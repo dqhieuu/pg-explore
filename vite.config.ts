@@ -18,7 +18,7 @@ export default defineConfig({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 10_000_000,
-        globPatterns: ["**/*.{js,css,html,data,wasm}"],
+        globPatterns: ["**/*.{js,css,html,svg,data,wasm}"],
       },
       includeAssets: [
         "favicon.ico",
