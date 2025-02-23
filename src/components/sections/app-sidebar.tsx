@@ -15,6 +15,7 @@ import {
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { APP_NAME } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { fixRadixUiUnclosedDialog } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Bug,
@@ -92,7 +93,12 @@ export function AppSidebar() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/" })}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      navigate({ to: "/" });
+                      fixRadixUiUnclosedDialog();
+                    }}
+                  >
                     <Plus />
                     <span>New database</span>
                   </DropdownMenuItem>

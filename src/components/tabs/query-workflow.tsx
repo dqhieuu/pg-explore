@@ -162,6 +162,12 @@ const initialEdges: Edge[] = [
     target: "testQueryScript2",
     animated: true,
   },
+  {
+    id: "edge3",
+    source: "testQueryScript2",
+    target: "end",
+    animated: true,
+  },
 ];
 
 export function QueryWorkflow() {
@@ -217,7 +223,10 @@ export function QueryWorkflow() {
       const nextQueue: string[] = [];
 
       for (const nodeId of queue) {
-        positionMap[nodeId] = { x: currentX, y: currentY };
+        positionMap[nodeId] =
+          nodeId === "end"
+            ? { x: initX + 50, y: currentY + 50 }
+            : { x: currentX, y: currentY };
 
         currentX += (idToNodeMap[nodeId].measured?.width ?? 0) + 50;
         nextQueue.push(...(sourceToTargetMap[nodeId] ?? []));
@@ -226,7 +235,10 @@ export function QueryWorkflow() {
       boundRight = Math.max(boundRight, currentX - 50 + 10);
 
       currentX = initX;
-      currentY += (idToNodeMap[queue[0]].measured?.height ?? 0) + 50;
+      if (idToNodeMap[queue[0]].id !== "end") {
+        currentY += (idToNodeMap[queue[0]].measured?.height ?? 0) + 50;
+      }
+
       queue = nextQueue;
     }
 

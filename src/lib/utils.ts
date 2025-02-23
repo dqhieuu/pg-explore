@@ -9,3 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 export const guid = () => {
   return uuidv4();
 };
+
+// https://github.com/radix-ui/primitives/issues/2122
+export function fixRadixUiUnclosedDialog() {
+  setTimeout(() => (document.body.style.pointerEvents = ""), 0);
+}
