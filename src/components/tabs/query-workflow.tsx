@@ -15,7 +15,6 @@ import {
   DatabaseIcon,
   ExternalLink,
   FilePlus,
-  Scroll,
   ScrollText,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -156,7 +155,7 @@ const initialEdges: Edge[] = [
 
 export function QueryWorkflow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
   const [layouted, setLayouted] = useState(false);
 
