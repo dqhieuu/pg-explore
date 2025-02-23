@@ -1,21 +1,23 @@
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
 import { pgLinter } from "@/lib/codemirror/pglinter";
+import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
+import { useEffect } from "react";
 
 import { Button } from "../ui/button";
-
-export interface QueryEditorProps {
-  contextId: string;
-}
 
 export const filterNonSelectResult = (result: QueryResult) => {
   return result?.fields?.length > 0;
 };
 
-export function QueryEditor({ contextId }: QueryEditorProps) {
+export interface QueryEditorProps {
+  contextId: string;
+  fileId: string;
+}
+export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
@@ -29,50 +31,45 @@ export function QueryEditor({ contextId }: QueryEditorProps) {
     (state) => state.queryResultPanelLots[contextId],
   );
 
+  const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
+
   const queryEditorValue = useQueryStore(
     (state) => state.queryEditors[contextId],
   );
   const setQueryEditorValue = useQueryStore((state) => state.setQueryEditor);
 
-  //   useEffect(() => {
-  //     return () => {
-  //       setQueryEditorValue(
-  //         contextId,
-  //         `begin;
-  // create table test(a int, b int);
-  // select * from test;
-  // insert into test (a,b)
-  // values (1,2), (3,4);
-  // select * from test;
-  // rollback;
-  // select * from information_schema.tables;`,
-  //       );
-  //     };
-  //   }, []);
+  useEffect(() => {
+    if (associatedFile == null) return;
+
+    setQueryEditorValue(contextId, associatedFile.content ?? "");
+  }, [associatedFile, contextId, setQueryEditorValue]);
 
   function createQueryResultTabsIfNeeded(result: object[]) {
+    if (dockviewApi == null) return;
+
     const lotsNeeded = result.length;
 
     for (let i = 0; i < lotsNeeded; i++) {
       if (queryResultLots == null || queryResultLots[i] !== true) {
         allotQueryResultPanel(contextId, i);
-        if (dockviewApi?.getGroup("results") == null) {
-          dockviewApi?.addGroup({
-            id: "results",
-            referencePanel: "panel_1",
+        if (dockviewApi.getGroup("result-group") == null) {
+          dockviewApi.addGroup({
+            id: "result-group",
+            referencePanel: fileId,
             direction: "below",
           });
         }
 
-        dockviewApi?.addPanel({
+        dockviewApi.addPanel({
           id: `${contextId}_${i}`,
+          title: `Result: ${associatedFile?.name ?? "Untitled"}`,
           component: "queryResult",
           params: {
             contextId,
             lotNumber: i,
           },
           position: {
-            referenceGroup: "results",
+            referenceGroup: "result-group",
           },
         });
       }

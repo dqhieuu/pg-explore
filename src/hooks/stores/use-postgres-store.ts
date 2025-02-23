@@ -16,6 +16,8 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
   setDatabase: async (databaseId) => {
     const { database } = get();
 
+    set({ databaseId });
+
     if (database != null) {
       await database.close();
     }
@@ -31,7 +33,7 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
       });
     }
 
-    set({ database: newDatabase, databaseId });
+    set({ database: newDatabase });
   },
 }));
 

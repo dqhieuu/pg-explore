@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  dockview:
+    hash: 316b76dac747ab9f78b82973ce1e2030f34529991288077d4d18a59afb16d7e7
+    path: patches/dockview.patch
+
 importers:
 
   .:
@@ -79,7 +84,7 @@ importers:
         version: 1.1.7(@types/react@19.0.8)(dexie@4.0.11)(react@19.0.0)
       dockview:
         specifier: ^3.2.0
-        version: 3.2.0(react@19.0.0)
+        version: 3.2.0(patch_hash=316b76dac747ab9f78b82973ce1e2030f34529991288077d4d18a59afb16d7e7)(react@19.0.0)
       immer:
         specifier: ^10.1.1
         version: 10.1.1
@@ -6182,7 +6187,7 @@ snapshots:
 
   dockview-core@3.2.0: {}
 
-  dockview@3.2.0(react@19.0.0):
+  dockview@3.2.0(patch_hash=316b76dac747ab9f78b82973ce1e2030f34529991288077d4d18a59afb16d7e7)(react@19.0.0):
     dependencies:
       dockview-core: 3.2.0
       react: 19.0.0

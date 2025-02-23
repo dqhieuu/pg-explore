@@ -77,7 +77,7 @@ function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+    <main className="flex flex-col items-center justify-center min-h-[100dvh] bg-gray-100">
       <Card className="">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -160,7 +160,7 @@ function HomePage() {
         </CardContent>
       </Card>
       <div className="my-5">
-        Reach me on <Link href={GITHUB_URL}>Github</Link>
+        Reach me at <Link href={GITHUB_URL}>Github</Link>
       </div>
     </main>
   );

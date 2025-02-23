@@ -5,6 +5,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html {
+  overscroll-behavior: none;
+}
+
 @layer utilities {
   * {
     min-width: 0;

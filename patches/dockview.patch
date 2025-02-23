@@ -1,0 +1,46 @@
+diff --git a/dist/dockview.js b/dist/dockview.js
+index 598a525ef5ced58226dbc81cdcde8ada83a07e77..4b3068d81581ca37bf2c7d0e3cc7a76480409e83 100644
+--- a/dist/dockview.js
++++ b/dist/dockview.js
+@@ -8059,7 +8059,7 @@
+           }
+           this.updateWatermark();
+       }
+-      orthogonalize(position) {
++      orthogonalize(position, options) {
+           switch (position) {
+               case 'top':
+               case 'bottom':
+@@ -8082,10 +8082,10 @@
+               case 'top':
+               case 'left':
+               case 'center':
+-                  return this.createGroupAtLocation([0]); // insert into first position
++                  return this.createGroupAtLocation([0], undefined, options); // insert into first position
+               case 'bottom':
+               case 'right':
+-                  return this.createGroupAtLocation([this.gridview.length]); // insert into last position
++                  return this.createGroupAtLocation([this.gridview.length], undefined, options); // insert into last position
+               default:
+                   throw new Error(`unsupported position ${position}`);
+           }
+@@ -8583,7 +8583,7 @@
+                   }
+               }
+               else {
+-                  const group = this.orthogonalize(directionToPosition(options.direction));
++                  const group = this.orthogonalize(directionToPosition(options.direction), options);
+                   if (!options.skipSetActive) {
+                       this.doSetGroupAndPanelActive(group);
+                   }
+@@ -9025,8 +9025,8 @@
+           });
+           return panel;
+       }
+-      createGroupAtLocation(location, size) {
+-          const group = this.createGroup();
++      createGroupAtLocation(location, size, options) {
++          const group = this.createGroup(options);
+           this.doAddGroup(group, location, size);
+           return group;
+       }

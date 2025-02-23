@@ -1,4 +1,5 @@
-import Dexie, { EntityTable } from "dexie";
+import { Modify } from "@/lib/ts-utils";
+import Dexie, { Table } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 
 interface PGDatabase {
@@ -17,14 +18,76 @@ interface FileEntry {
   blob?: Blob;
 }
 
+interface WorkflowSection {
+  id: string;
+  databaseId: string;
+  type: "schema" | "data";
+  name: string;
+  workflowSteps: WorkflowStep[];
+}
+
+interface CommonWorkflowStep {
+  type: string;
+  fileId?: string;
+  options: Record<string, unknown>;
+}
+
+type SQLQueryStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "sql-query";
+    options: Record<string, never>;
+  }
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type DbmlDataStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "dbml-data";
+    options: Record<string, never>;
+  }
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type DrawdbDataStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "drawdb-data";
+    options: Record<string, never>;
+  }
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type JsonDataStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "json-data";
+    options: Record<string, never>;
+  }
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type CsvDataStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "csv-data";
+    options: Record<string, never>;
+  }
+>;
+
+export type WorkflowStep = SQLQueryStep;
+
 export const useAppDbLiveQuery = useLiveQuery;
 
 export const appDb = new Dexie("pg-explore") as Dexie & {
-  databases: EntityTable<PGDatabase, "id">;
-  files: EntityTable<FileEntry, "id">;
+  databases: Table<PGDatabase>;
+  files: Table<FileEntry>;
+  workflows: Table<WorkflowSection>;
 };
 
 appDb.version(1).stores({
   databases: "id",
   files: "id, databaseId",
+  workflows: "id, databaseId",
 });

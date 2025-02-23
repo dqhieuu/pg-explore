@@ -12,10 +12,15 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { APP_NAME } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { fixRadixUiUnclosedDialog } from "@/lib/utils";
+import {
+  fixRadixUiUnclosedDialog,
+  guid,
+  nextIncrementedFilename,
+} from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Bug,
@@ -28,7 +33,6 @@ import {
   PlusCircle,
   ScrollText,
   SettingsIcon,
-  SquareTerminalIcon,
   Star,
   Trash,
   Workflow,
@@ -53,6 +57,134 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+
+function SQLScratchpadSection() {
+  const currentDatabaseId = usePostgresStore((state) => state.databaseId);
+
+  const databaseFiles =
+    useAppDbLiveQuery(
+      () =>
+        appDb.files
+          .where("databaseId")
+          .equals(currentDatabaseId ?? "")
+          .toArray(),
+      [currentDatabaseId],
+    ) ?? [];
+
+  const sortedFiles = databaseFiles.sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  const createNewFile = () => {
+    const existingFileNames = databaseFiles.map((file) => file.name);
+    const nextFileName = nextIncrementedFilename(
+      "SQL Query",
+      existingFileNames,
+    );
+
+    appDb.files.add({
+      id: guid(),
+      databaseId: currentDatabaseId ?? "",
+      type: "sql",
+      name: nextFileName,
+    });
+  };
+
+  const deleteFile = (fileId: string) => {
+    appDb.files.delete(fileId);
+  };
+
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+
+  const openFileEditor = (fileId: string) => {
+    if (dockviewApi == null) return;
+
+    let editorGroup = dockviewApi.getGroup("editor-group");
+
+    if (editorGroup == null) {
+      editorGroup = dockviewApi.addGroup({
+        id: "editor-group",
+        direction: "within",
+      });
+    }
+
+    const existingPanel = dockviewApi.getPanel(fileId);
+    if (existingPanel != null) {
+      existingPanel.focus();
+      return;
+    }
+
+    dockviewApi.addPanel({
+      id: fileId,
+      component: "queryEditor",
+      title: databaseFiles.find((file) => file.id === fileId)?.name,
+      params: {
+        fileId,
+        contextId: guid(),
+      },
+      position: {
+        referenceGroup: editorGroup,
+        direction: "within",
+      },
+    });
+  };
+
+  return (
+    <Collapsible defaultOpen className="group/collapsible">
+      <SidebarGroup>
+        <SidebarGroupLabel asChild>
+          <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
+            SQL scratchpad
+            <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
+          </CollapsibleTrigger>
+        </SidebarGroupLabel>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {sortedFiles.map((file) => (
+                <SidebarMenuItem
+                  className="group/file"
+                  key={file.id}
+                  onClick={() => openFileEditor(file.id)}
+                >
+                  <SidebarMenuButton>
+                    <ScrollText />
+                    {file.name}
+                  </SidebarMenuButton>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuAction className="hover:bg-gray-200">
+                        <MoreHorizontal className="hidden group-hover/file:block" />
+                      </SidebarMenuAction>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-[10rem]"
+                      side="right"
+                      align="start"
+                    >
+                      <DropdownMenuItem>
+                        <FolderPen />
+                        Rename file
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => deleteFile(file.id)}>
+                        <Trash className="text-destructive" />
+                        <span className="text-destructive">Delete file</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+
+            <Button variant="outline" className="mt-2" onClick={createNewFile}>
+              <Plus /> New
+            </Button>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -87,7 +219,6 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <div className="flex relative">
-                  {/* <div className="absolute bg-muted top-0 bottom-0 left-0 right-0 z-0 -m-1"></div> */}
                   <img className="w-8 rounded-md opacity-85" src={Logo} />
                   <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
                 </div>
@@ -154,59 +285,13 @@ export function AppSidebar() {
             Setup pre-query workflow
           </Button>
         </SidebarGroup>
-        <Collapsible defaultOpen className="group/collapsible">
-          <SidebarGroup>
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
-                SQL scratchpad
-                <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem className="group/file">
-                    <SidebarMenuButton>
-                      <ScrollText />
-                      Query 1
-                    </SidebarMenuButton>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction className="hover:bg-gray-200">
-                          <MoreHorizontal className="hidden group-hover/file:block" />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-[10rem]"
-                        side="right"
-                        align="start"
-                      >
-                        <DropdownMenuItem>
-                          <FolderPen />
-                          Rename file
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Trash className="text-destructive" />
-                          <span className="text-destructive">Delete file</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-
-                <Button variant="outline" className="mt-2">
-                  <Plus /> New
-                </Button>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+        <SQLScratchpadSection />
       </SidebarContent>
       <SidebarFooter>
-        <Button className="ml-auto" variant={"outline"}>
+        {/* <Button className="ml-auto" variant={"outline"}>
           <SquareTerminalIcon size={25} />
           Console
-        </Button>
+        </Button> */}
       </SidebarFooter>
     </Sidebar>
   );

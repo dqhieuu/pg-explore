@@ -14,3 +14,14 @@ export const guid = () => {
 export function fixRadixUiUnclosedDialog() {
   setTimeout(() => (document.body.style.pointerEvents = ""), 0);
 }
+
+export function nextIncrementedFilename(prefix: string, existing: string[]) {
+  const existingNumbers = existing
+    .filter((filename) => filename.match(new RegExp(`^${prefix} \\d+$`)))
+    .map((filename) => parseInt(filename.replace(prefix, ""), 10));
+
+  const nextNumber = Math.max(...existingNumbers, 0) + 1;
+  const zeroPaddedNumber = nextNumber.toString().padStart(2, "0");
+
+  return `${prefix} ${zeroPaddedNumber}`;
+}

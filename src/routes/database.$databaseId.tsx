@@ -66,29 +66,33 @@ function MainApp() {
             onReady={(event) => {
               setDockviewApi(event.api);
 
-              const editorPanel = event.api.addPanel({
-                id: "panel_1",
-                component: "queryEditor",
-                params: {
-                  contextId: guid(),
-                },
+              const workflowGroup = event.api.addGroup({
+                direction: "left",
+                id: "workflow-group",
+              });
+
+              event.api.addGroup({
+                direction: "right",
+                id: "editor-group",
               });
 
               if (window.screen.width >= 1000) {
                 event.api.addPanel({
-                  id: "panel_3",
+                  id: "workflow",
                   component: "queryWorkflow",
                   initialWidth: 300,
                   position: {
-                    referencePanel: editorPanel,
-                    direction: "left",
+                    referenceGroup: workflowGroup,
                   },
                 });
               }
             }}
             components={{
               queryEditor: (props: IDockviewPanelProps<QueryEditorProps>) => (
-                <QueryEditor contextId={props.params.contextId} />
+                <QueryEditor
+                  contextId={props.params.contextId}
+                  fileId={props.params.fileId}
+                />
               ),
               queryResult: (props: IDockviewPanelProps<QueryResultProps>) => (
                 <div className="p-2 w-full h-full overflow-auto">
@@ -99,9 +103,7 @@ function MainApp() {
                 </div>
               ),
               queryWorkflow: () => <QueryWorkflow />,
-              // repl: () => <Repl pg={db} />,
             }}
-            tabComponents={{}}
             singleTabMode="fullwidth"
             className="dockview-theme-replit"
             defaultTabComponent={DockviewCustomTab}
