@@ -16,14 +16,24 @@ import {
   ExternalLink,
   FilePlus,
   ScrollText,
+  SquareTerminal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const DatabaseSourceNode = () => {
   return (
     <div className="bg-blue-900 text-white p-2 rounded-lg">
-      <DatabaseIcon className="" />
+      <DatabaseIcon />
       <Handle type="source" position={Position.Bottom} />
+    </div>
+  );
+};
+
+const EndNode = () => {
+  return (
+    <div className="bg-green-900 text-white p-2 rounded-lg">
+      <Handle type="target" position={Position.Top} />
+      <SquareTerminal />
     </div>
   );
 };
@@ -31,7 +41,7 @@ const DatabaseSourceNode = () => {
 const QueryScriptNode = () => {
   return (
     <div className="w-[10rem] border shadow bg-white py-1 px-2 rounded-lg overflow-hidden">
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} className="z-10" />
       <div className="relative">
         <div className="relative z-10 flex gap-1">
           <ScrollText strokeWidth={1} />
@@ -65,19 +75,39 @@ const QueryScriptNode = () => {
 
 const nodeTypes = {
   databaseSource: DatabaseSourceNode,
+  end: EndNode,
   queryScript: QueryScriptNode,
 };
 
 const initialNodes: Node[] = [
   {
-    id: "bound",
+    id: "root",
+    type: "databaseSource",
+    position: { x: 50, y: 0 },
+    data: {},
+  },
+
+  {
+    id: "end",
+    type: "end",
+    position: { x: 50, y: 600 },
+    data: {},
+  },
+
+  {
+    id: "groupSchema",
     type: "group",
     data: { label: "Update Schema" },
-    position: { x: 0, y: 100 },
-    style: {
-      width: 0,
-      height: 0,
-    },
+    position: { x: 0, y: 0 },
+    hidden: true,
+  },
+
+  {
+    id: "groupData",
+    type: "group",
+    data: { label: "Update Data" },
+    position: { x: 0, y: 0 },
+    hidden: true,
   },
 
   // {
@@ -90,13 +120,6 @@ const initialNodes: Node[] = [
   //     height: 0,
   //   },
   // },
-
-  {
-    id: "rootNode",
-    type: "databaseSource",
-    position: { x: 155, y: -100 },
-    data: {},
-  },
 
   {
     id: "testQueryScript",
@@ -118,18 +141,12 @@ const initialNodes: Node[] = [
     data: { label: "Test Query Script" },
     position: { x: 0, y: 400 },
   },
-
-  {
-    id: "testQueryScript3",
-    type: "queryScript",
-    data: { label: "Test Query Script" },
-    position: { x: 0, y: 600 },
-  },
 ];
+
 const initialEdges: Edge[] = [
   {
     id: "edge0",
-    source: "rootNode",
+    source: "root",
     target: "testQueryScript",
     animated: true,
   },
@@ -143,12 +160,6 @@ const initialEdges: Edge[] = [
     id: "edge2",
     source: "testQueryScript1",
     target: "testQueryScript2",
-    animated: true,
-  },
-  {
-    id: "edge3",
-    source: "testQueryScript2",
-    target: "testQueryScript3",
     animated: true,
   },
 ];
@@ -170,7 +181,7 @@ export function QueryWorkflow() {
       {} as Record<string, Node>,
     );
 
-    const rootNode = idToNodeMap["rootNode"];
+    const rootNode = idToNodeMap["root"];
     if (rootNode.measured?.width == null) return;
 
     const sourceToTargetMap = edges.reduce(
@@ -188,10 +199,10 @@ export function QueryWorkflow() {
     let currentX = rootNode.position.x;
     let currentY = rootNode.position.y;
 
-    currentY += 100;
+    currentY += 120;
     currentX -= 50;
 
-    const boundTop = currentY - 10;
+    const boundTop = currentY - 10 - 50;
     const boundLeft = currentX - 10;
 
     let boundRight = currentX + 10;
@@ -225,18 +236,13 @@ export function QueryWorkflow() {
 
     setNodes((nodes) => {
       return nodes.map((node) => {
-        if (node.id === "bound") {
-          console.log("bound", {
-            boundLeft,
-            boundTop,
-            boundWidth,
-            boundHeight,
-          });
+        if (node.id === "groupSchema") {
           return {
             ...node,
             position: { x: boundLeft, y: boundTop },
             width: boundWidth,
             height: boundHeight,
+            hidden: false,
           };
         }
 
@@ -262,6 +268,8 @@ export function QueryWorkflow() {
         onEdgesChange={onEdgesChange}
         fitView
         proOptions={{ hideAttribution: true }}
+        nodesDraggable={false}
+        nodesConnectable={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       </ReactFlow>

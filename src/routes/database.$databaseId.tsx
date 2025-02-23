@@ -66,26 +66,25 @@ function MainApp() {
             onReady={(event) => {
               setDockviewApi(event.api);
 
-              const contextId = guid();
               const editorPanel = event.api.addPanel({
                 id: "panel_1",
                 component: "queryEditor",
                 params: {
-                  contextId,
-                },
-                position: {
-                  direction: "right",
+                  contextId: guid(),
                 },
               });
-              event.api.addPanel({
-                id: "panel_3",
-                component: "queryWorkflow",
-                initialWidth: 400,
-                position: {
-                  referencePanel: editorPanel,
-                  direction: "left",
-                },
-              });
+
+              if (window.screen.width >= 1000) {
+                event.api.addPanel({
+                  id: "panel_3",
+                  component: "queryWorkflow",
+                  initialWidth: 300,
+                  position: {
+                    referencePanel: editorPanel,
+                    direction: "left",
+                  },
+                });
+              }
             }}
             components={{
               queryEditor: (props: IDockviewPanelProps<QueryEditorProps>) => (

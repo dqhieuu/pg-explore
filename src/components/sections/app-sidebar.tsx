@@ -30,6 +30,7 @@ import {
   SquareTerminalIcon,
   Star,
   Trash,
+  Workflow,
 } from "lucide-react";
 
 import { Button } from "../ui/button";
@@ -142,7 +143,10 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <Button>Setup pre-query workflow</Button>
+          <Button>
+            <Workflow />
+            Setup pre-query workflow
+          </Button>
         </SidebarGroup>
         <Collapsible defaultOpen className="group/collapsible">
           <SidebarGroup>
