@@ -12,7 +12,7 @@ import { QueryResult, QueryResultProps } from "../components/tabs/query-result";
 import { QueryWorkflow } from "../components/tabs/query-workflow";
 import { useDockviewStore } from "../hooks/stores/use-dockview-store";
 import { usePostgresStore } from "../hooks/stores/use-postgres-store";
-import { appDb, useAppDbLiveQuery } from "../lib/dexie/app-db";
+import { appDb } from "../lib/dexie/app-db";
 import { guid } from "../lib/utils";
 
 export const Route = createFileRoute("/database/$databaseId")({
@@ -21,7 +21,6 @@ export const Route = createFileRoute("/database/$databaseId")({
 
 function MainApp() {
   const navigate = useNavigate();
-
   const { databaseId } = Route.useParams();
 
   const setDockviewApi = useDockviewStore((state) => state.setDockviewApi);
@@ -29,21 +28,24 @@ function MainApp() {
   const pgDb = usePostgresStore((state) => state.database);
   const setPgDb = usePostgresStore((state) => state.setDatabase);
 
-  const appDbPgList = useAppDbLiveQuery(() => appDb.databases.toArray());
-
   useEffect(() => {
     (async () => {
+      const appDbPgList = await appDb.databases.toArray();
+
       if (appDbPgList == null) {
         return;
       }
 
-      if (appDbPgList.find((db) => db.id === databaseId) == null) {
-        navigate({ to: "/" });
-      } else {
+      if (databaseId === "memory") {
+        setPgDb(null);
+      } else if (appDbPgList.find((db) => db.id === databaseId) != null) {
         setPgDb(databaseId);
+        appDb.databases.update(databaseId, { lastOpened: new Date() });
+      } else {
+        navigate({ to: "/" });
       }
     })();
-  }, [setPgDb, appDbPgList, databaseId, navigate]);
+  }, [setPgDb, databaseId, navigate]);
 
   if (pgDb == null) {
     return (

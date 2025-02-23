@@ -22,9 +22,11 @@ export function QueryEditor({ contextId }: QueryEditorProps) {
 
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
 
-  const allotQueryResult = useQueryStore((state) => state.allotQueryResult);
+  const allotQueryResultPanel = useQueryStore(
+    (state) => state.allotQueryResultPanel,
+  );
   const queryResultLots = useQueryStore(
-    (state) => state.queryResultLots[contextId],
+    (state) => state.queryResultPanelLots[contextId],
   );
 
   const queryEditorValue = useQueryStore(
@@ -53,7 +55,7 @@ export function QueryEditor({ contextId }: QueryEditorProps) {
 
     for (let i = 0; i < lotsNeeded; i++) {
       if (queryResultLots == null || queryResultLots[i] !== true) {
-        allotQueryResult(contextId, i);
+        allotQueryResultPanel(contextId, i);
         if (dockviewApi?.getGroup("results") == null) {
           dockviewApi?.addGroup({
             id: "results",
@@ -79,6 +81,29 @@ export function QueryEditor({ contextId }: QueryEditorProps) {
 
   return (
     <div className="h-full flex flex-col">
+      <div className="p-1">
+        <Button
+          className="h-7 p-3"
+          onClick={() => {
+            db.exec("rollback;" + (queryEditorValue ?? ""))
+              .then((res) => {
+                const result = (res as unknown as QueryResult[])
+                  .slice(1)
+                  .filter(filterNonSelectResult);
+                setQueryResult(contextId, result);
+                createQueryResultTabsIfNeeded(result);
+              })
+              .catch((err) => {
+                const result = [err.message];
+                setQueryResult(contextId, result);
+                createQueryResultTabsIfNeeded(result);
+              });
+          }}
+        >
+          Query
+        </Button>
+      </div>
+
       <CodeMirror
         value={queryEditorValue}
         className="flex-1"
@@ -94,27 +119,6 @@ export function QueryEditor({ contextId }: QueryEditorProps) {
           pgLinter(db),
         ]}
       />
-
-      <Button
-        className="rounded-none"
-        onClick={() => {
-          db.exec("rollback;" + (queryEditorValue ?? ""))
-            .then((res) => {
-              const result = (res as unknown as QueryResult[])
-                .slice(1)
-                .filter(filterNonSelectResult);
-              setQueryResult(contextId, result);
-              createQueryResultTabsIfNeeded(result);
-            })
-            .catch((err) => {
-              const result = [err.message];
-              setQueryResult(contextId, result);
-              createQueryResultTabsIfNeeded(result);
-            });
-        }}
-      >
-        Query
-      </Button>
     </div>
   );
 }

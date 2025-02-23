@@ -9,19 +9,19 @@ export interface QueryResult {
 
 interface QueryStore {
   queryResults: Record<string, QueryResult[]>;
-  queryResultLots: Record<string, boolean[]>;
+  queryResultPanelLots: Record<string, boolean[]>;
 
   queryEditors: Record<string, string>;
   setQueryResult: (contextId: string, result: (QueryResult | string)[]) => void;
   setQueryEditor: (contextId: string, editor: string) => void;
-  allotQueryResult: (contextId: string, lotNumber: number) => void;
-  unallotQueryResult: (contextId: string, lotNumber: number) => void;
+  allotQueryResultPanel: (contextId: string, lotNumber: number) => void;
+  unallotQueryResultPanel: (contextId: string, lotNumber: number) => void;
 }
 
 export const useQueryStore = create<QueryStore>((set) => ({
   queryResults: {},
   queryEditors: {},
-  queryResultLots: {},
+  queryResultPanelLots: {},
   setQueryResult: (contextId, result) =>
     set(
       produce((state) => {
@@ -29,21 +29,21 @@ export const useQueryStore = create<QueryStore>((set) => ({
       }),
     ),
 
-  allotQueryResult: (contextId, lotNumber) =>
+  allotQueryResultPanel: (contextId, lotNumber) =>
     set(
       produce((state) => {
-        if (state.queryResultLots[contextId] == null) {
-          state.queryResultLots[contextId] = [];
+        if (state.queryResultPanelLots[contextId] == null) {
+          state.queryResultPanelLots[contextId] = [];
         }
 
-        state.queryResultLots[contextId][lotNumber] = true;
+        state.queryResultPanelLots[contextId][lotNumber] = true;
       }),
     ),
 
-  unallotQueryResult: (contextId, lotNumber) =>
+  unallotQueryResultPanel: (contextId, lotNumber) =>
     set(
       produce((state) => {
-        state.queryResultLots[contextId][lotNumber] = false;
+        state.queryResultPanelLots[contextId][lotNumber] = false;
       }),
     ),
 

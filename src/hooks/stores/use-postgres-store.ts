@@ -7,7 +7,7 @@ import { create } from "zustand";
 interface PostgresStore {
   database: null | PGliteWithLive;
   databaseId: null | string;
-  setDatabase: (databaseId: string | undefined) => void;
+  setDatabase: (databaseId: string | null) => void;
 }
 
 export const usePostgresStore = create<PostgresStore>((set, get) => ({
@@ -21,7 +21,7 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
     }
 
     let newDatabase: PGliteWithLive;
-    if (databaseId == null) {
+    if (databaseId != null) {
       newDatabase = await PGlite.create(`idb://pg_${databaseId}`, {
         extensions: { live },
       });

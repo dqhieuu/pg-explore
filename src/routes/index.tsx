@@ -106,7 +106,7 @@ function HomePage() {
             <div className="font-medium">Create a new database</div>
             <div className="flex gap-2 flex-wrap">
               <div
-                className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto]"
+                className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto] transition ease-in-out"
                 onClick={() => navigate({ to: `/database/memory` })}
               >
                 <div className="font-semibold">In-memory database</div>
@@ -120,7 +120,7 @@ function HomePage() {
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <div className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto]">
+                  <div className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto] transition ease-in-out">
                     <div className="font-semibold ">Persistent database</div>
                     <Database size={48} strokeWidth={1} className="my-2" />
                     <div className="text-sm text-center text-balance text-muted-foreground">
@@ -138,7 +138,7 @@ function HomePage() {
           {/* divider */}
           <div className="border-r border-gray-200 hidden md:block"></div>
           {/* divider */}
-          <div className="flex flex-col gap-2 min-w-0 w-full md:w-auto">
+          <div className="flex flex-col gap-2 min-w-0 w-full md:w-auto ">
             <div className="font-medium">Open an existing database</div>
             {databases?.length === 0 ? (
               <div className="text-muted-foreground">No databases found.</div>
@@ -160,7 +160,7 @@ function HomePage() {
         </CardContent>
       </Card>
       <div className="my-5">
-        Reach us on <Link href={GITHUB_URL}>Github</Link>
+        Reach me on <Link href={GITHUB_URL}>Github</Link>
       </div>
     </main>
   );

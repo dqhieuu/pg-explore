@@ -53,14 +53,20 @@ import {
 } from "../ui/dropdown-menu";
 
 export function AppSidebar() {
-  const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
+  const navigate = useNavigate();
   const currentDbId = usePostgresStore((state) => state.databaseId);
 
-  const navigate = useNavigate();
+  const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
 
-  const currentDatabaseName = databases?.find(
-    (db) => db.id === currentDbId,
-  )?.name;
+  const lastOpenedDatabases = databases
+    ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
+    ?.slice(0, 3);
+
+  const isInMemoryDatabase = currentDbId == null;
+
+  const currentDatabaseName = isInMemoryDatabase
+    ? "In-memory database"
+    : databases?.find((db) => db.id === currentDbId)?.name;
 
   return (
     <Sidebar>
@@ -69,14 +75,17 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
+                <SidebarMenuButton
+                  className={`h-auto ${isInMemoryDatabase ? "italic" : ""}`}
+                >
                   <DatabaseIcon />
                   <span className="font-semibold">{currentDatabaseName}</span>
                   <ChevronDown className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
-                <div className="flex">
+                <div className="flex relative">
+                  {/* <div className="absolute bg-muted top-0 bottom-0 left-0 right-0 z-0 -m-1"></div> */}
                   <img className="w-8 rounded-md opacity-85" src={Logo} />
                   <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
                 </div>
@@ -93,7 +102,7 @@ export function AppSidebar() {
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                       <DropdownMenuSubContent>
-                        {databases?.map((db) => (
+                        {lastOpenedDatabases?.map((db) => (
                           <DropdownMenuItem
                             key={db.id}
                             onClick={() =>
@@ -139,7 +148,7 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupLabel asChild>
               <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
-                SQL notebook
+                SQL scratchpad
                 <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
               </CollapsibleTrigger>
             </SidebarGroupLabel>
