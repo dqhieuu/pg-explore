@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
+import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { APP_NAME } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
@@ -22,6 +23,7 @@ import {
   nextIncrementedFilename,
 } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
+import { sign } from "crypto";
 import {
   Bug,
   ChevronDown,
@@ -191,6 +193,9 @@ export function AppSidebar() {
   const currentDbId = usePostgresStore((state) => state.databaseId);
 
   const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
+  const signalSaveQueryEditors = useQueryStore(
+    (state) => state.signalSaveQueryEditors,
+  );
 
   const lastOpenedDatabases = databases
     ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
@@ -228,6 +233,7 @@ export function AppSidebar() {
                     onClick={() => {
                       navigate({ to: "/" });
                       fixRadixUiUnclosedDialog();
+                      signalSaveQueryEditors();
                     }}
                   >
                     <Plus />
@@ -243,9 +249,11 @@ export function AppSidebar() {
                         {lastOpenedDatabases?.map((db) => (
                           <DropdownMenuItem
                             key={db.id}
-                            onClick={() =>
-                              navigate({ to: `/database/${db.id}` })
-                            }
+                            onClick={() => {
+                              navigate({ to: `/database/${db.id}` });
+                              fixRadixUiUnclosedDialog();
+                              signalSaveQueryEditors();
+                            }}
                           >
                             <span>{db.name}</span>
                           </DropdownMenuItem>

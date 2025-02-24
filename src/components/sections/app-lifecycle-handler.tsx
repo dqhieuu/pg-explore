@@ -1,21 +1,31 @@
-import { useEffect } from "react";
+import { useQueryStore } from "@/hooks/stores/use-query-store";
+import { ReactNode, useEffect, useState } from "react";
 
 export default function AppLifecycleHandler({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const signalSaveQueryEditors = useQueryStore(
+    (state) => state.signalSaveQueryEditors,
+  );
+
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    document.onvisibilitychange = () => {
+    if (mounted) return;
+    setMounted(true);
+
+    document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        // TODO
         console.log("App is visible");
       } else {
-        // TODO
         console.log("App is hidden");
+
+        signalSaveQueryEditors();
       }
-    };
-  }, []);
+    });
+  }, [mounted, signalSaveQueryEditors]);
 
   return <>{children}</>;
 }

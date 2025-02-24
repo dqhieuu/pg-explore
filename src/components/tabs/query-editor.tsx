@@ -5,11 +5,12 @@ import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
+import { Save } from "lucide-react";
 import { useEffect } from "react";
 
 import { Button } from "../ui/button";
 
-export const filterNonSelectResult = (result: QueryResult) => {
+const filterNonSelectResult = (result: QueryResult) => {
   return result?.fields?.length > 0;
 };
 
@@ -21,7 +22,6 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
-
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
 
   const allotQueryResultPanel = useQueryStore(
@@ -31,18 +31,36 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     (state) => state.queryResultPanelLots[contextId],
   );
 
+  const setQueryEditorValue = useQueryStore(
+    (state) => state.setQueryEditorValue,
+  );
+
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
 
   const queryEditorValue = useQueryStore(
     (state) => state.queryEditors[contextId],
   );
-  const setQueryEditorValue = useQueryStore((state) => state.setQueryEditor);
+  const isSaved =
+    useQueryStore((state) => state.queryEditorsSaved[contextId]) ?? true;
+  const shouldSave = useQueryStore(
+    (state) => state.queryEditorsShouldSave[contextId],
+  );
 
+  // Component first mount, set the query editor value
   useEffect(() => {
     if (associatedFile == null) return;
 
-    setQueryEditorValue(contextId, associatedFile.content ?? "");
+    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
   }, [associatedFile, contextId, setQueryEditorValue]);
+
+  // Save the query editor value to the database if needed
+  useEffect(() => {
+    if (!shouldSave) return;
+
+    appDb.files.update(fileId, {
+      content: queryEditorValue,
+    });
+  }, [fileId, queryEditorValue, shouldSave]);
 
   function createQueryResultTabsIfNeeded(result: object[]) {
     if (dockviewApi == null) return;
@@ -78,7 +96,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="p-1">
+      <div className="p-1 flex gap-2">
+        <Save className={isSaved ? "text-green-700" : "text-red-800"} />
         <Button
           className="h-7 p-3"
           onClick={() => {

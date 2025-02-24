@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
-@import "dockview/dist/styles/dockview.css";
+@import "@hieu_dq/dockview/dist/styles/dockview.css";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -2,8 +2,8 @@ import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { PGliteProvider } from "@electric-sql/pglite-react";
+import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { DockviewReact, IDockviewPanelProps } from "dockview";
 import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
 
@@ -13,7 +13,6 @@ import { QueryWorkflow } from "../components/tabs/query-workflow";
 import { useDockviewStore } from "../hooks/stores/use-dockview-store";
 import { usePostgresStore } from "../hooks/stores/use-postgres-store";
 import { appDb } from "../lib/dexie/app-db";
-import { guid } from "../lib/utils";
 
 export const Route = createFileRoute("/database/$databaseId")({
   component: MainApp,
@@ -66,17 +65,16 @@ function MainApp() {
             onReady={(event) => {
               setDockviewApi(event.api);
 
-              const workflowGroup = event.api.addGroup({
-                direction: "left",
-                id: "workflow-group",
-              });
-
               event.api.addGroup({
                 direction: "right",
                 id: "editor-group",
               });
 
               if (window.screen.width >= 1000) {
+                const workflowGroup = event.api.addGroup({
+                  direction: "left",
+                  id: "workflow-group",
+                });
                 event.api.addPanel({
                   id: "workflow",
                   component: "queryWorkflow",

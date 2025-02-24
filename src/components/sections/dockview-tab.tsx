@@ -1,5 +1,8 @@
 import { useQueryStore } from "@/hooks/stores/use-query-store";
-import { DockviewDefaultTab, IDockviewPanelHeaderProps } from "dockview";
+import {
+  DockviewDefaultTab,
+  IDockviewPanelHeaderProps,
+} from "@hieu_dq/dockview";
 
 export const DockviewCustomTab = (props: IDockviewPanelHeaderProps) => {
   const unallotQueryResultPanel = useQueryStore(

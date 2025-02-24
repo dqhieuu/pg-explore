@@ -1,5 +1,6 @@
 import { produce } from "immer";
 import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 
 export interface QueryResult {
   fields: { name: string; dataTypeId: number }[];
@@ -8,49 +9,80 @@ export interface QueryResult {
 }
 
 interface QueryStore {
-  queryResults: Record<string, QueryResult[]>;
+  queryEditors: Record<string, string>;
+  queryEditorsSaved: Record<string, boolean>;
+  queryEditorsShouldSave: Record<string, boolean>;
+
+  queryResults: Record<string, (string | QueryResult)[]>;
   queryResultPanelLots: Record<string, boolean[]>;
 
-  queryEditors: Record<string, string>;
+  signalSaveQueryEditors: (contextIds?: string[]) => void;
   setQueryResult: (contextId: string, result: (QueryResult | string)[]) => void;
-  setQueryEditor: (contextId: string, editor: string) => void;
+  setQueryEditorValue: (
+    contextId: string,
+    value: string,
+    isSaved?: boolean,
+  ) => void;
   allotQueryResultPanel: (contextId: string, lotNumber: number) => void;
   unallotQueryResultPanel: (contextId: string, lotNumber: number) => void;
 }
 
-export const useQueryStore = create<QueryStore>((set) => ({
-  queryResults: {},
-  queryEditors: {},
-  queryResultPanelLots: {},
-  setQueryResult: (contextId, result) =>
-    set(
-      produce((state) => {
-        state.queryResults[contextId] = result;
-      }),
-    ),
+export const useQueryStore = create<QueryStore>()(
+  devtools((set) => ({
+    queryEditors: {},
+    queryEditorsSaved: {},
+    queryEditorsShouldSave: {},
 
-  allotQueryResultPanel: (contextId, lotNumber) =>
-    set(
-      produce((state) => {
-        if (state.queryResultPanelLots[contextId] == null) {
-          state.queryResultPanelLots[contextId] = [];
-        }
+    queryResults: {},
+    queryResultPanelLots: {},
 
-        state.queryResultPanelLots[contextId][lotNumber] = true;
-      }),
-    ),
+    setQueryResult: (contextId, result) =>
+      set(
+        produce<QueryStore>((state) => {
+          state.queryResults[contextId] = result;
+        }),
+      ),
 
-  unallotQueryResultPanel: (contextId, lotNumber) =>
-    set(
-      produce((state) => {
-        state.queryResultPanelLots[contextId][lotNumber] = false;
-      }),
-    ),
+    allotQueryResultPanel: (contextId, lotNumber) =>
+      set(
+        produce<QueryStore>((state) => {
+          if (state.queryResultPanelLots[contextId] == null) {
+            state.queryResultPanelLots[contextId] = [];
+          }
 
-  setQueryEditor: (contextId, editor) =>
-    set(
-      produce((state) => {
-        state.queryEditors[contextId] = editor;
-      }),
-    ),
-}));
+          state.queryResultPanelLots[contextId][lotNumber] = true;
+        }),
+      ),
+
+    unallotQueryResultPanel: (contextId, lotNumber) =>
+      set(
+        produce<QueryStore>((state) => {
+          state.queryResultPanelLots[contextId][lotNumber] = false;
+        }),
+      ),
+
+    setQueryEditorValue: (contextId, value, isSaved = false) =>
+      set(
+        produce<QueryStore>((state) => {
+          state.queryEditors[contextId] = value;
+          state.queryEditorsSaved[contextId] = isSaved;
+          state.queryEditorsShouldSave[contextId] = false;
+        }),
+      ),
+
+    signalSaveQueryEditors: (contextIds) =>
+      set(
+        produce((state) => {
+          if (contextIds == null) {
+            contextIds = Object.entries(state.queryEditorsSaved)
+              .filter(([, isSaved]) => !isSaved)
+              .map(([contextId]) => contextId);
+          }
+
+          contextIds.forEach((contextId) => {
+            state.queryEditorsShouldSave[contextId] = true;
+          });
+        }),
+      ),
+  })),
+);

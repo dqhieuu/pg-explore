@@ -1,4 +1,4 @@
-import { DockviewApi } from "dockview";
+import { DockviewApi } from "@hieu_dq/dockview";
 import { create } from "zustand";
 
 interface DockviewStore {
