@@ -67,5 +67,10 @@
     "vite": "^6.1.1",
     "vite-plugin-pwa": "^0.21.1"
   },
+  "pnpm": {
+    "overrides": {
+      "@hieu_dq/dockview-core": "^3.2.0"
+    }
+  },
   "packageManager": "pnpm@9.15.5"
 }

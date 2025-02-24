@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@hieu_dq/dockview-core': ^3.2.0
+
 importers:
 
   .:
