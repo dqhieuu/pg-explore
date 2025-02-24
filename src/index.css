@@ -20,6 +20,10 @@ html {
   border-radius: 0;
 }
 
+.dv-split-view-container .dv-sash-container .dv-sash {
+  z-index: 10;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;

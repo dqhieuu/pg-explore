@@ -58,7 +58,7 @@ function MainApp() {
     <PGliteProvider db={pgDb}>
       <SidebarProvider className="flex w-full">
         <AppSidebar />
-        <SidebarTrigger />
+        <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2" />
 
         <main className="flex-1 h-[100dvh]">
           <DockviewReact
