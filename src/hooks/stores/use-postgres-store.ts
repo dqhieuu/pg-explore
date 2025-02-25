@@ -1,4 +1,5 @@
 import { appDb } from "@/lib/dexie/app-db";
+import { querySchema } from "@/lib/pglite/pg-utils";
 import { PGlite } from "@electric-sql/pglite";
 import { PGliteWithLive, live } from "@electric-sql/pglite/live";
 import Dexie from "dexie";
@@ -8,6 +9,9 @@ interface PostgresStore {
   database: null | PGliteWithLive;
   databaseId: null | string;
   setDatabase: (databaseId: string | null) => void;
+
+  schema: Record<string, string[]>;
+  setSchema: (schema: Record<string, string[]>) => void;
 }
 
 export const usePostgresStore = create<PostgresStore>((set, get) => ({
@@ -18,7 +22,7 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
 
     const { database } = get();
 
-    if (database != null) {
+    if (database != null && database.ready) {
       await database.close();
     }
 
@@ -33,8 +37,13 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
       });
     }
 
-    set({ database: newDatabase });
+    const schema = await querySchema(newDatabase);
+
+    set({ database: newDatabase, schema });
   },
+
+  schema: {},
+  setSchema: (schema) => set({ schema }),
 }));
 
 export const deleteDatabase = async (id: string) => {

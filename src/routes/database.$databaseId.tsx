@@ -78,7 +78,7 @@ function MainApp() {
                 event.api.addPanel({
                   id: "workflow",
                   component: "queryWorkflow",
-                  initialWidth: 300,
+                  initialWidth: window.screen.width * 0.2,
                   position: {
                     referenceGroup: workflowGroup,
                   },

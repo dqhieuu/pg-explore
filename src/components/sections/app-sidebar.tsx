@@ -15,7 +15,7 @@ import {
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useQueryStore } from "@/hooks/stores/use-query-store";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
   fixRadixUiUnclosedDialog,
@@ -24,11 +24,13 @@ import {
 } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  BookText,
   Bug,
   ChevronDown,
   Database,
   DatabaseIcon,
   FolderPen,
+  HelpCircle,
   MoreHorizontal,
   Plus,
   PlusCircle,
@@ -272,14 +274,32 @@ export function AppSidebar() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Bug />
-                  <span>Report an issue / Feedback</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Star />
-                  <span>Star / Fork this repo</span>
-                </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <HelpCircle />
+                    <span>Help</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem disabled>
+                        <BookText />
+                        <span>Documentation (TODO)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={`${GITHUB_URL}/issues`} target="_blank">
+                          <Bug />
+                          <span>Report an issue / Feedback</span>
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={GITHUB_URL} target="_blank">
+                          <Star />
+                          <span>Star / Fork this repo</span>
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

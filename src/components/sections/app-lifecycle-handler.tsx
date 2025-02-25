@@ -1,5 +1,5 @@
 import { useQueryStore } from "@/hooks/stores/use-query-store";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
 
 export default function AppLifecycleHandler({
   children,
@@ -10,17 +10,14 @@ export default function AppLifecycleHandler({
     (state) => state.signalSaveQueryEditors,
   );
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    if (mounted) return;
-    setMounted(true);
-
-    window.addEventListener("beforeunload", () => {
+    const beforeunloadHandler = () => {
       signalSaveQueryEditors();
-    });
+    };
 
-    document.addEventListener("visibilitychange", () => {
+    window.addEventListener("beforeunload", beforeunloadHandler);
+
+    const visibilityChangeHandler = () => {
       if (document.visibilityState === "visible") {
         console.log("App is visible");
       } else {
@@ -28,8 +25,15 @@ export default function AppLifecycleHandler({
 
         signalSaveQueryEditors();
       }
-    });
-  }, [mounted, signalSaveQueryEditors]);
+    };
+
+    document.addEventListener("visibilitychange", visibilityChangeHandler);
+
+    return () => {
+      window.removeEventListener("beforeunload", beforeunloadHandler);
+      document.removeEventListener("visibilitychange", visibilityChangeHandler);
+    };
+  }, [signalSaveQueryEditors]);
 
   return <>{children}</>;
 }

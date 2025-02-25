@@ -1,7 +1,9 @@
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
+import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
 import { pgLinter } from "@/lib/codemirror/pglinter";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { querySchema } from "@/lib/pglite/pg-utils";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
@@ -21,23 +23,26 @@ export interface QueryEditorProps {
 export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
 
+  const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
+
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
-
-  const setQueryEditorValue = useQueryStore(
-    (state) => state.setQueryEditorValue,
-  );
-
-  const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
 
   const queryEditorValue = useQueryStore(
     (state) => state.queryEditors[contextId],
   );
+  const setQueryEditorValue = useQueryStore(
+    (state) => state.setQueryEditorValue,
+  );
+
   const isSaved =
     useQueryStore((state) => state.queryEditorsSaved[contextId]) ?? true;
   const shouldSave = useQueryStore(
     (state) => state.queryEditorsShouldSave[contextId],
   );
+
+  const schema = usePostgresStore((state) => state.schema);
+  const setSchema = usePostgresStore((state) => state.setSchema);
 
   // Component first mount, set the query editor value
   useEffect(() => {
@@ -91,10 +96,12 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="p-1 flex gap-2">
-        {/* <Save className={isSaved ? "text-green-700" : "text-red-800"} /> */}
+        <Save
+          className={(isSaved ? "text-green-700" : "text-red-800") + " hidden"}
+        />
         <Button
           className="h-7 p-3"
-          onClick={() => {
+          onClick={async () => {
             db.exec("rollback;" + (queryEditorValue ?? ""))
               .then((res) => {
                 const result = (res as unknown as QueryResult[])
@@ -108,6 +115,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
                 setQueryResult(contextId, result);
                 createQueryResultTabsIfNeeded(result);
               });
+
+            querySchema(db).then(setSchema);
           }}
         >
           Query
@@ -125,6 +134,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
         extensions={[
           sql({
             dialect: PostgreSQLDialect,
+            defaultSchema: "public",
+            schema,
           }),
           pgLinter(db),
         ]}
