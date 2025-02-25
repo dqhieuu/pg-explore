@@ -33,6 +33,18 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
   );
 
   const data = queryResult?.rows ?? [];
+  const processedData = data.map((row) => {
+    const processedRow: Record<string, string> = {};
+    for (const key in row) {
+      let value = row[key] as string;
+      if (typeof value === "object") {
+        value = JSON.stringify(value);
+      }
 
-  return <DataTable columns={columns} data={data} />;
+      processedRow[key] = value;
+    }
+    return processedRow;
+  });
+
+  return <DataTable columns={columns} data={processedData} />;
 }

@@ -4,7 +4,7 @@ import { devtools } from "zustand/middleware";
 
 export interface QueryResult {
   fields: { name: string; dataTypeId: number }[];
-  rows: object[];
+  rows: Record<string, unknown>[];
   affectedRows: number;
 }
 
