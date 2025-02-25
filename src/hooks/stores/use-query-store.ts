@@ -14,7 +14,6 @@ interface QueryStore {
   queryEditorsShouldSave: Record<string, boolean>;
 
   queryResults: Record<string, (string | QueryResult)[]>;
-  queryResultPanelLots: Record<string, boolean[]>;
 
   signalSaveQueryEditors: (contextIds?: string[]) => void;
   setQueryResult: (contextId: string, result: (QueryResult | string)[]) => void;
@@ -23,8 +22,6 @@ interface QueryStore {
     value: string,
     isSaved?: boolean,
   ) => void;
-  allotQueryResultPanel: (contextId: string, lotNumber: number) => void;
-  unallotQueryResultPanel: (contextId: string, lotNumber: number) => void;
 }
 
 export const useQueryStore = create<QueryStore>()(
@@ -34,30 +31,11 @@ export const useQueryStore = create<QueryStore>()(
     queryEditorsShouldSave: {},
 
     queryResults: {},
-    queryResultPanelLots: {},
 
     setQueryResult: (contextId, result) =>
       set(
         produce<QueryStore>((state) => {
           state.queryResults[contextId] = result;
-        }),
-      ),
-
-    allotQueryResultPanel: (contextId, lotNumber) =>
-      set(
-        produce<QueryStore>((state) => {
-          if (state.queryResultPanelLots[contextId] == null) {
-            state.queryResultPanelLots[contextId] = [];
-          }
-
-          state.queryResultPanelLots[contextId][lotNumber] = true;
-        }),
-      ),
-
-    unallotQueryResultPanel: (contextId, lotNumber) =>
-      set(
-        produce<QueryStore>((state) => {
-          state.queryResultPanelLots[contextId][lotNumber] = false;
         }),
       ),
 

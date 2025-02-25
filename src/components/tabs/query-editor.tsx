@@ -24,13 +24,6 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
 
-  const allotQueryResultPanel = useQueryStore(
-    (state) => state.allotQueryResultPanel,
-  );
-  const queryResultLots = useQueryStore(
-    (state) => state.queryResultPanelLots[contextId],
-  );
-
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
   );
@@ -65,29 +58,30 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   function createQueryResultTabsIfNeeded(result: object[]) {
     if (dockviewApi == null) return;
 
-    const lotsNeeded = result.length;
+    let resultGroup = dockviewApi.getGroup("result-group");
 
-    for (let i = 0; i < lotsNeeded; i++) {
-      if (queryResultLots == null || queryResultLots[i] !== true) {
-        allotQueryResultPanel(contextId, i);
-        if (dockviewApi.getGroup("result-group") == null) {
-          dockviewApi.addGroup({
-            id: "result-group",
-            referencePanel: fileId,
-            direction: "below",
-          });
-        }
+    if (resultGroup == null) {
+      resultGroup = dockviewApi.addGroup({
+        id: "result-group",
+        referencePanel: fileId,
+        direction: "below",
+      });
+    }
 
+    for (let i = 0; i < result.length; i++) {
+      const resultPanelId = `${contextId}_${i}`;
+
+      if (!dockviewApi.getPanel(resultPanelId)) {
         dockviewApi.addPanel({
-          id: `${contextId}_${i}`,
-          title: `Result: ${associatedFile?.name ?? "Untitled"}`,
+          id: resultPanelId,
+          title: `Result: [${i + 1}] ${associatedFile?.name ?? "Untitled"}`,
           component: "queryResult",
           params: {
             contextId,
             lotNumber: i,
           },
           position: {
-            referenceGroup: "result-group",
+            referenceGroup: resultGroup,
           },
         });
       }
@@ -97,7 +91,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="p-1 flex gap-2">
-        <Save className={isSaved ? "text-green-700" : "text-red-800"} />
+        {/* <Save className={isSaved ? "text-green-700" : "text-red-800"} /> */}
         <Button
           className="h-7 p-3"
           onClick={() => {

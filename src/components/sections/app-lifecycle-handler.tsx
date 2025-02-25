@@ -16,6 +16,10 @@ export default function AppLifecycleHandler({
     if (mounted) return;
     setMounted(true);
 
+    window.addEventListener("beforeunload", () => {
+      signalSaveQueryEditors();
+    });
+
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         console.log("App is visible");

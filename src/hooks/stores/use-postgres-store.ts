@@ -14,9 +14,9 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
   database: null,
   databaseId: null,
   setDatabase: async (databaseId) => {
-    const { database } = get();
-
     set({ databaseId });
+
+    const { database } = get();
 
     if (database != null) {
       await database.close();

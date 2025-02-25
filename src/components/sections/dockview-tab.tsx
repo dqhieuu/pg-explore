@@ -5,19 +5,21 @@ import {
 } from "@hieu_dq/dockview";
 
 export const DockviewCustomTab = (props: IDockviewPanelHeaderProps) => {
-  const unallotQueryResultPanel = useQueryStore(
-    (state) => state.unallotQueryResultPanel,
+  const signalSaveQueryEditors = useQueryStore(
+    (state) => state.signalSaveQueryEditors,
   );
+
 
   return (
     <DockviewDefaultTab
       closeActionOverride={() => {
         const params = props.params;
-        if (params.lotNumber != null && params.contextId != null) {
-          unallotQueryResultPanel(params.contextId, params.lotNumber);
-        }
+        signalSaveQueryEditors([params.contextId]);
 
-        props.api.close();
+        // Wait for the next tick so that signalSaveQueryEditors can finish
+        setTimeout(() => {
+          props.api.close();
+        }, 0);
       }}
       {...props}
     />
