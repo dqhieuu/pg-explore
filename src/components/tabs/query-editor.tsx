@@ -9,6 +9,7 @@ import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { Save } from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { Button } from "../ui/button";
 
@@ -107,6 +108,14 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
                 const result = (res as unknown as QueryResult[])
                   .slice(1)
                   .filter(filterNonSelectResult);
+
+                if (result.length === 0) {
+                  toast("Executed successfully!", {
+                    description: "No result returned.",
+                    duration: 1000,
+                  });
+                }
+
                 setQueryResult(contextId, result);
                 createQueryResultTabsIfNeeded(result);
               })
