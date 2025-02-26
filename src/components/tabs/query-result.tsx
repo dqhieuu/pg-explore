@@ -2,6 +2,7 @@ import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "../sections/data-table";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 export interface QueryResultProps {
   contextId: string;
@@ -46,5 +47,19 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
     return processedRow;
   });
 
-  return <DataTable columns={columns} data={processedData} />;
+  return (
+    <div className="flex flex-col h-full gap-1">
+      <div className="flex justify-between items-center border-b -mx-2 -mt-2 px-2 py-0.5 ">
+        <Tabs>
+          <TabsList defaultValue={"table"}>
+            <TabsTrigger value="table">Table</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="text-sm text-primary/50">{data.length} rows</div>
+      </div>
+      <div className="flex-1">
+        <DataTable columns={columns} data={processedData} />
+      </div>
+    </div>
+  );
 }

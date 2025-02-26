@@ -25,3 +25,7 @@ export function nextIncrementedFilename(prefix: string, existing: string[]) {
 
   return `${prefix} ${zeroPaddedNumber}`;
 }
+
+export const sessionId = guid();
+export const MEM_DB_PREFIX = "mem_";
+export const memDbId = `${MEM_DB_PREFIX}${sessionId}`;

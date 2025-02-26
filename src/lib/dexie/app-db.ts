@@ -78,16 +78,23 @@ type CsvDataStep = Modify<
 
 export type WorkflowStep = SQLQueryStep;
 
+interface AppSession {
+  id: string;
+  expirationDate: Date;
+}
+
 export const useAppDbLiveQuery = useLiveQuery;
 
 export const appDb = new Dexie("pg-explore") as Dexie & {
   databases: Table<PGDatabase>;
   files: Table<FileEntry>;
   workflows: Table<WorkflowSection>;
+  sessions: Table<AppSession>;
 };
 
 appDb.version(1).stores({
   databases: "id",
   files: "id, databaseId",
   workflows: "id, databaseId",
+  sessions: "id, expirationDate",
 });

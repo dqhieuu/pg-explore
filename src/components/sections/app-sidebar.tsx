@@ -20,6 +20,7 @@ import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
   fixRadixUiUnclosedDialog,
   guid,
+  memDbId,
   nextIncrementedFilename,
 } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
@@ -69,7 +70,7 @@ function SQLScratchpadSection() {
       () =>
         appDb.files
           .where("databaseId")
-          .equals(currentDatabaseId ?? "")
+          .equals(currentDatabaseId ?? memDbId)
           .toArray(),
       [currentDatabaseId],
     ) ?? [];
@@ -87,7 +88,7 @@ function SQLScratchpadSection() {
 
     appDb.files.add({
       id: guid(),
-      databaseId: currentDatabaseId ?? "",
+      databaseId: currentDatabaseId ?? memDbId,
       type: "sql",
       name: nextFileName,
     });
