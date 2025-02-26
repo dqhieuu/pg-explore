@@ -8,7 +8,7 @@ import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { Save } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "../ui/button";
@@ -25,6 +25,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
 
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
+  const prevAssociatedFile = useRef(associatedFile);
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
@@ -47,10 +48,18 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
 
   // Component first mount, set the query editor value
   useEffect(() => {
-    if (associatedFile == null) return;
+    if (associatedFile == null) {
+      if (prevAssociatedFile.current == null) return;
+      // File state changed to null, close the panel
+      dockviewApi?.getPanel(fileId)?.api?.close();
+
+      return;
+    }
+
+    prevAssociatedFile.current = associatedFile;
 
     setQueryEditorValue(contextId, associatedFile.content ?? "", true);
-  }, [associatedFile, contextId, setQueryEditorValue]);
+  }, [contextId, fileId, associatedFile, dockviewApi, setQueryEditorValue]);
 
   // Save the query editor value to the database if needed
   useEffect(() => {
@@ -114,6 +123,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
                     description: "No result returned.",
                     duration: 1000,
                   });
+                  return;
                 }
 
                 setQueryResult(contextId, result);

@@ -77,6 +77,7 @@ function MainApp() {
                 });
                 event.api.addPanel({
                   id: "workflow",
+                  title: "Workflow",
                   component: "queryWorkflow",
                   initialWidth: window.screen.width * 0.2,
                   position: {

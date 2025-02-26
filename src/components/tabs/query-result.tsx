@@ -1,5 +1,6 @@
 import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 
 import { DataTable } from "../sections/data-table";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -13,6 +14,8 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
   const queryResult = useQueryStore(
     (state) => state.queryResults[contextId][lotNumber],
   );
+
+  const [tab, setTab] = useState<string>("table");
 
   if (queryResult == null) {
     return (
@@ -50,12 +53,17 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
   return (
     <div className="flex flex-col h-full gap-1">
       <div className="flex justify-between items-center border-b -mx-2 -mt-2 px-2 py-0.5 ">
-        <Tabs>
-          <TabsList defaultValue={"table"}>
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList>
             <TabsTrigger value="table">Table</TabsTrigger>
+            <TabsTrigger value="chart" disabled>
+              Chart (TODO)
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="text-sm text-primary/50">{data.length} rows</div>
+        <div className="text-sm text-primary/50">
+          {data.length} {data.length !== 1 ? "rows" : "row"}
+        </div>
       </div>
       <div className="flex-1">
         <DataTable columns={columns} data={processedData} />
