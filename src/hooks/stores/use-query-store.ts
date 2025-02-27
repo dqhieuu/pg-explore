@@ -8,20 +8,25 @@ export interface QueryResult {
   affectedRows: number;
 }
 
+type ContextId = string;
+type EditorValue = string;
 interface QueryStore {
-  queryEditors: Record<string, string>;
-  queryEditorsSaved: Record<string, boolean>;
-  queryEditorsShouldSave: Record<string, boolean>;
+  queryEditors: Record<ContextId, EditorValue>;
+  queryEditorsSaved: Record<ContextId, boolean>;
+  queryEditorsShouldSave: Record<ContextId, boolean>;
 
-  queryResults: Record<string, (string | QueryResult)[]>;
-
-  signalSaveQueryEditors: (contextIds?: string[]) => void;
+  queryResults: Record<ContextId, (string | QueryResult)[]>;
   setQueryResult: (contextId: string, result: (QueryResult | string)[]) => void;
+
   setQueryEditorValue: (
     contextId: string,
     value: string,
     isSaved?: boolean,
   ) => void;
+
+  // Unlike other stores, saving query editors value to the database is resource intensive.
+  // Therefore, we signal saving asynchrnously instead of syncing browser state with the database.
+  signalSaveQueryEditors: (contextIds?: string[]) => void;
 }
 
 export const useQueryStore = create<QueryStore>()(

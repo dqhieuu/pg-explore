@@ -47,6 +47,6 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
 }));
 
 export const deleteDatabase = async (id: string) => {
-  appDb.databases.delete(id);
+  await appDb.databases.delete(id);
   return Dexie.delete(`/pglite/pg_${id}`);
 };

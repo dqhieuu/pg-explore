@@ -15,6 +15,7 @@ import {
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useQueryStore } from "@/hooks/stores/use-query-store";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
@@ -63,6 +64,8 @@ import {
 } from "../ui/dropdown-menu";
 
 function SQLScratchpadSection() {
+  const isMobile = useIsMobile();
+
   const currentDatabaseId = usePostgresStore((state) => state.databaseId);
 
   const databaseFiles =
@@ -158,7 +161,11 @@ function SQLScratchpadSection() {
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <SidebarMenuAction className="hover:bg-gray-200">
-                        <MoreHorizontal className="hidden group-hover/file:block" />
+                        <MoreHorizontal
+                          className={
+                            isMobile ? "" : "hidden group-hover/file:block"
+                          }
+                        />
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
@@ -195,9 +202,6 @@ export function AppSidebar() {
   const currentDbId = usePostgresStore((state) => state.databaseId);
 
   const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
-  const signalSaveQueryEditors = useQueryStore(
-    (state) => state.signalSaveQueryEditors,
-  );
 
   const lastOpenedDatabases = databases
     ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
@@ -234,8 +238,6 @@ export function AppSidebar() {
                   <DropdownMenuItem
                     onClick={() => {
                       navigate({ to: "/" });
-                      fixRadixUiUnclosedDialog();
-                      signalSaveQueryEditors();
                     }}
                   >
                     <Plus />
@@ -253,8 +255,6 @@ export function AppSidebar() {
                             key={db.id}
                             onClick={() => {
                               navigate({ to: `/database/${db.id}` });
-                              fixRadixUiUnclosedDialog();
-                              signalSaveQueryEditors();
                             }}
                           >
                             <span>{db.name}</span>
