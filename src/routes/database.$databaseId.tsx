@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
+import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
@@ -17,6 +18,15 @@ import { appDb } from "../lib/dexie/app-db";
 export const Route = createFileRoute("/database/$databaseId")({
   component: MainApp,
 });
+
+function NoEditors() {
+  return (
+    <div className="w-full h-full bg-background flex flex-col items-center justify-center gap-2">
+      No files opened.
+      <Button>Browse files</Button>
+    </div>
+  );
+}
 
 function MainApp() {
   const navigate = useNavigate();
@@ -58,16 +68,25 @@ function MainApp() {
     <PGliteProvider db={pgDb}>
       <SidebarProvider className="flex w-full">
         <AppSidebar />
-        <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2" />
+        <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2 border-r" />
 
         <main className="flex-1 h-[100dvh]">
           <DockviewReact
             onReady={(event) => {
               setDockviewApi(event.api);
 
-              event.api.addGroup({
+              const editorGroup = event.api.addGroup({
                 direction: "right",
                 id: "editor-group",
+              });
+
+              event.api.addPanel({
+                id: "no-editors",
+                title: "No files opened",
+                component: "noEditors",
+                position: {
+                  referenceGroup: editorGroup,
+                },
               });
 
               if (window.screen.width >= 1000) {
@@ -102,10 +121,12 @@ function MainApp() {
                 </div>
               ),
               queryWorkflow: () => <QueryWorkflow />,
+              noEditors: () => <NoEditors />,
             }}
             singleTabMode="fullwidth"
             className="dockview-theme-replit"
             defaultTabComponent={DockviewCustomTab}
+            watermarkComponent={NoEditors}
           />
         </main>
       </SidebarProvider>

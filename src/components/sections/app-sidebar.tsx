@@ -14,16 +14,10 @@ import {
 } from "@/components/ui/sidebar";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
-import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import {
-  fixRadixUiUnclosedDialog,
-  guid,
-  memDbId,
-  nextIncrementedFilename,
-} from "@/lib/utils";
+import { guid, memDbId, nextIncrementedFilename } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   BookText,
@@ -52,7 +46,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuPortal,
@@ -134,6 +127,8 @@ function SQLScratchpadSection() {
         direction: "within",
       },
     });
+
+    dockviewApi.getPanel("no-editors")?.api?.close();
   };
 
   return (
@@ -217,93 +212,91 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  className={`h-auto ${isInMemoryDatabase ? "italic" : ""}`}
-                >
-                  <DatabaseIcon />
-                  <span className="font-semibold">{currentDatabaseName}</span>
-                  <ChevronDown className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <div className="flex relative">
-                  <img className="w-8 rounded-md opacity-85" src={Logo} />
-                  <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      navigate({ to: "/" });
-                    }}
-                  >
-                    <Plus />
-                    <span>New database</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <Database />
-                      <span>Open database</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent>
-                        {lastOpenedDatabases?.map((db) => (
-                          <DropdownMenuItem
-                            key={db.id}
-                            onClick={() => {
-                              navigate({ to: `/database/${db.id}` });
-                            }}
-                          >
-                            <span>{db.name}</span>
-                          </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <PlusCircle />
-                          <span>More...</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <SettingsIcon />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <HelpCircle />
-                    <span>Help</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem disabled>
-                        <BookText />
-                        <span>Documentation (TODO)</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                className={`h-auto ${isInMemoryDatabase ? "italic" : ""}`}
+              >
+                <DatabaseIcon />
+                <span className="font-semibold">{currentDatabaseName}</span>
+                <ChevronDown className="ml-auto" />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <div className="flex relative">
+                <img className="w-8 rounded-md opacity-85" src={Logo} />
+                <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
+              </div>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={() => {
+                  navigate({ to: "/" });
+                }}
+              >
+                <Plus />
+                <span>New database</span>
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Database />
+                  <span>Open database</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {lastOpenedDatabases?.map((db) => (
+                      <DropdownMenuItem
+                        key={db.id}
+                        onClick={() => {
+                          navigate({ to: `/database/${db.id}` });
+                        }}
+                      >
+                        <span>{db.name}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <a href={`${GITHUB_URL}/issues`} target="_blank">
-                          <Bug />
-                          <span>Report an issue / Feedback</span>
-                        </a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <a href={GITHUB_URL} target="_blank">
-                          <Star />
-                          <span>Star / Fork this repo</span>
-                        </a>
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <PlusCircle />
+                      <span>More...</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <SettingsIcon />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <HelpCircle />
+                  <span>Help</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem disabled>
+                      <BookText />
+                      <span>Documentation (TODO)</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={`${GITHUB_URL}/issues`} target="_blank">
+                        <Bug />
+                        <span>Report an issue / Feedback</span>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href={GITHUB_URL} target="_blank">
+                        <Star />
+                        <span>Star / Fork this repo</span>
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
