@@ -1,0 +1,59 @@
+import { BaseNode } from "@/components/workflow-blocks/base-node";
+import { cn } from "@/lib/utils";
+import { Node, NodeProps, Panel } from "@xyflow/react";
+import { HTMLAttributes, ReactNode } from "react";
+
+/* GROUP NODE Label ------------------------------------------------------- */
+
+export type GroupNodeLabelProps = HTMLAttributes<HTMLDivElement>;
+
+export const GroupNodeLabel = ({
+  children,
+  className,
+  ...props
+}: GroupNodeLabelProps) => {
+  return (
+    <div className="h-full w-full" {...props}>
+      <div
+        className={cn(
+          "w-fit bg-secondary/80 p-2 text-s text-card-foreground",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+type GroupNodeData = {
+  label?: string;
+  backgroundClassName?: string;
+};
+
+export type GroupNodeProps = NodeProps<Node<GroupNodeData, "GroupNode">> & {
+  label?: ReactNode;
+};
+
+/* GROUP NODE -------------------------------------------------------------- */
+
+export const LabeledGroupNode = ({ selected, data }: GroupNodeProps) => {
+  const { label, backgroundClassName } = data;
+
+  return (
+    <BaseNode
+      selected={selected}
+      className={cn(
+        "h-full overflow-hidden rounded-sm p-0 border-muted-foreground",
+        backgroundClassName,
+      )}
+    >
+      <Panel className={cn("m-0! p-0")}>
+        {label && (
+          <GroupNodeLabel className="rounded-br-sm">{label}</GroupNodeLabel>
+        )}
+      </Panel>
+    </BaseNode>
+  );
+};

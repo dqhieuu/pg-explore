@@ -1,6 +1,11 @@
 import { cn } from "@/lib/utils";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronRightIcon,
+  CircleIcon,
+  HelpCircle,
+} from "lucide-react";
 import * as React from "react";
 
 function DropdownMenu({
@@ -189,6 +194,26 @@ function DropdownMenuShortcut({
   );
 }
 
+function DropdownMenuHint({
+  className,
+  redirectUrl,
+  ...props
+}: React.ComponentProps<"a"> & { redirectUrl?: string }) {
+  return (
+    <a
+      className={cn(
+        "text-muted-foreground ml-auto text-xs tracking-widest",
+        className,
+      )}
+      target="_blank"
+      href={redirectUrl}
+      {...props}
+    >
+      <HelpCircle />
+    </a>
+  );
+}
+
 function DropdownMenuSub({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
@@ -252,4 +277,5 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuHint,
 };

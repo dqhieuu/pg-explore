@@ -17,6 +17,7 @@ import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { createWorkflowPanel } from "@/lib/dockview";
 import { guid, memDbId, nextIncrementedFilename } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -59,15 +60,12 @@ import {
 function SQLScratchpadSection() {
   const isMobile = useIsMobile();
 
-  const currentDatabaseId = usePostgresStore((state) => state.databaseId);
+  const currentDatabaseId =
+    usePostgresStore((state) => state.databaseId) ?? memDbId;
 
   const databaseFiles =
     useAppDbLiveQuery(
-      () =>
-        appDb.files
-          .where("databaseId")
-          .equals(currentDatabaseId ?? memDbId)
-          .toArray(),
+      () => appDb.files.where("databaseId").equals(currentDatabaseId).toArray(),
       [currentDatabaseId],
     ) ?? [];
 
@@ -84,7 +82,7 @@ function SQLScratchpadSection() {
 
     appDb.files.add({
       id: guid(),
-      databaseId: currentDatabaseId ?? memDbId,
+      databaseId: currentDatabaseId,
       type: "sql",
       name: nextFileName,
     });
@@ -198,6 +196,8 @@ export function AppSidebar() {
 
   const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
 
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+
   const lastOpenedDatabases = databases
     ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
     ?.slice(0, 3);
@@ -301,7 +301,9 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <Button>
+          <Button
+            onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
+          >
             <Workflow />
             Setup pre-query workflow
           </Button>

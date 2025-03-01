@@ -2,9 +2,11 @@ import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { createWorkflowPanel } from "@/lib/dockview";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ReactFlowProvider } from "@xyflow/react";
 import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
 
@@ -66,70 +68,58 @@ function MainApp() {
 
   return (
     <PGliteProvider db={pgDb}>
-      <SidebarProvider className="flex w-full">
-        <AppSidebar />
-        <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2 border-r" />
+      <ReactFlowProvider>
+        <SidebarProvider className="flex w-full">
+          <AppSidebar />
+          <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2 border-r" />
 
-        <main className="flex-1 h-[100dvh]">
-          <DockviewReact
-            onReady={(event) => {
-              setDockviewApi(event.api);
+          <main className="flex-1 h-[100dvh]">
+            <DockviewReact
+              onReady={(event) => {
+                setDockviewApi(event.api);
 
-              const editorGroup = event.api.addGroup({
-                direction: "right",
-                id: "editor-group",
-              });
-
-              event.api.addPanel({
-                id: "no-editors",
-                title: "No files opened",
-                component: "noEditors",
-                position: {
-                  referenceGroup: editorGroup,
-                },
-              });
-
-              if (window.screen.width >= 1000) {
-                const workflowGroup = event.api.addGroup({
-                  direction: "left",
-                  id: "workflow-group",
+                const editorGroup = event.api.addGroup({
+                  direction: "right",
+                  id: "editor-group",
                 });
+
                 event.api.addPanel({
-                  id: "workflow",
-                  title: "Workflow",
-                  component: "queryWorkflow",
-                  initialWidth: window.screen.width * 0.2,
+                  id: "no-editors",
+                  title: "No files opened",
+                  component: "noEditors",
                   position: {
-                    referenceGroup: workflowGroup,
+                    referenceGroup: editorGroup,
                   },
                 });
-              }
-            }}
-            components={{
-              queryEditor: (props: IDockviewPanelProps<QueryEditorProps>) => (
-                <QueryEditor
-                  contextId={props.params.contextId}
-                  fileId={props.params.fileId}
-                />
-              ),
-              queryResult: (props: IDockviewPanelProps<QueryResultProps>) => (
-                <div className="p-2 w-full h-full overflow-auto">
-                  <QueryResult
+
+                createWorkflowPanel(event.api, true);
+              }}
+              components={{
+                queryEditor: (props: IDockviewPanelProps<QueryEditorProps>) => (
+                  <QueryEditor
                     contextId={props.params.contextId}
-                    lotNumber={props.params.lotNumber}
+                    fileId={props.params.fileId}
                   />
-                </div>
-              ),
-              queryWorkflow: () => <QueryWorkflow />,
-              noEditors: () => <NoEditors />,
-            }}
-            singleTabMode="fullwidth"
-            className="dockview-theme-replit"
-            defaultTabComponent={DockviewCustomTab}
-            watermarkComponent={NoEditors}
-          />
-        </main>
-      </SidebarProvider>
+                ),
+                queryResult: (props: IDockviewPanelProps<QueryResultProps>) => (
+                  <div className="p-2 w-full h-full overflow-auto">
+                    <QueryResult
+                      contextId={props.params.contextId}
+                      lotNumber={props.params.lotNumber}
+                    />
+                  </div>
+                ),
+                queryWorkflow: () => <QueryWorkflow />,
+                noEditors: () => <NoEditors />,
+              }}
+              singleTabMode="fullwidth"
+              className="dockview-theme-replit"
+              defaultTabComponent={DockviewCustomTab}
+              watermarkComponent={NoEditors}
+            />
+          </main>
+        </SidebarProvider>
+      </ReactFlowProvider>
     </PGliteProvider>
   );
 }

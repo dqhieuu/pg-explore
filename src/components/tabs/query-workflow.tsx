@@ -1,28 +1,33 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
+import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { guid, memDbId } from "@/lib/utils";
 import {
   Background,
   BackgroundVariant,
   Edge,
+  EdgeChange,
   Handle,
   Node,
+  NodeChange,
   NodeTypes,
   Position,
   ReactFlow,
+  applyEdgeChanges,
+  applyNodeChanges,
   useEdgesState,
   useNodesState,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  CircleMinus,
-  DatabaseIcon,
-  ExternalLink,
-  FilePlus,
-  ScrollText,
-  SquareTerminal,
-} from "lucide-react";
+import { produce } from "immer";
+import { DatabaseIcon, SquareTerminal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { BaseNode } from "../base-node";
-import { PlaceholderNode } from "../placeholder-node";
+import { BaseNode } from "../workflow-blocks/base-node";
+import { LabeledGroupNode } from "../workflow-blocks/labeled-group-node";
+import { PlaceholderSchemaNode } from "../workflow-blocks/placeholder-schema-node";
+import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
 
 const DatabaseSourceNode = () => {
   return (
@@ -44,234 +49,249 @@ const EndNode = () => {
   );
 };
 
-const QueryScriptNode = () => {
-  return (
-    <>
-      <Handle type="target" position={Position.Top} className="z-10" />
-      <BaseNode className="w-[10rem] bg-white py-1 px-2 rounded-lg overflow-hidden">
-        <div className="relative">
-          <div className="relative z-10 flex gap-1">
-            <ScrollText strokeWidth={1.5} className="w-5" />
-            <div className="font-medium">SQL script</div>
-            <CircleMinus className="ml-auto w-4.5" strokeWidth={1.5} />
-          </div>
-          <div className="bg-amber-50 top-0 bottom-0 left-0 right-0 absolute -mx-2 -mt-1 -mb-1" />
-        </div>
-
-        <div className="border-b border-gray-200 my-1 -mx-2 relative" />
-        <div className="flex flex-col gap-2 py-2">
-          <div className="rounded h-6 w-full bg-gray-100 flex overflow-hidden px-1">
-            <div className="flex-1 flex gap-0.5">
-              <FilePlus className="w-4" />
-              <div className="text-sm flex items-center">New</div>
-            </div>
-            {/* divider */}
-            <div className="h-full w-0.5 bg-gray-400 mx-1" />
-            {/* divider */}
-            <div className="flex-1 flex gap-0.5">
-              {" "}
-              <ExternalLink className="w-4" />
-              <div className="text-sm flex items-center">Open</div>
-            </div>
-          </div>
-        </div>
-      </BaseNode>
-      <Handle type="source" position={Position.Bottom} />
-    </>
-  );
-};
-
 const nodeTypes: NodeTypes = {
   databaseSource: DatabaseSourceNode,
   end: EndNode,
-  placeholder: PlaceholderNode,
-  queryScript: QueryScriptNode,
+  placeholderSchema: PlaceholderSchemaNode,
+  sqlScript: SQLScriptNode,
+  labeledGroup: LabeledGroupNode,
 };
 
-const initialNodes: Node[] = [
-  {
-    id: "placeholder",
-    type: "placeholder",
-    position: { x: 0, y: -50 },
-    data: {},
-  },
-  {
-    id: "root",
-    type: "databaseSource",
-    position: { x: 0, y: 0 },
-    data: {},
-  },
+const newSchemaWorkflowId = guid();
 
-  {
-    id: "end",
-    type: "end",
-    position: { x: 0, y: 600 },
-    data: {},
-  },
-
-  {
-    id: "groupSchema",
-    type: "group",
-    data: { label: "Update Schema" },
-    position: { x: 0, y: 0 },
-    hidden: true,
-  },
-
-  {
-    id: "groupData",
-    type: "group",
-    data: { label: "Update Data" },
-    position: { x: 0, y: 0 },
-    hidden: true,
-  },
-
-  {
-    id: "testQueryScript",
-    type: "queryScript",
-    data: { label: "Test Query Script" },
-    position: { x: 0, y: 0 },
-  },
-
-  {
-    id: "testQueryScript1",
-    type: "queryScript",
-    data: { label: "Test Query Script" },
-    position: { x: 0, y: 200 },
-  },
-
-  {
-    id: "testQueryScript2",
-    type: "queryScript",
-    data: { label: "Test Query Script" },
-    position: { x: 0, y: 400 },
-  },
-];
-
-const initialEdges: Edge[] = [
-  {
-    id: "edge0",
-    source: "root",
-    target: "testQueryScript",
-    animated: true,
-  },
-  {
-    id: "edge1",
-    source: "testQueryScript",
-    target: "testQueryScript1",
-    animated: true,
-  },
-  {
-    id: "edge2",
-    source: "testQueryScript1",
-    target: "testQueryScript2",
-    animated: true,
-  },
-  {
-    id: "edge3",
-    source: "testQueryScript2",
-    target: "end",
-    animated: true,
-  },
-];
+enum LayoutingStep {
+  Render = 1,
+  Position,
+  CreateGroups,
+  FitView,
+  Done,
+}
 
 export function QueryWorkflow() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, setNodes] = useNodesState([] as Node[]);
+  const onNodesChange = (changes: NodeChange[]) => {
+    const updatedNodes = produce(nodes, (draft) => {
+      const entries = applyNodeChanges(changes, draft);
+      draft.splice(0, entries.length, ...entries);
+      draft.splice(entries.length);
+    });
+    setNodes(updatedNodes);
+  };
 
-  const [layouted, setLayouted] = useState(false);
+  const [edges, setEdges] = useEdgesState([] as Edge[]);
+  const onEdgesChange = (changes: EdgeChange[]) => {
+    const updatedEdges = produce(edges, (draft) => {
+      const entries = applyEdgeChanges(changes, draft);
+      draft.splice(0, entries.length, ...entries);
+      draft.splice(entries.length);
+    });
+    setEdges(updatedEdges);
+  };
+
+  const reactFlow = useReactFlow();
+
+  const nodeWidthNotAvailable = nodes.some(
+    (node) => node.measured?.width == null,
+  );
+
+  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+
+  const schemaWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "schema")
+        .first(),
+    [currentDbId],
+    "loading",
+  );
+
+  const [layoutingStep, setLayoutingStep] = useState(
+    LayoutingStep.Render as LayoutingStep,
+  );
 
   useEffect(() => {
-    if (layouted) return;
+    if (typeof schemaWorkflow !== "object") return;
 
-    const idToNodeMap = nodes.reduce(
-      (acc, node) => {
-        acc[node.id] = node;
-        return acc;
+    let newNodes: Node[] = [
+      {
+        id: "root",
+        type: "databaseSource",
+        position: { x: 0, y: 0 },
+        data: {},
       },
-      {} as Record<string, Node>,
-    );
+    ];
 
-    const rootNode = idToNodeMap["root"];
-    if (rootNode.measured?.width == null) return;
+    const workflowSteps = schemaWorkflow.workflowSteps;
 
-    const sourceToTargetMap = edges.reduce(
-      (acc, edge) => {
-        if (acc[edge.source] == null) {
-          acc[edge.source] = [];
+    if (workflowSteps.length === 0) {
+      newNodes = produce(newNodes, (draft) => {
+        draft.push({
+          id: "placeholder-schema",
+          type: "placeholderSchema",
+          position: { x: 0, y: 0 },
+          data: { compact: false, insertBefore: 0, section: "schema" },
+        } satisfies PlaceholderSchemaNode);
+      });
+    } else {
+      newNodes = produce(newNodes, (draft) => {
+        draft.push({
+          id: "placeholder-schema-0",
+          type: "placeholderSchema",
+          position: { x: 0, y: 0 },
+          data: { compact: true, insertBefore: 0, section: "schema" },
+        } satisfies PlaceholderSchemaNode);
+
+        for (let i = 0; i < workflowSteps.length; i++) {
+          const workflowInfo = {
+            workflowIndex: i,
+            workflowType: "schema",
+          };
+
+          if (workflowSteps[i].type === "sql-query") {
+            draft.push({
+              id: `schema-step-${i}`,
+              type: "sqlScript",
+              position: { x: 0, y: 0 },
+              data: {
+                section: "schema",
+                ...workflowInfo,
+              },
+            });
+          } else {
+            continue;
+          }
+
+          draft.push({
+            id: `placeholder-schema-${i + 1}`,
+            type: "placeholderSchema",
+            position: { x: 0, y: 0 },
+            data: { compact: true, insertBefore: i + 1, section: "schema" },
+          } satisfies PlaceholderSchemaNode);
         }
-
-        acc[edge.source].push(edge.target);
-        return acc;
-      },
-      {} as Record<string, string[]>,
-    );
-
-    let currentX = rootNode.position.x;
-    let currentY = rootNode.position.y;
-
-    currentY += 120;
-
-    const boundTop = currentY - 10;
-    const boundLeft = currentX - 10;
-
-    let boundRight = currentX + 10;
-
-    let queue = sourceToTargetMap[rootNode.id].slice() ?? [];
-
-    const positionMap: Record<string, { x: number; y: number }> = {};
-
-    while (queue.length > 0) {
-      const initX = currentX;
-
-      const nextQueue: string[] = [];
-
-      for (const nodeId of queue) {
-        positionMap[nodeId] =
-          nodeId === "end"
-            ? { x: initX, y: currentY + 50 }
-            : { x: currentX, y: currentY };
-
-        currentX += (idToNodeMap[nodeId].measured?.width ?? 0) + 50;
-        nextQueue.push(...(sourceToTargetMap[nodeId] ?? []));
-      }
-
-      boundRight = Math.max(boundRight, currentX - 50 + 10);
-
-      currentX = initX;
-      if (idToNodeMap[queue[0]].id !== "end") {
-        currentY += (idToNodeMap[queue[0]].measured?.height ?? 0) + 50;
-      }
-
-      queue = nextQueue;
+      });
     }
 
-    const boundBottom = currentY;
-    const boundWidth = boundRight - boundLeft;
-    const boundHeight = boundBottom - boundTop;
-
-    setNodes((nodes) => {
-      return nodes.map((node) => {
-        if (node.id === "groupSchema") {
-          return {
-            ...node,
-            position: { x: boundLeft, y: boundTop },
-            width: boundWidth,
-            height: boundHeight,
-            hidden: false,
-          };
-        }
-
-        if (positionMap[node.id] == null) return { ...node };
-
-        return {
-          ...node,
-          position: positionMap[node.id],
-        };
+    newNodes = produce(newNodes, (draft) => {
+      draft.push({
+        id: "end",
+        type: "end",
+        position: { x: 0, y: 0 },
+        data: {},
       });
     });
 
-    setLayouted(true);
-  }, [edges, layouted, nodes, setNodes]);
+    setNodes(newNodes);
+    setLayoutingStep(LayoutingStep.Position);
+  }, [schemaWorkflow, setNodes]);
+
+  useEffect(() => {
+    if (layoutingStep !== LayoutingStep.Position || nodeWidthNotAvailable)
+      return;
+
+    let updatedNodes = nodes;
+    updatedNodes = produce(updatedNodes, (draft) => {
+      const edgesToBeAdded: Edge[] = [];
+
+      for (let i = 0; i < draft.length - 1; i++) {
+        const source = draft[i];
+        const target = draft[i + 1];
+
+        edgesToBeAdded.push({
+          id: `${source.id}-${target.id}`,
+          source: source.id,
+          target: target.id,
+          animated: true,
+        });
+      }
+
+      setEdges(edgesToBeAdded);
+
+      const widthMax = Math.max(...draft.map((node) => node.measured!.width!));
+      const centerX = widthMax / 2;
+
+      let curY = 0;
+
+      for (let i = 0; i < draft.length; i++) {
+        const node = draft[i];
+        const xShift = centerX - node.measured!.width! / 2;
+        node.position = { x: xShift, y: curY };
+        curY += node.measured!.height!;
+        if (node["id"] === "root") {
+          curY += 80;
+        } else if (i < draft.length - 1 && draft[i + 1].type === "end") {
+          curY += 50;
+        } else {
+          curY += 5;
+        }
+      }
+    });
+
+    setNodes(updatedNodes);
+    setLayoutingStep(LayoutingStep.CreateGroups);
+  }, [edges, nodes, layoutingStep, nodeWidthNotAvailable, setEdges, setNodes]);
+
+  useEffect(() => {
+    if (layoutingStep !== LayoutingStep.CreateGroups) return;
+
+    let updatedNodes = nodes;
+    updatedNodes = produce(updatedNodes, (draft) => {
+      const schemaNodes = draft.filter(
+        (node) => node.data.section === "schema",
+      );
+
+      const bbox = reactFlow.getNodesBounds(schemaNodes);
+
+      const groupWidth = bbox.width + 40;
+
+      const groupSchema = {
+        id: "group-schema",
+        type: "labeledGroup",
+        position: { x: bbox.x - 20, y: bbox.y - 40 },
+        data: {
+          label: "Create tables",
+          backgroundClassName: "bg-blue-200/50",
+        },
+        width: groupWidth,
+        height: bbox.height + 60,
+      };
+
+      draft.unshift(groupSchema);
+
+      const centerX = groupWidth / 2;
+
+      let curY = 50;
+      for (const node of schemaNodes) {
+        node.parentId = "group-schema";
+        const xShift = centerX - node.measured!.width! / 2;
+        node.position = { x: xShift, y: curY };
+        curY += node.measured!.height!;
+        curY += 5;
+      }
+    });
+
+    setNodes(updatedNodes);
+    setLayoutingStep(LayoutingStep.FitView);
+  }, [layoutingStep, nodes, reactFlow, setNodes]);
+
+  useEffect(() => {
+    if (layoutingStep !== LayoutingStep.FitView) return;
+
+    reactFlow.fitView({ padding: 0.4 });
+    setLayoutingStep(LayoutingStep.Done);
+  }, [layoutingStep, reactFlow]);
+
+  if (schemaWorkflow == null) {
+    appDb.workflows.put({
+      id: newSchemaWorkflowId,
+      databaseId: currentDbId,
+      type: "schema",
+      name: "",
+      workflowSteps: [],
+    });
+    return null;
+  }
 
   return (
     <div className="h-full w-full">
@@ -281,7 +301,6 @@ export function QueryWorkflow() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        fitView
         proOptions={{ hideAttribution: true }}
         nodesDraggable={false}
         nodesConnectable={false}

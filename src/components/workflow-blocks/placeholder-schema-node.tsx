@@ -1,0 +1,77 @@
+import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
+import { WorkflowStep, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { memDbId } from "@/lib/utils";
+import { Node, NodeProps } from "@xyflow/react";
+import { PlusCircle } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuHint,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { PlaceholderNode, PlaceholderNodeData } from "./placeholder-node";
+
+export type PlaceholderSchemaNode = Node<
+  PlaceholderNodeData,
+  "placeholderSchema"
+>;
+
+export const PlaceholderSchemaNode = ({
+  data,
+}: NodeProps<PlaceholderSchemaNode>) => {
+  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+
+  const { compact, insertBefore } = data;
+
+  const schemaWorkflow = useAppDbLiveQuery(() =>
+    appDb.workflows
+      .where("databaseId")
+      .equals(currentDbId)
+      .and((wf) => wf.type === "schema")
+      .first(),
+  );
+
+  const addWorkflowStep = (insertBefore: number, stepType: "sql-query") => {
+    if (schemaWorkflow == null) return;
+
+    let newStep: WorkflowStep;
+    if (stepType === "sql-query") {
+      newStep = { type: "sql-query", options: {} };
+    } else {
+      throw new Error("Invalid step type");
+    }
+
+    appDb.workflows.update(schemaWorkflow.id, {
+      workflowSteps: [
+        ...schemaWorkflow.workflowSteps.slice(0, insertBefore),
+        newStep,
+        ...schemaWorkflow.workflowSteps.slice(insertBefore),
+      ],
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="cursor-pointer">
+        <PlaceholderNode compact={compact}>
+          <div className="w-[9rem] h-[4rem] flex items-center gap-2">
+            <PlusCircle className="size-8" strokeWidth={1} />
+            Add table schema
+          </div>
+        </PlaceholderNode>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-[10rem]">
+        <DropdownMenuItem
+          onClick={() => addWorkflowStep(insertBefore, "sql-query")}
+        >
+          From SQL
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled>
+          From DBML <DropdownMenuHint href="https://dbml.dbdiagram.io/home/" />
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

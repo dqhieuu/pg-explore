@@ -38,7 +38,7 @@ async function createAppSession() {
 }
 
 async function expireAppSession() {
-  await appDb.sessions.delete(sessionId);
+  return appDb.sessions.delete(sessionId);
 }
 
 export default function AppLifecycleHandler({
@@ -66,11 +66,7 @@ export default function AppLifecycleHandler({
     window.addEventListener("beforeunload", beforeunloadHandler);
 
     const visibilityChangeHandler = () => {
-      if (document.visibilityState === "visible") {
-        console.log("App is visible");
-      } else {
-        console.log("App is hidden");
-
+      if (document.visibilityState === "hidden") {
         signalSaveQueryEditors();
       }
     };
@@ -78,7 +74,6 @@ export default function AppLifecycleHandler({
     document.addEventListener("visibilitychange", visibilityChangeHandler);
 
     return () => {
-      console.log("Cleaning up app");
       document.removeEventListener("beforeunload", beforeunloadHandler);
       window.document.removeEventListener(
         "visibilitychange",

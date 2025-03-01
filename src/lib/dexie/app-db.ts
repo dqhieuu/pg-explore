@@ -18,7 +18,7 @@ interface FileEntry {
   blob?: Blob;
 }
 
-interface WorkflowSection {
+export interface WorkflowSection {
   id: string;
   databaseId: string;
   type: "schema" | "data";
