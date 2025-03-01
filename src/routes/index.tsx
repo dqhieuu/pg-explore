@@ -78,7 +78,7 @@ function HomePage() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-[100dvh] bg-gray-100">
-      <Card className="">
+      <Card className="mx-1">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ function HomePage() {
                 <MemoryStick size={48} strokeWidth={1} className="my-2" />
                 <div className="text-sm text-center text-balance text-muted-foreground">
                   Run PostgreSQL in memory
-                  <div className="text-red-600">
+                  <div className="text-red-600 max-w-[15rem]">
                     All data is lost when the browser tab is closed.
                   </div>
                 </div>
@@ -125,7 +125,7 @@ function HomePage() {
                     <Database size={48} strokeWidth={1} className="my-2" />
                     <div className="text-sm text-center text-balance text-muted-foreground">
                       Run PostgreSQL in IndexedDB
-                      <div className="text-green-600">
+                      <div className="text-green-600 max-w-[15rem]">
                         Data is persisted across browser sessions.
                       </div>
                     </div>

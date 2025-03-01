@@ -23,6 +23,8 @@ import "@xyflow/react/dist/style.css";
 import { produce } from "immer";
 import { DatabaseIcon, SquareTerminal } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useDebounce } from "react-use";
+import useResizeObserver from "use-resize-observer";
 
 import { BaseNode } from "../workflow-blocks/base-node";
 import { LabeledGroupNode } from "../workflow-blocks/labeled-group-node";
@@ -110,6 +112,14 @@ export function QueryWorkflow() {
   const [layoutingStep, setLayoutingStep] = useState(
     LayoutingStep.Render as LayoutingStep,
   );
+
+  const fitViewWhenResize = () => {
+    if (layoutingStep !== LayoutingStep.Done) return;
+    reactFlow.fitView({ padding: 0.4 });
+  };
+
+  const { ref, width } = useResizeObserver<HTMLElement>();
+  useDebounce(fitViewWhenResize, 100, [width]);
 
   useEffect(() => {
     if (typeof schemaWorkflow !== "object") return;
@@ -304,6 +314,7 @@ export function QueryWorkflow() {
         proOptions={{ hideAttribution: true }}
         nodesDraggable={false}
         nodesConnectable={false}
+        ref={ref}
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       </ReactFlow>

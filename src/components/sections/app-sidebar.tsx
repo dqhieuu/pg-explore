@@ -142,12 +142,8 @@ function SQLScratchpadSection() {
           <SidebarGroupContent>
             <SidebarMenu>
               {sortedFiles.map((file) => (
-                <SidebarMenuItem
-                  className="group/file"
-                  key={file.id}
-                  onClick={() => openFileEditor(file.id)}
-                >
-                  <SidebarMenuButton>
+                <SidebarMenuItem className="group/file" key={file.id}>
+                  <SidebarMenuButton onClick={() => openFileEditor(file.id)}>
                     <ScrollText />
                     {file.name}
                   </SidebarMenuButton>
