@@ -16,7 +16,7 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
 import { memDbId } from "@/lib/utils";
@@ -34,10 +34,12 @@ import {
   PlusCircle,
   ScrollText,
   SettingsIcon,
+  SquareTerminal,
   Star,
   Trash,
   Workflow,
 } from "lucide-react";
+import { ReactNode } from "react";
 
 import { Button } from "../ui/button";
 import {
@@ -58,49 +60,68 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-function SQLScratchpadSection() {
+function FileCollapsibleSection({
+  newButtonAction,
+  sectionName,
+  itemIcon,
+  hiddenIfEmpty,
+  fileFilterPredicate,
+}: {
+  sectionName: string;
+  newButtonAction?: () => void;
+  itemIcon?: ReactNode;
+  hiddenIfEmpty?: boolean;
+  fileFilterPredicate?: (file: FileEntry) => boolean;
+}) {
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const isMobile = useIsMobile();
 
   const currentDatabaseId =
     usePostgresStore((state) => state.databaseId) ?? memDbId;
 
-  const databaseFiles =
+  const databaseFiles = (
     useAppDbLiveQuery(
       () => appDb.files.where("databaseId").equals(currentDatabaseId).toArray(),
       [currentDatabaseId],
-    ) ?? [];
+    ) ?? []
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
-  const sortedFiles = databaseFiles.sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
+  const filteredFiles = fileFilterPredicate
+    ? databaseFiles.filter(fileFilterPredicate)
+    : databaseFiles;
 
   const deleteFile = (fileId: string) => {
     appDb.files.delete(fileId);
   };
 
-  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+  const hiddenIfEmptyValue = hiddenIfEmpty ?? false;
+
+  if (hiddenIfEmptyValue && filteredFiles.length === 0) {
+    return null;
+  }
 
   return (
-    <Collapsible defaultOpen className="group/collapsible">
+    <Collapsible defaultOpen className="group/collapsible shrink-0">
       <SidebarGroup>
         <SidebarGroupLabel asChild>
           <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
-            SQL scratchpad
+            {sectionName}
             <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
           </CollapsibleTrigger>
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sortedFiles.map((file) => (
-                <SidebarMenuItem className="group/file" key={file.id}>
+              {filteredFiles.map((file) => (
+                <SidebarMenuItem className="group/" key={file.id}>
                   <SidebarMenuButton
+                    className="h-auto"
                     onClick={() => {
                       if (dockviewApi == null) return;
                       openFileEditor(dockviewApi, file.id, file.name);
                     }}
                   >
-                    <ScrollText />
+                    {itemIcon ?? <ScrollText />}
                     {file.name}
                   </SidebarMenuButton>
                   <DropdownMenu>
@@ -131,19 +152,15 @@ function SQLScratchpadSection() {
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-
-            <Button
-              variant="outline"
-              className="mt-2"
-              onClick={() =>
-                createNewFile(currentDatabaseId, {
-                  prefix: "SQL Query",
-                  existingFileNames: databaseFiles.map((file) => file.name),
-                })
-              }
-            >
-              <Plus /> New
-            </Button>
+            {newButtonAction && (
+              <Button
+                variant="outline"
+                className="mt-2"
+                onClick={newButtonAction}
+              >
+                <Plus /> New
+              </Button>
+            )}
           </SidebarGroupContent>
         </CollapsibleContent>
       </SidebarGroup>
@@ -153,21 +170,51 @@ function SQLScratchpadSection() {
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const currentDbId = usePostgresStore((state) => state.databaseId);
-
   const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
-
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+
+  const databaseId = usePostgresStore((state) => state.databaseId);
+  const isInMemoryDatabase = databaseId == null;
+
+  const currentDatabaseName = isInMemoryDatabase
+    ? "In-memory database"
+    : databases?.find((db) => db.id === databaseId)?.name;
+  const currentDbId = databaseId ?? memDbId;
 
   const lastOpenedDatabases = databases
     ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
     ?.slice(0, 3);
 
-  const isInMemoryDatabase = currentDbId == null;
+  const existingFileNames =
+    useAppDbLiveQuery(
+      () => appDb.files.where("databaseId").equals(currentDbId).toArray(),
+      [currentDbId],
+    )?.map((f) => f.name) ?? [];
 
-  const currentDatabaseName = isInMemoryDatabase
-    ? "In-memory database"
-    : databases?.find((db) => db.id === currentDbId)?.name;
+  const currentSchemaWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "schema")
+        .first(),
+    [currentDbId],
+  );
+
+  const currentDataWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "data")
+        .first(),
+    [currentDbId],
+  );
+
+  const fileIdsInUse = [
+    ...(currentSchemaWorkflow?.workflowSteps ?? []).map((step) => step.fileId),
+    ...(currentDataWorkflow?.workflowSteps ?? []).map((step) => step.fileId),
+  ];
 
   return (
     <Sidebar>
@@ -261,7 +308,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="shrink-0">
           <Button
             onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
           >
@@ -269,7 +316,23 @@ export function AppSidebar() {
             Setup pre-query workflow
           </Button>
         </SidebarGroup>
-        <SQLScratchpadSection />
+        <FileCollapsibleSection
+          fileFilterPredicate={(file) => !fileIdsInUse.includes(file.id)}
+          sectionName="SQL scratchpad"
+          itemIcon={<SquareTerminal />}
+          newButtonAction={() =>
+            createNewFile(currentDbId, {
+              prefix: "SQL Query",
+              existingFileNames: existingFileNames,
+            })
+          }
+        />
+        <FileCollapsibleSection
+          fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
+          sectionName="In-workflow SQL scripts"
+          itemIcon={<ScrollText />}
+          hiddenIfEmpty={true}
+        />
       </SidebarContent>
       <SidebarFooter>
         {/* <Button className="ml-auto" variant={"outline"}>

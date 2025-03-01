@@ -10,6 +10,10 @@ interface FilenameOption {
   filename: string;
 }
 
+interface FileContent {
+  content?: string;
+}
+
 /**
  * Create a new file for the given database
  * @param databaseId
@@ -18,7 +22,7 @@ interface FilenameOption {
  */
 export function createNewFile(
   databaseId: string,
-  option: PrefixOption | FilenameOption,
+  option: (PrefixOption | FilenameOption) & FileContent,
 ) {
   let filename;
   if ("filename" in option) {
@@ -35,5 +39,6 @@ export function createNewFile(
     databaseId,
     type: "sql",
     name: filename,
+    content: option.content,
   }) as Promise<string>;
 }

@@ -2,7 +2,9 @@ import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { createWorkflowPanel } from "@/lib/dockview";
+import { createNewFile } from "@/lib/dexie/dexie-utils";
+import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
+import { memDbId } from "@/lib/utils";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -15,17 +17,47 @@ import { QueryResult, QueryResultProps } from "../components/tabs/query-result";
 import { QueryWorkflow } from "../components/tabs/query-workflow";
 import { useDockviewStore } from "../hooks/stores/use-dockview-store";
 import { usePostgresStore } from "../hooks/stores/use-postgres-store";
-import { appDb } from "../lib/dexie/app-db";
+import { appDb, useAppDbLiveQuery } from "../lib/dexie/app-db";
 
 export const Route = createFileRoute("/database/$databaseId")({
   component: MainApp,
 });
 
 function NoEditors() {
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+
+  const files =
+    useAppDbLiveQuery(() => {
+      return appDb.files.where("databaseId").equals(currentDbId).toArray();
+    }) ?? [];
+
   return (
     <div className="w-full h-full bg-background flex flex-col items-center justify-center gap-2">
-      No files opened.
-      <Button>Browse files</Button>
+      {files.length === 0 ? (
+        <>
+          <div className="text-xl">Create a new file to get started</div>
+          <Button
+            onClick={async () => {
+              if (dockviewApi == null) return;
+
+              const fileId = await createNewFile(currentDbId, {
+                prefix: "SQL Query",
+                existingFileNames: files.map((f) => f.name),
+              });
+
+              openFileEditor(dockviewApi, fileId, "SQL Query 01");
+            }}
+          >
+            Create new file
+          </Button>
+        </>
+      ) : (
+        <>
+          <div className="text-xl">No files opened.</div>
+          <Button>Browse files</Button>
+        </>
+      )}
     </div>
   );
 }

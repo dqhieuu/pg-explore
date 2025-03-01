@@ -216,10 +216,29 @@ export const BaseWorkflowNode = ({
                             </div>
                           ))
                         ) : (
-                          <div>No files found.</div>
+                          <div className="mb-5">No files found.</div>
                         )}
                       </div>
-                      <Button>Select from your machine</Button>
+
+                      <Button>
+                        <label htmlFor="file-upload">
+                          Select from your machine
+                        </label>
+                      </Button>
+                      <input
+                        type="file"
+                        id="file-upload"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file == null) return;
+                          const fileId = await createNewFile(currentDbId, {
+                            filename: file.name,
+                            content: await file.text(),
+                          });
+                          selectFile(workflowType, workflowIndex, fileId);
+                        }}
+                      />
                     </div>
                   </DialogContent>
                 </Dialog>
