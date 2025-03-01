@@ -113,7 +113,10 @@ function FileCollapsibleSection({
           <SidebarGroupContent>
             <SidebarMenu>
               {filteredFiles.map((file) => (
-                <SidebarMenuItem className="group/" key={file.id}>
+                <SidebarMenuItem
+                  className="group/file flex items-center"
+                  key={file.id}
+                >
                   <SidebarMenuButton
                     className="h-auto"
                     onClick={() => {
@@ -126,7 +129,7 @@ function FileCollapsibleSection({
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction className="hover:bg-gray-200">
+                      <SidebarMenuAction className="hover:bg-gray-200 top-[initial]!">
                         <MoreHorizontal
                           className={
                             isMobile ? "" : "hidden group-hover/file:block"
