@@ -196,7 +196,7 @@ export const BaseWorkflowNode = ({
                       <DialogDescription />
                       {/* empty description is needed otherwise it will throw warnings */}
                     </DialogHeader>
-                    <div className="flex flex-col gap-2 items-start">
+                    <div className="flex flex-col gap-8 items-start">
                       <div className="flex flex-col gap-1 max-h-[15rem] w-full overflow-auto">
                         {filteredFiles.length ? (
                           filteredFiles.map((file) => (
@@ -216,7 +216,7 @@ export const BaseWorkflowNode = ({
                             </div>
                           ))
                         ) : (
-                          <div className="mb-5">No files found.</div>
+                          <div>No files found.</div>
                         )}
                       </div>
 
