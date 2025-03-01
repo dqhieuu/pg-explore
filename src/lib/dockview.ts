@@ -1,5 +1,7 @@
 import { DockviewApi } from "@hieu_dq/dockview";
 
+import { guid } from "./utils";
+
 export function createWorkflowPanel(
   dockviewApi: DockviewApi,
   skipIfSmallScreen = false,
@@ -38,4 +40,43 @@ export function createWorkflowPanel(
       dockviewApi.addPanel(workflowPanel);
     }
   }
+}
+
+export function openFileEditor(
+  dockviewApi: DockviewApi,
+  fileId: string,
+  fileName?: string,
+) {
+  if (dockviewApi == null) return;
+
+  let editorGroup = dockviewApi.getGroup("editor-group");
+
+  if (editorGroup == null) {
+    editorGroup = dockviewApi.addGroup({
+      id: "editor-group",
+      direction: "within",
+    });
+  }
+
+  const existingPanel = dockviewApi.getPanel(fileId);
+  if (existingPanel != null) {
+    existingPanel.focus();
+    return;
+  }
+
+  dockviewApi.addPanel({
+    id: fileId,
+    component: "queryEditor",
+    title: fileName ?? fileId,
+    params: {
+      fileId,
+      contextId: guid(),
+    },
+    position: {
+      referenceGroup: editorGroup,
+      direction: "within",
+    },
+  });
+
+  dockviewApi.getPanel("no-editors")?.api?.close();
 }

@@ -9,7 +9,7 @@ interface PGDatabase {
   lastOpened: Date;
 }
 
-interface FileEntry {
+export interface FileEntry {
   id: string;
   databaseId: string;
   type: "sql" | "data";

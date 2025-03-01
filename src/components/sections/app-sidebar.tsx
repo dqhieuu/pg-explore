@@ -17,8 +17,9 @@ import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { createWorkflowPanel } from "@/lib/dockview";
-import { guid, memDbId, nextIncrementedFilename } from "@/lib/utils";
+import { createNewFile } from "@/lib/dexie/dexie-utils";
+import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
+import { memDbId } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   BookText,
@@ -73,61 +74,11 @@ function SQLScratchpadSection() {
     a.name.localeCompare(b.name),
   );
 
-  const createNewFile = () => {
-    const existingFileNames = databaseFiles.map((file) => file.name);
-    const nextFileName = nextIncrementedFilename(
-      "SQL Query",
-      existingFileNames,
-    );
-
-    appDb.files.add({
-      id: guid(),
-      databaseId: currentDatabaseId,
-      type: "sql",
-      name: nextFileName,
-    });
-  };
-
   const deleteFile = (fileId: string) => {
     appDb.files.delete(fileId);
   };
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
-
-  const openFileEditor = (fileId: string) => {
-    if (dockviewApi == null) return;
-
-    let editorGroup = dockviewApi.getGroup("editor-group");
-
-    if (editorGroup == null) {
-      editorGroup = dockviewApi.addGroup({
-        id: "editor-group",
-        direction: "within",
-      });
-    }
-
-    const existingPanel = dockviewApi.getPanel(fileId);
-    if (existingPanel != null) {
-      existingPanel.focus();
-      return;
-    }
-
-    dockviewApi.addPanel({
-      id: fileId,
-      component: "queryEditor",
-      title: databaseFiles.find((file) => file.id === fileId)?.name,
-      params: {
-        fileId,
-        contextId: guid(),
-      },
-      position: {
-        referenceGroup: editorGroup,
-        direction: "within",
-      },
-    });
-
-    dockviewApi.getPanel("no-editors")?.api?.close();
-  };
 
   return (
     <Collapsible defaultOpen className="group/collapsible">
@@ -143,7 +94,12 @@ function SQLScratchpadSection() {
             <SidebarMenu>
               {sortedFiles.map((file) => (
                 <SidebarMenuItem className="group/file" key={file.id}>
-                  <SidebarMenuButton onClick={() => openFileEditor(file.id)}>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      if (dockviewApi == null) return;
+                      openFileEditor(dockviewApi, file.id, file.name);
+                    }}
+                  >
                     <ScrollText />
                     {file.name}
                   </SidebarMenuButton>
@@ -176,7 +132,16 @@ function SQLScratchpadSection() {
               ))}
             </SidebarMenu>
 
-            <Button variant="outline" className="mt-2" onClick={createNewFile}>
+            <Button
+              variant="outline"
+              className="mt-2"
+              onClick={() =>
+                createNewFile(currentDatabaseId, {
+                  prefix: "SQL Query",
+                  existingFileNames: databaseFiles.map((file) => file.name),
+                })
+              }
+            >
               <Plus /> New
             </Button>
           </SidebarGroupContent>

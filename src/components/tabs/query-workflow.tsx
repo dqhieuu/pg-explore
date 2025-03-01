@@ -2,6 +2,7 @@
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { guid, memDbId } from "@/lib/utils";
+import { Tooltip, TooltipTrigger } from "@radix-ui/react-tooltip";
 import {
   Background,
   BackgroundVariant,
@@ -26,6 +27,7 @@ import { useEffect, useState } from "react";
 import { useDebounce } from "react-use";
 import useResizeObserver from "use-resize-observer";
 
+import { TooltipContent } from "../ui/tooltip";
 import { BaseNode } from "../workflow-blocks/base-node";
 import { LabeledGroupNode } from "../workflow-blocks/labeled-group-node";
 import { PlaceholderSchemaNode } from "../workflow-blocks/placeholder-schema-node";
@@ -33,22 +35,36 @@ import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
 
 const DatabaseSourceNode = () => {
   return (
-    <BaseNode className="bg-neutral-700 text-white p-2 flex gap-1">
-      <DatabaseIcon />
-      Empty database
-      <Handle type="source" position={Position.Bottom} />
-    </BaseNode>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <BaseNode className="bg-neutral-700 text-white p-2 flex gap-1">
+          <DatabaseIcon />
+          Empty database
+          <Handle type="source" position={Position.Bottom} />
+        </BaseNode>
+      </TooltipTrigger>
+      <TooltipContent>
+        Add database plugins and configurations (TODO)
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
 const TablesCreatedNode = () => {
   return (
-    <BaseNode className="bg-cyan-900 text-white p-2 flex gap-1">
-      <Handle type="source" position={Position.Top} />
-      <Table2 />
-      Tables created
-      <Handle type="target" position={Position.Bottom} />
-    </BaseNode>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <BaseNode className="bg-cyan-900 text-white p-2 flex gap-1">
+          <Handle type="target" position={Position.Top} />
+          <Table2 />
+          Tables created
+          <Handle type="source" position={Position.Bottom} />
+        </BaseNode>
+      </TooltipTrigger>
+      <TooltipContent>
+        Click to view current tables and relationships (TODO)
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
@@ -317,7 +333,7 @@ export function QueryWorkflow() {
     if (
       typeof schemaWorkflow !== "object" ||
       // We don't want to fit view if there are too many nodes
-      schemaWorkflow.workflowSteps.length <= 5
+      schemaWorkflow.workflowSteps.length <= 4
     ) {
       reactFlow.fitView({ padding: 0.1 });
     }

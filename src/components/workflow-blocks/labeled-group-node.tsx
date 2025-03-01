@@ -16,7 +16,7 @@ export const GroupNodeLabel = ({
     <div className="h-full w-full" {...props}>
       <div
         className={cn(
-          "w-fit bg-secondary/80 p-2 text-s text-card-foreground",
+          "w-fit bg-secondary/80 p-2 text-card-foreground",
           className,
         )}
       >
@@ -28,7 +28,7 @@ export const GroupNodeLabel = ({
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type GroupNodeData = {
-  label?: string;
+  label: string;
   backgroundClassName?: string;
 };
 
@@ -51,7 +51,9 @@ export const LabeledGroupNode = ({ selected, data }: GroupNodeProps) => {
     >
       <Panel className={cn("m-0! p-0")}>
         {label && (
-          <GroupNodeLabel className="rounded-br-sm">{label}</GroupNodeLabel>
+          <GroupNodeLabel className="rounded-br-sm text-sm font-medium">
+            {label}
+          </GroupNodeLabel>
         )}
       </Panel>
     </BaseNode>
