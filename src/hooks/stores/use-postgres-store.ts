@@ -37,9 +37,11 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
       });
     }
 
-    const schema = await querySchema(newDatabase);
+    querySchema(newDatabase).then((schema) => {
+      set({ schema });
+    });
 
-    set({ database: newDatabase, schema });
+    set({ database: newDatabase });
   },
 
   schema: {},

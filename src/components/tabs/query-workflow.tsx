@@ -21,7 +21,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { produce } from "immer";
-import { DatabaseIcon, SquareTerminal } from "lucide-react";
+import { DatabaseIcon, SquareTerminal, Table2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "react-use";
 import useResizeObserver from "use-resize-observer";
@@ -33,7 +33,7 @@ import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
 
 const DatabaseSourceNode = () => {
   return (
-    <BaseNode className="bg-blue-900 text-white p-2 flex gap-1">
+    <BaseNode className="bg-neutral-700 text-white p-2 flex gap-1">
       <DatabaseIcon />
       Empty database
       <Handle type="source" position={Position.Bottom} />
@@ -41,18 +41,32 @@ const DatabaseSourceNode = () => {
   );
 };
 
+const TablesCreatedNode = () => {
+  return (
+    <BaseNode className="bg-cyan-900 text-white p-2 flex gap-1">
+      <Handle type="source" position={Position.Top} />
+      <Table2 />
+      Tables created
+      <Handle type="target" position={Position.Bottom} />
+    </BaseNode>
+  );
+};
+
 const EndNode = () => {
   return (
-    <BaseNode className="bg-green-900 text-white p-2 flex gap-1">
+    <BaseNode className="bg-green-900 text-white p-2 flex items-center gap-1">
       <Handle type="target" position={Position.Top} />
       <SquareTerminal />
-      Run your query
+      <div>
+        <div>Data populated / Run your query</div>
+      </div>
     </BaseNode>
   );
 };
 
 const nodeTypes: NodeTypes = {
   databaseSource: DatabaseSourceNode,
+  tablesCreated: TablesCreatedNode,
   end: EndNode,
   placeholderSchema: PlaceholderSchemaNode,
   sqlScript: SQLScriptNode,
@@ -115,7 +129,7 @@ export function QueryWorkflow() {
 
   const fitViewWhenResize = () => {
     if (layoutingStep !== LayoutingStep.Done) return;
-    reactFlow.fitView({ padding: 0.4 });
+    reactFlow.fitView({ padding: 0.1 });
   };
 
   const { ref, width } = useResizeObserver<HTMLElement>();
@@ -185,6 +199,15 @@ export function QueryWorkflow() {
 
     newNodes = produce(newNodes, (draft) => {
       draft.push({
+        id: "tables-created",
+        type: "tablesCreated",
+        position: { x: 0, y: 0 },
+        data: {},
+      });
+    });
+
+    newNodes = produce(newNodes, (draft) => {
+      draft.push({
         id: "end",
         type: "end",
         position: { x: 0, y: 0 },
@@ -230,7 +253,10 @@ export function QueryWorkflow() {
         curY += node.measured!.height!;
         if (node["id"] === "root") {
           curY += 80;
-        } else if (i < draft.length - 1 && draft[i + 1].type === "end") {
+        } else if (
+          i < draft.length - 1 &&
+          ["end", "tables-created"].includes(draft[i + 1].id ?? "")
+        ) {
           curY += 50;
         } else {
           curY += 5;
@@ -288,9 +314,15 @@ export function QueryWorkflow() {
   useEffect(() => {
     if (layoutingStep !== LayoutingStep.FitView) return;
 
-    reactFlow.fitView({ padding: 0.4 });
+    if (
+      typeof schemaWorkflow !== "object" ||
+      // We don't want to fit view if there are too many nodes
+      schemaWorkflow.workflowSteps.length <= 5
+    ) {
+      reactFlow.fitView({ padding: 0.1 });
+    }
     setLayoutingStep(LayoutingStep.Done);
-  }, [layoutingStep, reactFlow]);
+  }, [layoutingStep, reactFlow, schemaWorkflow]);
 
   if (schemaWorkflow == null) {
     appDb.workflows.put({
