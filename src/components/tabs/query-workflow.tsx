@@ -30,6 +30,7 @@ import useResizeObserver from "use-resize-observer";
 import { TooltipContent } from "../ui/tooltip";
 import { BaseNode } from "../workflow-blocks/base-node";
 import { LabeledGroupNode } from "../workflow-blocks/labeled-group-node";
+import { PlaceholderDataNode } from "../workflow-blocks/placeholder-data-node";
 import { PlaceholderSchemaNode } from "../workflow-blocks/placeholder-schema-node";
 import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
 
@@ -85,11 +86,13 @@ const nodeTypes: NodeTypes = {
   tablesCreated: TablesCreatedNode,
   end: EndNode,
   placeholderSchema: PlaceholderSchemaNode,
+  placeholderData: PlaceholderDataNode,
   sqlScript: SQLScriptNode,
   labeledGroup: LabeledGroupNode,
 };
 
 const newSchemaWorkflowId = guid();
+const newDataWorkflowId = guid();
 
 enum LayoutingStep {
   Render = 1,
@@ -100,6 +103,8 @@ enum LayoutingStep {
 }
 
 export function QueryWorkflow() {
+  const reactFlow = useReactFlow();
+
   const [nodes, setNodes] = useNodesState([] as Node[]);
   const onNodesChange = (changes: NodeChange[]) => {
     const updatedNodes = produce(nodes, (draft) => {
@@ -120,13 +125,22 @@ export function QueryWorkflow() {
     setEdges(updatedEdges);
   };
 
-  const reactFlow = useReactFlow();
-
   const nodeWidthNotAvailable = nodes.some(
     (node) => node.measured?.width == null,
   );
 
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+
+  const dataWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "data")
+        .first(),
+    [currentDbId],
+    "loading",
+  );
 
   const schemaWorkflow = useAppDbLiveQuery(
     () =>
@@ -151,8 +165,10 @@ export function QueryWorkflow() {
   const { ref, width } = useResizeObserver<HTMLElement>();
   useDebounce(fitViewWhenResize, 100, [width]);
 
+  // Render nodes
   useEffect(() => {
-    if (typeof schemaWorkflow !== "object") return;
+    if (typeof schemaWorkflow !== "object" || typeof dataWorkflow !== "object")
+      return;
 
     let newNodes: Node[] = [
       {
@@ -163,9 +179,9 @@ export function QueryWorkflow() {
       },
     ];
 
-    const workflowSteps = schemaWorkflow.workflowSteps;
+    const schemaSteps = schemaWorkflow.workflowSteps;
 
-    if (workflowSteps.length === 0) {
+    if (schemaSteps.length === 0) {
       newNodes = produce(newNodes, (draft) => {
         draft.push({
           id: "placeholder-schema",
@@ -183,13 +199,13 @@ export function QueryWorkflow() {
           data: { compact: true, insertBefore: 0, section: "schema" },
         } satisfies PlaceholderSchemaNode);
 
-        for (let i = 0; i < workflowSteps.length; i++) {
+        for (let i = 0; i < schemaSteps.length; i++) {
           const workflowInfo = {
             workflowIndex: i,
             workflowType: "schema",
           };
 
-          if (workflowSteps[i].type === "sql-query") {
+          if (schemaSteps[i].type === "sql-query") {
             draft.push({
               id: `schema-step-${i}`,
               type: "sqlScript",
@@ -222,6 +238,56 @@ export function QueryWorkflow() {
       });
     });
 
+    const dataSteps = dataWorkflow.workflowSteps;
+
+    if (dataSteps.length === 0) {
+      newNodes = produce(newNodes, (draft) => {
+        draft.push({
+          id: "placeholder-data",
+          type: "placeholderData",
+          position: { x: 0, y: 0 },
+          data: { compact: false, insertBefore: 0, section: "data" },
+        } satisfies PlaceholderDataNode);
+      });
+    } else {
+      newNodes = produce(newNodes, (draft) => {
+        draft.push({
+          id: "placeholder-data-0",
+          type: "placeholderData",
+          position: { x: 0, y: 0 },
+          data: { compact: true, insertBefore: 0, section: "data" },
+        } satisfies PlaceholderDataNode);
+
+        for (let i = 0; i < dataSteps.length; i++) {
+          const workflowInfo = {
+            workflowIndex: i,
+            workflowType: "data",
+          };
+
+          if (dataSteps[i].type === "sql-query") {
+            draft.push({
+              id: `data-step-${i}`,
+              type: "sqlScript",
+              position: { x: 0, y: 0 },
+              data: {
+                section: "data",
+                ...workflowInfo,
+              },
+            });
+          } else {
+            continue;
+          }
+
+          draft.push({
+            id: `placeholder-data-${i + 1}`,
+            type: "placeholderData",
+            position: { x: 0, y: 0 },
+            data: { compact: true, insertBefore: i + 1, section: "data" },
+          } satisfies PlaceholderDataNode);
+        }
+      });
+    }
+
     newNodes = produce(newNodes, (draft) => {
       draft.push({
         id: "end",
@@ -233,8 +299,9 @@ export function QueryWorkflow() {
 
     setNodes(newNodes);
     setLayoutingStep(LayoutingStep.Position);
-  }, [schemaWorkflow, setNodes]);
+  }, [dataWorkflow, schemaWorkflow, setNodes]);
 
+  // Position nodes
   useEffect(() => {
     if (layoutingStep !== LayoutingStep.Position || nodeWidthNotAvailable)
       return;
@@ -268,12 +335,14 @@ export function QueryWorkflow() {
         node.position = { x: xShift, y: curY };
         curY += node.measured!.height!;
         if (node["id"] === "root") {
-          curY += 80;
+          curY += 70;
         } else if (
           i < draft.length - 1 &&
           ["end", "tables-created"].includes(draft[i + 1].id ?? "")
         ) {
           curY += 50;
+        } else if (["tables-created"].includes(draft[i].id ?? "")) {
+          curY += 70;
         } else {
           curY += 5;
         }
@@ -284,17 +353,18 @@ export function QueryWorkflow() {
     setLayoutingStep(LayoutingStep.CreateGroups);
   }, [edges, nodes, layoutingStep, nodeWidthNotAvailable, setEdges, setNodes]);
 
+  // Create groups after positioning
   useEffect(() => {
     if (layoutingStep !== LayoutingStep.CreateGroups) return;
 
     let updatedNodes = nodes;
+
+    // Schema group
     updatedNodes = produce(updatedNodes, (draft) => {
       const schemaNodes = draft.filter(
         (node) => node.data.section === "schema",
       );
-
       const bbox = reactFlow.getNodesBounds(schemaNodes);
-
       const groupWidth = bbox.width + 40;
 
       const groupSchema = {
@@ -311,11 +381,41 @@ export function QueryWorkflow() {
 
       draft.unshift(groupSchema);
 
-      const centerX = groupWidth / 2;
-
       let curY = 50;
+      const centerX = groupWidth / 2;
       for (const node of schemaNodes) {
         node.parentId = "group-schema";
+        const xShift = centerX - node.measured!.width! / 2;
+        node.position = { x: xShift, y: curY };
+        curY += node.measured!.height!;
+        curY += 5;
+      }
+    });
+
+    // Data group
+    updatedNodes = produce(updatedNodes, (draft) => {
+      const dataNodes = draft.filter((node) => node.data.section === "data");
+      const bbox = reactFlow.getNodesBounds(dataNodes);
+      const groupWidth = bbox.width + 40;
+
+      const groupData = {
+        id: "group-data",
+        type: "labeledGroup",
+        position: { x: bbox.x - 20, y: bbox.y - 40 },
+        data: {
+          label: "Populate data",
+          backgroundClassName: "bg-green-200/50",
+        },
+        width: groupWidth,
+        height: bbox.height + 60,
+      };
+
+      draft.unshift(groupData);
+
+      let curY = 50;
+      const centerX = groupWidth / 2;
+      for (const node of dataNodes) {
+        node.parentId = "group-data";
         const xShift = centerX - node.measured!.width! / 2;
         node.position = { x: xShift, y: curY };
         curY += node.measured!.height!;
@@ -327,24 +427,38 @@ export function QueryWorkflow() {
     setLayoutingStep(LayoutingStep.FitView);
   }, [layoutingStep, nodes, reactFlow, setNodes]);
 
+  // Fit view after layouting
   useEffect(() => {
     if (layoutingStep !== LayoutingStep.FitView) return;
 
     if (
       typeof schemaWorkflow !== "object" ||
+      typeof dataWorkflow !== "object" ||
       // We don't want to fit view if there are too many nodes
-      schemaWorkflow.workflowSteps.length <= 4
+      schemaWorkflow.workflowSteps.length + dataWorkflow.workflowSteps.length <=
+        4
     ) {
       reactFlow.fitView({ padding: 0.1 });
     }
     setLayoutingStep(LayoutingStep.Done);
-  }, [layoutingStep, reactFlow, schemaWorkflow]);
+  }, [dataWorkflow, layoutingStep, reactFlow, schemaWorkflow]);
 
   if (schemaWorkflow == null) {
     appDb.workflows.put({
       id: newSchemaWorkflowId,
       databaseId: currentDbId,
       type: "schema",
+      name: "",
+      workflowSteps: [],
+    });
+    return null;
+  }
+
+  if (dataWorkflow == null) {
+    appDb.workflows.put({
+      id: newDataWorkflowId,
+      databaseId: currentDbId,
+      type: "data",
       name: "",
       workflowSteps: [],
     });

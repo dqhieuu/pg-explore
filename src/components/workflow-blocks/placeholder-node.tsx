@@ -16,7 +16,7 @@ export type PlaceholderNodeProps = Partial<NodeProps> & {
 export type PlaceholderNodeData = {
   compact?: boolean;
   insertBefore: number; // index of the node to insert before
-  section: "schema";
+  section: "schema" | "data";
 };
 
 export const PlaceholderNode = ({
