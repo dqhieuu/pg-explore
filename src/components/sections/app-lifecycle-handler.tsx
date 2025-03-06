@@ -63,14 +63,13 @@ export default function AppLifecycleHandler({
       await expireAppSession();
     };
 
-    window.addEventListener("beforeunload", beforeunloadHandler);
-
     const visibilityChangeHandler = () => {
       if (document.visibilityState === "hidden") {
         signalSaveQueryEditors();
       }
     };
 
+    window.addEventListener("beforeunload", beforeunloadHandler);
     document.addEventListener("visibilitychange", visibilityChangeHandler);
 
     return () => {

@@ -163,7 +163,7 @@ export function QueryWorkflow() {
   };
 
   const { ref, width } = useResizeObserver<HTMLElement>();
-  useDebounce(fitViewWhenResize, 100, [width]);
+  useDebounce(fitViewWhenResize, 50, [width]);
 
   // Render nodes
   useEffect(() => {
@@ -443,6 +443,7 @@ export function QueryWorkflow() {
     setLayoutingStep(LayoutingStep.Done);
   }, [dataWorkflow, layoutingStep, reactFlow, schemaWorkflow]);
 
+  // Create new schema and data workflows if they don't exist
   if (schemaWorkflow == null) {
     appDb.workflows.put({
       id: newSchemaWorkflowId,

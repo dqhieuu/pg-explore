@@ -73,6 +73,8 @@ function FileCollapsibleSection({
   hiddenIfEmpty?: boolean;
   fileFilterPredicate?: (file: FileEntry) => boolean;
 }) {
+  const hiddenIfEmptyValue = hiddenIfEmpty ?? false;
+
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const isMobile = useIsMobile();
 
@@ -94,11 +96,7 @@ function FileCollapsibleSection({
     appDb.files.delete(fileId);
   };
 
-  const hiddenIfEmptyValue = hiddenIfEmpty ?? false;
-
-  if (hiddenIfEmptyValue && filteredFiles.length === 0) {
-    return null;
-  }
+  if (hiddenIfEmptyValue && filteredFiles.length === 0) return null;
 
   return (
     <Collapsible defaultOpen className="group/collapsible shrink-0">

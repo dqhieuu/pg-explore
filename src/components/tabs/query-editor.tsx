@@ -42,6 +42,9 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const shouldSave = useQueryStore(
     (state) => state.queryEditorsShouldSave[contextId],
   );
+  const setShouldSave = useQueryStore(
+    (state) => state.setQueryEditorShouldSave,
+  );
 
   const schema = usePostgresStore((state) => state.schema);
   const setSchema = usePostgresStore((state) => state.setSchema);
@@ -49,17 +52,26 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   // Component first mount, set the query editor value
   useEffect(() => {
     if (associatedFile == null) {
+      // Nothing is loaded yet. Do nothing
       if (prevAssociatedFile.current == null) return;
-      // File state changed to null, close the panel
-      dockviewApi?.getPanel(fileId)?.api?.close();
 
+      // File state changed from valued to null -> close the panel
+      dockviewApi?.getPanel(fileId)?.api?.close();
       return;
     }
 
     prevAssociatedFile.current = associatedFile;
 
     setQueryEditorValue(contextId, associatedFile.content ?? "", true);
-  }, [contextId, fileId, associatedFile, dockviewApi, setQueryEditorValue]);
+    setShouldSave(contextId, false);
+  }, [
+    contextId,
+    fileId,
+    associatedFile,
+    dockviewApi,
+    setQueryEditorValue,
+    setShouldSave,
+  ]);
 
   // Save the query editor value to the database if needed
   useEffect(() => {

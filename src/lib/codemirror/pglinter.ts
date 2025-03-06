@@ -7,7 +7,8 @@ interface QueryLineError {
 }
 
 // This is a hacky way to detect the line of an error in a query
-// It's experimental and may not work in all cases
+// It detects the line of an error by running the query in a transaction
+// and rolling back the transaction after each line
 async function detectQueryLineError_Experimental(
   db: PGliteInterface,
   query: string,
@@ -27,7 +28,7 @@ async function detectQueryLineError_Experimental(
 
   const lines = query.split("\n");
 
-  // Limit the number of lines to prevent over-querying the database
+  // Limit the number of lines to prevent killing the browser
   if (lines.length >= 50) return null;
 
   let result: QueryLineError | null = null;

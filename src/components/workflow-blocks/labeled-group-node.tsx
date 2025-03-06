@@ -6,7 +6,6 @@ import { HTMLAttributes, ReactNode } from "react";
 /* GROUP NODE Label ------------------------------------------------------- */
 
 export type GroupNodeLabelProps = HTMLAttributes<HTMLDivElement>;
-
 export const GroupNodeLabel = ({
   children,
   className,
@@ -35,9 +34,6 @@ type GroupNodeData = {
 export type GroupNodeProps = NodeProps<Node<GroupNodeData, "GroupNode">> & {
   label?: ReactNode;
 };
-
-/* GROUP NODE -------------------------------------------------------------- */
-
 export const LabeledGroupNode = ({ selected, data }: GroupNodeProps) => {
   const { label, backgroundClassName } = data;
 
