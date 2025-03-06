@@ -9,6 +9,7 @@ import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { Save } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useDebounce } from "react-use";
 import { toast } from "sonner";
 
 import { Button } from "../ui/button";
@@ -49,39 +50,6 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const schema = usePostgresStore((state) => state.schema);
   const setSchema = usePostgresStore((state) => state.setSchema);
 
-  // Component first mount, set the query editor value
-  useEffect(() => {
-    if (associatedFile == null) {
-      // Nothing is loaded yet. Do nothing
-      if (prevAssociatedFile.current == null) return;
-
-      // File state changed from valued to null -> close the panel
-      dockviewApi?.getPanel(fileId)?.api?.close();
-      return;
-    }
-
-    prevAssociatedFile.current = associatedFile;
-
-    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
-    setShouldSave(contextId, false);
-  }, [
-    contextId,
-    fileId,
-    associatedFile,
-    dockviewApi,
-    setQueryEditorValue,
-    setShouldSave,
-  ]);
-
-  // Save the query editor value to the database if needed
-  useEffect(() => {
-    if (!shouldSave) return;
-
-    appDb.files.update(fileId, {
-      content: queryEditorValue,
-    });
-  }, [fileId, queryEditorValue, shouldSave]);
-
   function createQueryResultTabsIfNeeded(result: object[]) {
     if (dockviewApi == null) return;
 
@@ -115,11 +83,58 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     }
   }
 
+  useDebounce(
+    () => {
+      if (!isSaved) setShouldSave(contextId, true);
+    },
+    3000,
+    [queryEditorValue],
+  );
+
+  // Component first mount, set the query editor value
+  useEffect(() => {
+    if (associatedFile == null) {
+      // Nothing is loaded yet. Do nothing
+      if (prevAssociatedFile.current == null) return;
+
+      // File state changed from valued to null -> close the panel
+      dockviewApi?.getPanel(fileId)?.api?.close();
+      return;
+    }
+
+    prevAssociatedFile.current = associatedFile;
+
+    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
+  }, [
+    contextId,
+    fileId,
+    associatedFile,
+    dockviewApi,
+    setQueryEditorValue,
+    setShouldSave,
+  ]);
+
+  useEffect(() => {
+    // Save the query editor value to the database if needed
+    if (!shouldSave) return;
+
+    appDb.files
+      .update(fileId, {
+        content: queryEditorValue,
+      })
+      .then(() => {
+        console.log(`Saved query editor value for ${fileId}`);
+      });
+  }, [shouldSave, fileId, queryEditorValue]);
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-1 flex gap-2">
         <Save
-          className={(isSaved ? "text-green-700" : "text-red-800") + " hidden"}
+          className={
+            (isSaved ? "text-green-700" : "text-red-800") +
+            (import.meta.env.DEV ? " " : " hidden")
+          }
         />
         <Button
           className="h-7 p-3"

@@ -11,7 +11,7 @@ Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app).
 
 ## Features (TODO)
 
-- [ ] Create and manage PostgreSQL databases that persist in your browser
+- [X] Create and manage PostgreSQL databases that persist in your browser
 - [ ] Add table schema & data files (SQL, DBML, JSON,...) to build your query workflow
 - [x] SQL query editor with error highlighting and schema autocompletion
 - [ ] Configurable AI chat integration for SQL query suggestions

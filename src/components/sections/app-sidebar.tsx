@@ -39,7 +39,7 @@ import {
   Trash,
   Workflow,
 } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import { Button } from "../ui/button";
 import {
@@ -47,6 +47,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +68,60 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { Input } from "../ui/input";
+
+function RenameFileDialogContent({
+  fileId,
+  onClose,
+}: {
+  fileId: string | null;
+  onClose?: () => void;
+}) {
+  const [newFileName, setNewFileName] = useState("");
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
+
+  useEffect(() => {
+    if (fileId == null) return;
+
+    (async () => {
+      const file = await appDb.files.get(fileId);
+
+      if (file != null) {
+        setNewFileName(file.name);
+      }
+    })();
+  }, [fileId]);
+
+  const updateFileName = async () => {
+    if (newFileName.trim() === "") return;
+
+    await appDb.files.update(fileId, { name: newFileName });
+
+    if (dockviewApi != null && fileId != null) {
+      dockviewApi.getPanel(fileId)?.setTitle(newFileName);
+    }
+
+    if (onClose) onClose();
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Rename file</DialogTitle>
+        <DialogDescription>
+          <Input
+            placeholder="New file name"
+            value={newFileName}
+            onChange={(e) => setNewFileName(e.target.value)}
+          />
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button onClick={updateFileName}>Rename</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
 
 function FileCollapsibleSection({
   newButtonAction,
@@ -96,76 +159,99 @@ function FileCollapsibleSection({
     appDb.files.delete(fileId);
   };
 
+  const [dialogFileId, setDialogFileId] = useState<string | null>(null);
+
   if (hiddenIfEmptyValue && filteredFiles.length === 0) return null;
 
   return (
-    <Collapsible defaultOpen className="group/collapsible shrink-0">
-      <SidebarGroup>
-        <SidebarGroupLabel asChild>
-          <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
-            {sectionName}
-            <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-          </CollapsibleTrigger>
-        </SidebarGroupLabel>
-        <CollapsibleContent>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredFiles.map((file) => (
-                <SidebarMenuItem
-                  className="group/file flex items-center"
-                  key={file.id}
-                >
-                  <SidebarMenuButton
-                    className="h-auto"
-                    onClick={() => {
-                      if (dockviewApi == null) return;
-                      openFileEditor(dockviewApi, file.id, file.name);
-                    }}
+    <Dialog
+      open={dialogFileId != null}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setDialogFileId(null);
+        }
+      }}
+    >
+      <Collapsible defaultOpen className="group/collapsible shrink-0">
+        <SidebarGroup>
+          <SidebarGroupLabel asChild>
+            <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
+              {sectionName}
+              <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
+            </CollapsibleTrigger>
+          </SidebarGroupLabel>
+          <CollapsibleContent>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredFiles.map((file) => (
+                  <SidebarMenuItem
+                    className="group/file flex items-center"
+                    key={file.id}
                   >
-                    {itemIcon ?? <ScrollText />}
-                    {file.name}
-                  </SidebarMenuButton>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction className="hover:bg-gray-200 top-[initial]!">
-                        <MoreHorizontal
-                          className={
-                            isMobile ? "" : "hidden group-hover/file:block"
-                          }
-                        />
-                      </SidebarMenuAction>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className="w-[10rem]"
-                      side="right"
-                      align="start"
+                    <SidebarMenuButton
+                      className="h-auto"
+                      onClick={() => {
+                        if (dockviewApi == null) return;
+                        openFileEditor(dockviewApi, file.id, file.name);
+                      }}
                     >
-                      <DropdownMenuItem>
-                        <FolderPen />
-                        Rename file
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => deleteFile(file.id)}>
-                        <Trash className="text-destructive" />
-                        <span className="text-destructive">Delete file</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-            {newButtonAction && (
-              <Button
-                variant="outline"
-                className="mt-2"
-                onClick={newButtonAction}
-              >
-                <Plus /> New
-              </Button>
-            )}
-          </SidebarGroupContent>
-        </CollapsibleContent>
-      </SidebarGroup>
-    </Collapsible>
+                      {itemIcon ?? <ScrollText />}
+                      {file.name}
+                    </SidebarMenuButton>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuAction className="hover:bg-gray-200 top-[initial]!">
+                          <MoreHorizontal
+                            className={
+                              isMobile ? "" : "hidden group-hover/file:block"
+                            }
+                          />
+                        </SidebarMenuAction>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-[10rem]"
+                        side="right"
+                        align="start"
+                      >
+                        <DialogTrigger
+                          asChild
+                          onClick={() => setDialogFileId(file.id)}
+                        >
+                          <DropdownMenuItem>
+                            <FolderPen />
+                            Rename file
+                          </DropdownMenuItem>
+                        </DialogTrigger>
+                        <DropdownMenuItem onClick={() => deleteFile(file.id)}>
+                          <Trash className="text-destructive" />
+                          <span className="text-destructive">Delete file</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+              {newButtonAction && (
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={newButtonAction}
+                >
+                  <Plus /> New
+                </Button>
+              )}
+            </SidebarGroupContent>
+          </CollapsibleContent>
+        </SidebarGroup>
+      </Collapsible>
+      <RenameFileDialogContent
+        fileId={dialogFileId}
+        onClose={() => {
+          setDialogFileId(null);
+        }}
+      />
+      )
+    </Dialog>
   );
 }
 

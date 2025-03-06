@@ -75,10 +75,6 @@ function MainApp() {
     (async () => {
       const appDbPgList = await appDb.databases.toArray();
 
-      if (appDbPgList == null) {
-        return;
-      }
-
       if (databaseId === "memory") {
         setPgDb(null);
       } else if (appDbPgList.find((db) => db.id === databaseId) != null) {
