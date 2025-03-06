@@ -250,7 +250,6 @@ function FileCollapsibleSection({
           setDialogFileId(null);
         }}
       />
-      )
     </Dialog>
   );
 }
