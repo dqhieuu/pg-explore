@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
-import { memDbId } from "@/lib/utils";
+import { guid, memDbId } from "@/lib/utils";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -17,7 +17,7 @@ import { QueryResult, QueryResultProps } from "../components/tabs/query-result";
 import { QueryWorkflow } from "../components/tabs/query-workflow";
 import { useDockviewStore } from "../hooks/stores/use-dockview-store";
 import { usePostgresStore } from "../hooks/stores/use-postgres-store";
-import { appDb, useAppDbLiveQuery } from "../lib/dexie/app-db";
+import { WorkflowState, appDb, useAppDbLiveQuery } from "../lib/dexie/app-db";
 
 export const Route = createFileRoute("/database/$databaseId")({
   component: MainApp,
@@ -62,6 +62,17 @@ function NoEditors() {
   );
 }
 
+const newSchemaWorkflowId = guid();
+const newDataWorkflowId = guid();
+
+function LoadingPlaceholder() {
+  return (
+    <div className="flex items-center justify-center h-[100dvh] gap-2">
+      <LoaderCircle className="animate-spin" /> Loading database...
+    </div>
+  );
+}
+
 function MainApp() {
   const navigate = useNavigate();
   const { databaseId } = Route.useParams();
@@ -70,6 +81,30 @@ function MainApp() {
 
   const pgDb = usePostgresStore((state) => state.database);
   const setPgDb = usePostgresStore((state) => state.setDatabase);
+
+  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+
+  const dataWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "data")
+        .first(),
+    [currentDbId],
+    "loading",
+  );
+
+  const schemaWorkflow = useAppDbLiveQuery(
+    () =>
+      appDb.workflows
+        .where("databaseId")
+        .equals(currentDbId)
+        .and((wf) => wf.type === "schema")
+        .first(),
+    [currentDbId],
+    "loading",
+  );
 
   useEffect(() => {
     (async () => {
@@ -86,12 +121,62 @@ function MainApp() {
     })();
   }, [setPgDb, databaseId, navigate]);
 
+  useEffect(() => {
+    if (pgDb == null) return;
+
+    if (schemaWorkflow == null) {
+      appDb.workflows.put({
+        id: newSchemaWorkflowId,
+        databaseId: currentDbId,
+        type: "schema",
+        name: "",
+        workflowSteps: [],
+      });
+    }
+
+    if (dataWorkflow == null) {
+      appDb.workflows.put({
+        id: newDataWorkflowId,
+        databaseId: currentDbId,
+        type: "data",
+        name: "",
+        workflowSteps: [],
+      });
+    }
+
+    (async () => {
+      let db = await appDb.databases.get(currentDbId);
+
+      if (db == null) {
+        await appDb.databases.add({
+          id: currentDbId,
+          name: "In-memory database",
+          createdAt: new Date(),
+          lastOpened: new Date(),
+        });
+
+        db = await appDb.databases.get(currentDbId);
+
+        if (db == null) {
+          throw new Error("Failed to create database");
+        }
+      }
+
+      if (db.workflowState == null) {
+        appDb.databases.update(currentDbId, {
+          workflowState: {
+            schemaWorkflowId: newSchemaWorkflowId,
+            dataWorkflowId: newDataWorkflowId,
+            currentProgress: "schema",
+            stepsDone: 0,
+          } satisfies WorkflowState,
+        });
+      }
+    })();
+  }, [pgDb, currentDbId, dataWorkflow, schemaWorkflow]);
+
   if (pgDb == null) {
-    return (
-      <div className="flex items-center justify-center h-[100dvh] gap-2">
-        <LoaderCircle className="animate-spin" /> Loading database...
-      </div>
-    );
+    return <LoadingPlaceholder />;
   }
 
   return (

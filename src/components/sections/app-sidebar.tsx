@@ -19,7 +19,7 @@ import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
-import { memDbId } from "@/lib/utils";
+import { MEM_DB_PREFIX, memDbId } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   BookText,
@@ -256,7 +256,9 @@ function FileCollapsibleSection({
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
+  const databases = useAppDbLiveQuery(() =>
+    appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray(),
+  );
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
 
   const databaseId = usePostgresStore((state) => state.databaseId);

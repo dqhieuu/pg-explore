@@ -23,7 +23,13 @@ async function deleteStaleSessionData() {
     .and((workflow) => !activeMemDatabasesIds.has(workflow.databaseId))
     .delete();
 
-  await Promise.all([deleteFiles, deleteWorkflows]);
+  const deleteDatabases = appDb.databases
+    .where("id")
+    .startsWith(MEM_DB_PREFIX)
+    .and((db) => !activeMemDatabasesIds.has(db.id))
+    .delete();
+
+  await Promise.all([deleteFiles, deleteWorkflows, deleteDatabases]);
 }
 
 async function createAppSession() {

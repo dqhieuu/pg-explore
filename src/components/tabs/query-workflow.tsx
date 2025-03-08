@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { guid, memDbId } from "@/lib/utils";
+import { memDbId } from "@/lib/utils";
 import { Tooltip, TooltipTrigger } from "@radix-ui/react-tooltip";
 import {
   Background,
@@ -91,9 +91,6 @@ const nodeTypes: NodeTypes = {
   labeledGroup: LabeledGroupNode,
 };
 
-const newSchemaWorkflowId = guid();
-const newDataWorkflowId = guid();
-
 enum LayoutingStep {
   Render = 1,
   Position,
@@ -139,7 +136,6 @@ export function QueryWorkflow() {
         .and((wf) => wf.type === "data")
         .first(),
     [currentDbId],
-    "loading",
   );
 
   const schemaWorkflow = useAppDbLiveQuery(
@@ -150,7 +146,6 @@ export function QueryWorkflow() {
         .and((wf) => wf.type === "schema")
         .first(),
     [currentDbId],
-    "loading",
   );
 
   const [layoutingStep, setLayoutingStep] = useState(
@@ -442,29 +437,6 @@ export function QueryWorkflow() {
     }
     setLayoutingStep(LayoutingStep.Done);
   }, [dataWorkflow, layoutingStep, reactFlow, schemaWorkflow]);
-
-  // Create new schema and data workflows if they don't exist
-  if (schemaWorkflow == null) {
-    appDb.workflows.put({
-      id: newSchemaWorkflowId,
-      databaseId: currentDbId,
-      type: "schema",
-      name: "",
-      workflowSteps: [],
-    });
-    return null;
-  }
-
-  if (dataWorkflow == null) {
-    appDb.workflows.put({
-      id: newDataWorkflowId,
-      databaseId: currentDbId,
-      type: "data",
-      name: "",
-      workflowSteps: [],
-    });
-    return null;
-  }
 
   return (
     <div className="h-full w-full">

@@ -3,7 +3,12 @@ import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
 import { pgLinter } from "@/lib/codemirror/pglinter";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { querySchema } from "@/lib/pglite/pg-utils";
+import { evaluateSql, querySchema } from "@/lib/pglite/pg-utils";
+import {
+  applyWorkflow,
+  markWorkflowDirty,
+} from "@/lib/pglite/workflow-evaluator.ts";
+import { memDbId } from "@/lib/utils.ts";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror from "@uiw/react-codemirror";
@@ -24,6 +29,7 @@ export interface QueryEditorProps {
 }
 export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
+  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
   const prevAssociatedFile = useRef(associatedFile);
@@ -139,7 +145,10 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
         <Button
           className="h-7 p-3"
           onClick={async () => {
-            db.exec("rollback;" + (queryEditorValue ?? ""))
+            await markWorkflowDirty(db, currentDbId);
+            await applyWorkflow(db, currentDbId);
+
+            evaluateSql(db, queryEditorValue)
               .then((res) => {
                 const result = (res as unknown as QueryResult[])
                   .slice(1)

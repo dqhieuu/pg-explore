@@ -15,6 +15,10 @@ export function fixRadixUiUnclosedDialog() {
   setTimeout(() => (document.body.style.pointerEvents = ""), 0);
 }
 
+export function isEmptyOrSpaces(str?: string | null) {
+  return str == null || str.match(/^\s*$/) !== null;
+}
+
 export function nextIncrementedFilename(prefix: string, existing: string[]) {
   const existingNumbers = existing
     .filter((filename) => filename.match(new RegExp(`^${prefix} \\d+$`)))

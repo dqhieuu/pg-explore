@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { guid } from "@/lib/utils";
+import { MEM_DB_PREFIX, guid } from "@/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Database, MemoryStick } from "lucide-react";
 import { generateSlug } from "random-word-slugs";
@@ -72,7 +72,9 @@ function Link({ href, children }: { href: string; children: React.ReactNode }) {
 }
 
 function HomePage() {
-  const databases = useAppDbLiveQuery(() => appDb.databases.toArray());
+  const databases = useAppDbLiveQuery(() =>
+    appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray(),
+  );
 
   const navigate = useNavigate();
 

@@ -7,6 +7,14 @@ interface PGDatabase {
   name: string;
   createdAt: Date;
   lastOpened: Date;
+  workflowState?: WorkflowState;
+}
+
+export interface WorkflowState {
+  schemaWorkflowId: string;
+  dataWorkflowId: string;
+  currentProgress: "dirty" | "schema" | "data";
+  stepsDone: number;
 }
 
 export interface FileEntry {
@@ -32,7 +40,7 @@ interface CommonWorkflowStep {
   options: Record<string, unknown>;
 }
 
-type SQLQueryStep = Modify<
+export type SQLQueryStep = Modify<
   CommonWorkflowStep,
   {
     type: "sql-query";

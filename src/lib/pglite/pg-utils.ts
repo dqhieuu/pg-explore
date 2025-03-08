@@ -27,3 +27,17 @@ export async function querySchema(
   }
   return schema;
 }
+
+export function wipeDatabase(pg: PGliteInterface) {
+  return evaluateSql(
+    pg,
+    `DROP SCHEMA public CASCADE; 
+    CREATE SCHEMA public;
+    GRANT ALL ON SCHEMA public TO postgres;
+    GRANT ALL ON SCHEMA public TO public;`,
+  );
+}
+
+export function evaluateSql(pg: PGliteInterface, sqlScript: string) {
+  return pg.exec("rollback;" + sqlScript);
+}
