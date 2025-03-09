@@ -1,5 +1,5 @@
 import { appDb } from "@/lib/dexie/app-db";
-import { querySchema } from "@/lib/pglite/pg-utils";
+import { querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
 import { PGlite } from "@electric-sql/pglite";
 import { PGliteWithLive, live } from "@electric-sql/pglite/live";
 import Dexie from "dexie";
@@ -37,7 +37,7 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
       });
     }
 
-    querySchema(newDatabase).then((schema) => {
+    querySchemaForCodeMirror(newDatabase).then((schema) => {
       set({ schema });
     });
 

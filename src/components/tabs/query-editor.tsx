@@ -1,13 +1,11 @@
+import { Button } from "@/components/ui/button";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
 import { pgLinter } from "@/lib/codemirror/pglinter";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { evaluateSql, querySchema } from "@/lib/pglite/pg-utils";
-import {
-  applyWorkflow,
-  markWorkflowDirty,
-} from "@/lib/pglite/workflow-evaluator.ts";
+import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
+import { applyWorkflow } from "@/lib/pglite/workflow-evaluator";
 import { memDbId } from "@/lib/utils.ts";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { usePGlite } from "@electric-sql/pglite-react";
@@ -16,8 +14,6 @@ import { Save } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useDebounce } from "react-use";
 import { toast } from "sonner";
-
-import { Button } from "../ui/button";
 
 const filterNonSelectResult = (result: QueryResult) => {
   return result?.fields?.length > 0;
@@ -145,7 +141,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
         <Button
           className="h-7 p-3"
           onClick={async () => {
-            await markWorkflowDirty(db, currentDbId);
+            // await markWorkflowDirty(db, currentDbId);
             await applyWorkflow(db, currentDbId);
 
             evaluateSql(db, queryEditorValue)
@@ -171,7 +167,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
                 createQueryResultTabsIfNeeded(result);
               });
 
-            querySchema(db).then(setSchema);
+            querySchemaForCodeMirror(db).then(setSchema);
           }}
         >
           Query

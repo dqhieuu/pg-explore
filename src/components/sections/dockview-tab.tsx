@@ -9,7 +9,6 @@ export const DockviewCustomTab = (props: IDockviewPanelHeaderProps) => {
     (state) => state.signalSaveQueryEditors,
   );
 
-
   return (
     <DockviewDefaultTab
       closeActionOverride={() => {

@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
+import { AiChat } from "@/components/tabs/ai-chat.tsx";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
@@ -205,6 +206,15 @@ function MainApp() {
                   },
                 });
 
+                event.api.addPanel({
+                  id: "ai-chat",
+                  title: "AI Chat",
+                  component: "aiChat",
+                  position: {
+                    referenceGroup: editorGroup,
+                  },
+                });
+
                 createWorkflowPanel(event.api, true);
               }}
               components={{
@@ -224,6 +234,7 @@ function MainApp() {
                 ),
                 queryWorkflow: () => <QueryWorkflow />,
                 noEditors: () => <NoEditors />,
+                aiChat: () => <AiChat />,
               }}
               singleTabMode="fullwidth"
               className="dockview-theme-replit"

@@ -1,6 +1,7 @@
 import { PGliteInterface } from "@electric-sql/pglite";
+import { pgDump } from "@electric-sql/pglite-tools/pg_dump";
 
-export async function querySchema(
+export async function querySchemaForCodeMirror(
   pg: PGliteInterface,
 ): Promise<Record<string, string[]>> {
   const ret = await pg.query<{
@@ -34,10 +35,19 @@ export function wipeDatabase(pg: PGliteInterface) {
     `DROP SCHEMA public CASCADE; 
     CREATE SCHEMA public;
     GRANT ALL ON SCHEMA public TO postgres;
-    GRANT ALL ON SCHEMA public TO public;`,
+    GRANT ALL ON SCHEMA public TO public;
+    ALTER USER postgres SET search_path TO public;
+    SET search_path TO public;
+    `,
   );
 }
 
 export function evaluateSql(pg: PGliteInterface, sqlScript: string) {
-  return pg.exec("rollback;" + sqlScript);
+  return pg.exec("rollback;SET search_path TO public;" + sqlScript);
+}
+
+export async function getDatabaseSchemaDump(pg: PGliteInterface) {
+  const dumpFile = await pgDump({ pg, args: ["--schema-only"] });
+  pg.exec("SET search_path TO public;"); // annoying bug
+  return dumpFile.text();
 }
