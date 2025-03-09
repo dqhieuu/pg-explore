@@ -18,15 +18,22 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
-import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
+import {
+  createWorkflowPanel,
+  openAiChat,
+  openFileEditor,
+} from "@/lib/dockview";
 import { MEM_DB_PREFIX, memDbId } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  Blocks,
   BookText,
+  BotMessageSquare,
   Bug,
   ChevronDown,
   Database,
   DatabaseIcon,
+  EllipsisIcon,
   FolderPen,
   HelpCircle,
   MoreHorizontal,
@@ -36,6 +43,8 @@ import {
   SettingsIcon,
   SquareTerminal,
   Star,
+  Table2,
+  TerminalSquare,
   Trash,
   Workflow,
 } from "lucide-react";
@@ -200,7 +209,7 @@ function FileCollapsibleSection({
                     </SidebarMenuButton>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction className="hover:bg-gray-200 top-[initial]!">
+                        <SidebarMenuAction className="hover:bg-gray-100 top-auto! p-4">
                           <MoreHorizontal
                             className={
                               isMobile ? "" : "hidden group-hover/file:block"
@@ -320,7 +329,11 @@ export function AppSidebar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <div className="flex relative">
-                <img className="w-8 rounded-md opacity-85" src={Logo} />
+                <img
+                  alt="App logo"
+                  className="w-8 rounded-md opacity-85"
+                  src={Logo}
+                />
                 <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
               </div>
               <DropdownMenuSeparator />
@@ -396,13 +409,48 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup className="shrink-0">
+        <SidebarGroup className="shrink-0 flex gap-2">
           <Button
             onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
           >
             <Workflow />
             Setup pre-query workflow
           </Button>
+          <div className="flex">
+            <Button
+              onClick={() => dockviewApi && openAiChat(dockviewApi)}
+              variant="secondary"
+              className="bg-gray-200 flex-1 rounded-r-none"
+            >
+              <BotMessageSquare />
+              AI chat
+            </Button>
+            <Button
+              variant="secondary"
+              disabled
+              className="bg-gray-200 flex-1 rounded-l-none"
+            >
+              <Table2 />
+              Tables
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost">
+                  <EllipsisIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem disabled>
+                  <Blocks />
+                  Manage plugins
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled>
+                  <TerminalSquare />
+                  Console
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </SidebarGroup>
         <FileCollapsibleSection
           fileFilterPredicate={(file) => !fileIdsInUse.includes(file.id)}

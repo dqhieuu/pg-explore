@@ -61,7 +61,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
       resultGroup = dockviewApi.addGroup({
         id: "result-group",
         referencePanel: fileId,
-        direction: "below",
+        direction: window.screen.width >= 1000 ? "right" : "below",
       });
     }
 

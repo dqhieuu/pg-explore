@@ -80,3 +80,23 @@ export function openFileEditor(
 
   dockviewApi.getPanel("no-editors")?.api?.close();
 }
+
+export function openAiChat(dockviewApi: DockviewApi) {
+  if (dockviewApi == null) return;
+
+  const existingPanel = dockviewApi.getPanel("ai-chat");
+  if (existingPanel != null) {
+    existingPanel.focus();
+    return;
+  }
+
+  dockviewApi.addPanel({
+    id: "ai-chat",
+    title: "AI Chat",
+    component: "aiChat",
+    position: {
+      referenceGroup: "editor-group",
+      direction: "below",
+    },
+  });
+}

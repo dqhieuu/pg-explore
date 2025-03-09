@@ -206,15 +206,6 @@ function MainApp() {
                   },
                 });
 
-                event.api.addPanel({
-                  id: "ai-chat",
-                  title: "AI Chat",
-                  component: "aiChat",
-                  position: {
-                    referenceGroup: editorGroup,
-                  },
-                });
-
                 createWorkflowPanel(event.api, true);
               }}
               components={{
