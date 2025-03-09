@@ -79,19 +79,33 @@ export const AiChat = () => {
   return (
     <div className="flex flex-col gap-2 h-full">
       <div className="flex-1 flex gap-1 flex-col p-2 items-start overflow-auto">
-        {chatMessages.map(({ role, content }, idx) => (
-          <div
-            key={idx}
-            className={cn(
-              "flex gap-2 px-3 py-1 border rounded-xl shrink-0",
-              role === "user"
-                ? "self-end bg-background"
-                : "self-start bg-foreground text-background",
-            )}
-          >
-            <Markdown>{content.toString()}</Markdown>
-          </div>
-        ))}
+        {chatMessages.length === 0 ? (
+          <>
+            <div className="text-primary/50">
+              Try asking me a question about your database schema.
+            </div>
+            <div className="text-primary/50">
+              For example: "What are the tables in my database?"
+            </div>
+            <div className="text-primary/50">
+              Or "How can I get the top 10 users by activity?"
+            </div>
+          </>
+        ) : (
+          chatMessages.map(({ role, content }, idx) => (
+            <div
+              key={idx}
+              className={cn(
+                "flex gap-2 px-3 py-2 border rounded-2xl shrink-0",
+                role === "user"
+                  ? "self-end bg-background rounded-br-sm"
+                  : "self-start bg-foreground text-background rounded-bl-sm",
+              )}
+            >
+              <Markdown>{content.toString()}</Markdown>
+            </div>
+          ))
+        )}
       </div>
       <Form {...form}>
         <form
