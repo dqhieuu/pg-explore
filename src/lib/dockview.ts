@@ -6,7 +6,11 @@ export function createWorkflowPanel(
   dockviewApi: DockviewApi,
   skipIfSmallScreen = false,
 ) {
-  if (dockviewApi.getPanel("workflow") != null) return;
+  const existingPanel = dockviewApi.getPanel("workflow");
+  if (existingPanel != null) {
+    existingPanel.focus();
+    return;
+  }
 
   const workflowPanel = {
     id: "workflow",
