@@ -4,7 +4,6 @@ import { ScrollText } from "lucide-react";
 
 import { BaseWorkflowNode } from "./base-workflow-node";
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type SQLScriptData = {
   workflowIndex: number;
   workflowType: "schema" | "data";

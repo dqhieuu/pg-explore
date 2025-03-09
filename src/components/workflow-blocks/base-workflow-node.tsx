@@ -34,7 +34,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { BaseNode } from "./base-node";
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type BaseWorkflowNodeData = {
   workflowIndex: number;
   workflowType: "schema" | "data";

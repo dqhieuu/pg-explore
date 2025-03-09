@@ -30,6 +30,7 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/consistent-type-definitions": "off"
     },
   },
 );

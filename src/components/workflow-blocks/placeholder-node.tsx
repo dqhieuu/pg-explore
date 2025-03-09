@@ -12,7 +12,6 @@ export type PlaceholderNodeProps = Partial<NodeProps> & {
   ref?: Ref<HTMLDivElement>;
 };
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type PlaceholderNodeData = {
   compact?: boolean;
   insertBefore: number; // index of the node to insert before
