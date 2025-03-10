@@ -43,11 +43,12 @@ export function wipeDatabase(pg: PGliteInterface) {
 }
 
 export function evaluateSql(pg: PGliteInterface, sqlScript: string) {
-  return pg.exec("rollback;SET search_path TO public;" + sqlScript);
+  return pg.exec("rollback;" + sqlScript);
 }
 
 export async function getDatabaseSchemaDump(pg: PGliteInterface) {
   const dumpFile = await pgDump({ pg, args: ["--schema-only"] });
-  pg.exec("SET search_path TO public;"); // annoying bug
+  await pg.query("DEALLOCATE ALL;");
+  await evaluateSql(pg, "SET search_path TO public;");
   return dumpFile.text();
 }

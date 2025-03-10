@@ -33,7 +33,7 @@ async function detectQueryLineError_Experimental(
 
   let result: QueryLineError | null = null;
   for (let i = 0; i < lines.length; i++) {
-    const partialQuery = `rollback;SET search_path TO public;begin;${lines
+    const partialQuery = `rollback;begin;${lines
       .slice(0, i + 1)
       .join("\n")};rollback;`;
     await db

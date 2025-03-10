@@ -96,7 +96,7 @@ export const AiChat = () => {
             <div
               key={idx}
               className={cn(
-                "flex gap-2 px-3 py-2 border rounded-2xl shrink-0",
+                "flex gap-2 px-3 py-2 border rounded-2xl shrink-0 overflow-auto",
                 role === "user"
                   ? "self-end bg-background rounded-br-sm"
                   : "self-start bg-foreground text-background rounded-bl-sm",
