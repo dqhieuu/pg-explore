@@ -30,6 +30,7 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
     if (databaseId != null) {
       newDatabase = await PGlite.create(`idb://pg_${databaseId}`, {
         extensions: { live },
+        relaxedDurability: true,
       });
     } else {
       newDatabase = await PGlite.create({

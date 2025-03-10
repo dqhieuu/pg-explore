@@ -113,7 +113,7 @@ export const BaseWorkflowNode = ({
     });
   }
 
-  async function selectFile(
+  async function setWorkflowFile(
     workflowType: string,
     workflowIndex: number,
     fileId: string | null,
@@ -172,7 +172,10 @@ export const BaseWorkflowNode = ({
                       prefix: "SQL Script",
                       existingFileNames: databaseFiles.map((file) => file.name),
                     });
-                    selectFile(workflowType, workflowIndex, fileId);
+                    setWorkflowFile(workflowType, workflowIndex, fileId);
+
+                    const fileEntry = await appDb.files.get(fileId);
+                    openFileEditor(dockviewApi, fileId, fileEntry?.name);
                   }}
                 >
                   <FilePlus className="w-4" />
@@ -203,7 +206,7 @@ export const BaseWorkflowNode = ({
                               key={file.id}
                               className="select-none hover:bg-gray-100 rounded-lg p-2 flex gap-1 shrink-0 mr-1"
                               onClick={() => {
-                                selectFile(
+                                setWorkflowFile(
                                   workflowType,
                                   workflowIndex,
                                   file.id,
@@ -235,7 +238,7 @@ export const BaseWorkflowNode = ({
                             filename: file.name,
                             content: await file.text(),
                           });
-                          selectFile(workflowType, workflowIndex, fileId);
+                          setWorkflowFile(workflowType, workflowIndex, fileId);
                         }}
                       />
                     </div>
@@ -270,7 +273,9 @@ export const BaseWorkflowNode = ({
                 {/* divider */}
                 <div
                   className="flex items-center bg-gray-100 hover:bg-gray-200 px-1 rounded-r"
-                  onClick={() => selectFile(workflowType, workflowIndex, null)}
+                  onClick={() =>
+                    setWorkflowFile(workflowType, workflowIndex, null)
+                  }
                 >
                   <CircleMinus className="w-3.5" />
                 </div>
