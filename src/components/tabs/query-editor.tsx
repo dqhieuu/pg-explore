@@ -8,12 +8,15 @@ import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
 import { applyWorkflow } from "@/lib/pglite/workflow-evaluator";
 import { memDbId } from "@/lib/utils.ts";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
+import { Prec } from "@codemirror/state";
+import { keymap } from "@codemirror/view";
 import { usePGlite } from "@electric-sql/pglite-react";
-import CodeMirror from "@uiw/react-codemirror";
+import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { Save } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "react-use";
 import { toast } from "sonner";
+import { useDebounceCallback } from "usehooks-ts";
 
 const filterNonSelectResult = (result: QueryResult) => {
   return result?.fields?.length > 0;
@@ -85,6 +88,13 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     }
   }
 
+  const editor = useRef<ReactCodeMirrorRef>(null);
+  const [selectionRange, setSelectionRange] = useState<[number, number]>([
+    0, 0,
+  ]);
+  const setSelectionRangeDebounced = useDebounceCallback(setSelectionRange, 50);
+  const isSelecting = selectionRange[0] < selectionRange[1];
+
   // Component first mount, set the query editor value
   useEffect(() => {
     if (associatedFile == null) {
@@ -127,6 +137,40 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     });
   }, [shouldSave, fileId, queryEditorValue]);
 
+  async function executeQuery() {
+    // await markWorkflowDirty(db, currentDbId);
+    await applyWorkflow(db, currentDbId);
+
+    const sqlToQuery = isSelecting
+      ? queryEditorValue.slice(...selectionRange)
+      : queryEditorValue;
+
+    evaluateSql(db, sqlToQuery)
+      .then((res) => {
+        const result = (res as unknown as QueryResult[])
+          .slice(1)
+          .filter(filterNonSelectResult);
+
+        if (result.length === 0) {
+          toast("Executed successfully!", {
+            description: "No result returned.",
+            duration: 1000,
+          });
+          return;
+        }
+
+        setQueryResult(contextId, result);
+        createQueryResultTabsIfNeeded(result);
+      })
+      .catch((err) => {
+        const result = [err.message];
+        setQueryResult(contextId, result);
+        createQueryResultTabsIfNeeded(result);
+      });
+
+    querySchemaForCodeMirror(db).then(setSchema);
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-1 flex gap-2">
@@ -136,49 +180,49 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
             (import.meta.env.DEV ? " " : " hidden")
           }
         />
-        <Button
-          className="h-7 p-3"
-          onClick={async () => {
-            // await markWorkflowDirty(db, currentDbId);
-            await applyWorkflow(db, currentDbId);
-
-            evaluateSql(db, queryEditorValue)
-              .then((res) => {
-                const result = (res as unknown as QueryResult[])
-                  .slice(1)
-                  .filter(filterNonSelectResult);
-
-                if (result.length === 0) {
-                  toast("Executed successfully!", {
-                    description: "No result returned.",
-                    duration: 1000,
-                  });
-                  return;
-                }
-
-                setQueryResult(contextId, result);
-                createQueryResultTabsIfNeeded(result);
-              })
-              .catch((err) => {
-                const result = [err.message];
-                setQueryResult(contextId, result);
-                createQueryResultTabsIfNeeded(result);
-              });
-
-            querySchemaForCodeMirror(db).then(setSchema);
-          }}
-        >
-          Query
+        <Button className="h-7 p-3" onClick={executeQuery}>
+          Query {isSelecting ? "selection" : ""}
         </Button>
       </div>
 
       <CodeMirror
+        ref={editor}
         value={queryEditorValue}
         className="flex-1"
         width="100%"
         height="100%"
+        onUpdate={(update) => {
+          const newSelectionRanges = update.view.state.selection.ranges;
+
+          if (
+            newSelectionRanges.length != 1 ||
+            newSelectionRanges[0].from >= newSelectionRanges[0].to
+          ) {
+            if (selectionRange[0] != 0 || selectionRange[1] != 0) {
+              setSelectionRangeDebounced([0, 0]);
+            }
+            return;
+          }
+
+          if (
+            selectionRange[0] != newSelectionRanges[0].from ||
+            selectionRange[1] != newSelectionRanges[0].to
+          ) {
+            setSelectionRangeDebounced([
+              newSelectionRanges[0].from,
+              newSelectionRanges[0].to,
+            ]);
+          }
+        }}
         onChange={(val) => {
           setQueryEditorValue(contextId, val);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            executeQuery();
+          }
         }}
         extensions={[
           sql({
@@ -187,6 +231,15 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
             schema,
           }),
           pgLinter(db),
+          // Prevent default behavior of Ctrl-Enter and Command-Enter
+          Prec.highest(
+            keymap.of([
+              {
+                key: "Mod-Enter",
+                run: () => true,
+              },
+            ]),
+          ),
         ]}
       />
     </div>
