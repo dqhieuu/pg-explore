@@ -14,6 +14,7 @@ import {
   Row,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -26,6 +27,7 @@ import { useMemo, useRef } from "react";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  filter?: string;
 }
 
 let gCanvasContext: CanvasRenderingContext2D | null = null;
@@ -145,6 +147,7 @@ function TableBodyRow<DataType>({
 export function DataTable<TData, TValue>({
   columns,
   data,
+  filter,
 }: DataTableProps<TData, TValue>) {
   const widthComputedColumns = useMemo(() => {
     return columns.map((column) => {
@@ -168,6 +171,11 @@ export function DataTable<TData, TValue>({
     data,
     columns: widthComputedColumns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: "includesString",
+    state: {
+      globalFilter: filter,
+    },
   });
 
   const { rows } = table.getRowModel();
@@ -187,7 +195,7 @@ export function DataTable<TData, TValue>({
   });
 
   const rowVirtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
-    count: data.length,
+    count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 36,
     overscan: 20,
@@ -228,10 +236,13 @@ export function DataTable<TData, TValue>({
         <TableBody
           className="grid relative"
           style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
+            height:
+              rows.length > 0
+                ? `${rowVirtualizer.getTotalSize()}px`
+                : undefined,
           }}
         >
-          {rows.length > 0 ? (
+          {rows.length > 0 && virtualRows.length > 0 ? (
             virtualRows.map((virtualRow) => {
               const row = rows[virtualRow.index];
               return (
