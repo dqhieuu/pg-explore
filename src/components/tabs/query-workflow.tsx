@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { memDbId } from "@/lib/utils";
@@ -23,9 +22,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import { produce } from "immer";
 import { DatabaseIcon, SquareTerminal, Table2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useDebounce } from "react-use";
-import useResizeObserver from "use-resize-observer";
+import { useEffect, useRef, useState } from "react";
+import { useDebounceCallback, useResizeObserver } from "usehooks-ts";
 
 import { TooltipContent } from "../ui/tooltip";
 import { BaseNode } from "../workflow-blocks/base-node";
@@ -152,13 +150,16 @@ export function QueryWorkflow() {
     LayoutingStep.Render as LayoutingStep,
   );
 
-  const fitViewWhenResize = () => {
+  const fitView = () => {
     if (layoutingStep !== LayoutingStep.Done) return;
     reactFlow.fitView({ padding: 0.1 });
   };
 
-  const { ref, width } = useResizeObserver<HTMLElement>();
-  useDebounce(fitViewWhenResize, 50, [width]);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const fitViewDebounced = useDebounceCallback(fitView, 50);
+  // @ts-expect-error useResizeObserver currently expects non-null ref, which is not expected in React 19.
+  useResizeObserver({ ref, onResize: fitViewDebounced });
 
   // Render nodes
   useEffect(() => {

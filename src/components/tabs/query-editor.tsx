@@ -85,14 +85,6 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     }
   }
 
-  useDebounce(
-    () => {
-      if (!isSaved) setShouldSave(contextId, true);
-    },
-    3000,
-    [queryEditorValue],
-  );
-
   // Component first mount, set the query editor value
   useEffect(() => {
     if (associatedFile == null) {
@@ -107,6 +99,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     prevAssociatedFile.current = associatedFile;
 
     setQueryEditorValue(contextId, associatedFile.content ?? "", true);
+    setShouldSave(contextId, false);
   }, [
     contextId,
     fileId,
@@ -116,17 +109,22 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     setShouldSave,
   ]);
 
+  useDebounce(
+    () => {
+      if (isSaved) return;
+      setShouldSave(contextId, true);
+    },
+    3000,
+    [queryEditorValue],
+  );
+
   useEffect(() => {
     // Save the query editor value to the database if needed
     if (!shouldSave) return;
 
-    appDb.files
-      .update(fileId, {
-        content: queryEditorValue,
-      })
-      .then(() => {
-        console.log(`Saved query editor value for ${fileId}`);
-      });
+    appDb.files.update(fileId, {
+      content: queryEditorValue,
+    });
   }, [shouldSave, fileId, queryEditorValue]);
 
   return (
