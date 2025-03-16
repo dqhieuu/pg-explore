@@ -58,7 +58,7 @@ export function openFileEditor(
   if (editorGroup == null) {
     editorGroup = dockviewApi.addGroup({
       id: "editor-group",
-      direction: "within",
+      direction: "right",
     });
   }
 
@@ -94,13 +94,20 @@ export function openAiChat(dockviewApi: DockviewApi) {
     return;
   }
 
+  const editorGroup = dockviewApi.getGroup("editor-group");
+
   dockviewApi.addPanel({
     id: "ai-chat",
     title: "AI Chat",
     component: "aiChat",
-    position: {
-      referenceGroup: "editor-group",
-      direction: "below",
-    },
+    position:
+      editorGroup == null
+        ? {
+            direction: "right",
+          }
+        : {
+            referenceGroup: editorGroup,
+            direction: "below",
+          },
   });
 }

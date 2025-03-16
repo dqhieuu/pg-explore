@@ -114,7 +114,7 @@ function TableBodyRow<DataType>({
       key={row.id}
       data-index={virtualRow.index}
       ref={rowVirtualizer.measureElement}
-      className="flex absolute"
+      className="flex absolute min-w-full"
       style={{
         transform: `translateY(${virtualRow.start}px)`,
       }}
