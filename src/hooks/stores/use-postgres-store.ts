@@ -14,35 +14,46 @@ interface PostgresStore {
   setSchema: (schema: Record<string, string[]>) => void;
 }
 
+let isLockingSetDatabase = false;
 export const usePostgresStore = create<PostgresStore>((set, get) => ({
   database: null,
   databaseId: null,
   setDatabase: async (databaseId) => {
-    set({ databaseId });
-
-    const { database } = get();
-
-    if (database != null && database.ready) {
-      await database.close();
+    if (isLockingSetDatabase) {
+      return;
     }
 
-    let newDatabase: PGliteWithLive;
-    if (databaseId != null) {
-      newDatabase = await PGlite.create(`idb://pg_${databaseId}`, {
-        extensions: { live },
-        relaxedDurability: true,
+    isLockingSetDatabase = true;
+
+    try {
+      set({ databaseId });
+
+      const { database } = get();
+
+      if (database != null && database.ready) {
+        await database.close();
+      }
+
+      let newDatabase: PGliteWithLive;
+      if (databaseId != null) {
+        newDatabase = await PGlite.create(`idb://pg_${databaseId}`, {
+          extensions: { live },
+          relaxedDurability: true,
+        });
+      } else {
+        newDatabase = await PGlite.create({
+          extensions: { live },
+        });
+      }
+
+      querySchemaForCodeMirror(newDatabase).then((schema) => {
+        set({ schema });
       });
-    } else {
-      newDatabase = await PGlite.create({
-        extensions: { live },
-      });
+
+      set({ database: newDatabase });
+    } finally {
+      isLockingSetDatabase = false;
     }
-
-    querySchemaForCodeMirror(newDatabase).then((schema) => {
-      set({ schema });
-    });
-
-    set({ database: newDatabase });
   },
 
   schema: {},

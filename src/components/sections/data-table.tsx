@@ -28,6 +28,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   filter?: string;
+  onFilteredChange?: (result: Row<TData>[]) => void;
 }
 
 let gCanvasContext: CanvasRenderingContext2D | null = null;
@@ -148,6 +149,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   filter,
+  onFilteredChange,
 }: DataTableProps<TData, TValue>) {
   const widthComputedColumns = useMemo(() => {
     return columns.map((column) => {
@@ -179,6 +181,8 @@ export function DataTable<TData, TValue>({
   });
 
   const { rows } = table.getRowModel();
+  onFilteredChange?.(rows);
+
   const visibleColumns = table.getVisibleLeafColumns();
 
   const parentRef = useRef<HTMLTableElement>(null);
@@ -259,7 +263,10 @@ export function DataTable<TData, TValue>({
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center ">
+              <TableCell
+                colSpan={columns.length}
+                className="text-center italic text-foreground/50"
+              >
                 No results.
               </TableCell>
             </TableRow>

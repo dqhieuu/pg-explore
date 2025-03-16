@@ -18,10 +18,12 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
     (state) => state.queryResults[contextId][lotNumber],
   );
 
-  const [tab, setTab] = useState<string>("table");
+  const [tab, setTab] = useState("table");
 
-  const [filter, setFilter] = useState<string>("");
+  const [filter, setFilter] = useState("");
   const setFilterDebounced = useDebounceCallback(setFilter, 300);
+
+  const [filteredCount, setFilteredCount] = useState(0);
 
   if (queryResult == null) {
     return (
@@ -63,7 +65,7 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
           <TabsList>
             <TabsTrigger value="table">Table</TabsTrigger>
             <TabsTrigger value="chart" disabled>
-              Chart (TODO)
+              Chart
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -78,12 +80,22 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
             />
           </label>
           <div className="text-sm text-primary/50 shrink-0">
+            {filter.length > 0 ? `${filteredCount} / ` : ""}
             {data.length} {data.length !== 1 ? "rows" : "row"}
           </div>
         </div>
       </div>
       <div className="flex-1">
-        <DataTable columns={columns} data={processedData} filter={filter} />
+        <DataTable
+          columns={columns}
+          data={processedData}
+          filter={filter}
+          onFilteredChange={(filteredData) => {
+            setTimeout(() => {
+              setFilteredCount(filteredData.length);
+            }, 0);
+          }}
+        />
       </div>
     </div>
   );
