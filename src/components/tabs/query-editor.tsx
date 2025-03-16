@@ -1,4 +1,9 @@
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
@@ -119,7 +124,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     setShouldSave,
   ]);
 
-  useDebounce(
+  const [, cancelDebouncedSave] = useDebounce(
     () => {
       if (isSaved) return;
       setShouldSave(contextId, true);
@@ -180,9 +185,16 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
             (import.meta.env.DEV ? " " : " hidden")
           }
         />
-        <Button className="h-7 p-3" onClick={executeQuery}>
-          Query {isSelecting ? "selection" : ""}
-        </Button>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button className="h-7 p-3" onClick={executeQuery}>
+              Query {isSelecting ? "selection" : ""}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            Hotkey <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <CodeMirror
@@ -217,13 +229,6 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
         onChange={(val) => {
           setQueryEditorValue(contextId, val);
         }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-            e.preventDefault();
-            e.stopPropagation();
-            executeQuery();
-          }
-        }}
         extensions={[
           sql({
             dialect: PostgreSQLDialect,
@@ -231,15 +236,30 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
             schema,
           }),
           pgLinter(db),
-          // Prevent default behavior of Ctrl-Enter and Command-Enter
+
           Prec.highest(
             keymap.of([
               {
                 key: "Mod-Enter",
-                run: () => true,
+                run: () => {
+                  executeQuery();
+                  return true;
+                },
               },
             ]),
           ),
+
+          keymap.of([
+            {
+              key: "Mod-s",
+              preventDefault: true,
+              run: () => {
+                cancelDebouncedSave();
+                setShouldSave(contextId, true);
+                return true;
+              },
+            },
+          ]),
         ]}
       />
     </div>

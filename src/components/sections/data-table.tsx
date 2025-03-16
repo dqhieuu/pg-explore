@@ -178,6 +178,9 @@ export function DataTable<TData, TValue>({
     state: {
       globalFilter: filter,
     },
+    defaultColumn: {
+      maxSize: 300,
+    },
   });
 
   const { rows } = table.getRowModel();
