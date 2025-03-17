@@ -237,7 +237,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
           }),
           pgLinter(db),
 
-          Prec.highest(
+          Prec.high(
             keymap.of([
               {
                 key: "Mod-Enter",

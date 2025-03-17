@@ -7,9 +7,9 @@ import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
 import { guid, memDbId } from "@/lib/utils";
 import { PGliteProvider } from "@electric-sql/pglite-react";
-import { DockviewReact, IDockviewPanelProps } from "@hieu_dq/dockview";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ReactFlowProvider } from "@xyflow/react";
+import { DockviewReact, IDockviewPanelProps, themeReplit } from "dockview";
 import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
 
@@ -227,8 +227,8 @@ function MainApp() {
                 noEditors: () => <NoEditors />,
                 aiChat: () => <AiChat />,
               }}
-              singleTabMode="fullwidth"
-              className="dockview-theme-replit"
+              singleTabMode="default"
+              theme={{ ...themeReplit, gap: 0 }}
               defaultTabComponent={DockviewCustomTab}
               watermarkComponent={NoEditors}
             />
