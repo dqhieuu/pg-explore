@@ -74,6 +74,7 @@ export const PlaceholderSchemaNode = ({
         <DropdownMenuItem disabled>
           From DBML <DropdownMenuHint href="https://dbml.dbdiagram.io/home/" />
         </DropdownMenuItem>
+        <DropdownMenuItem disabled>From AI prompt</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -36,7 +36,7 @@ const DatabaseSourceNode = () => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <BaseNode className="bg-neutral-700 text-white p-2 flex gap-1">
+        <BaseNode className="flex gap-1 bg-neutral-700 p-2 text-white">
           <DatabaseIcon />
           Empty database
           <Handle type="source" position={Position.Bottom} />
@@ -53,7 +53,7 @@ const TablesCreatedNode = () => {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <BaseNode className="bg-cyan-900 text-white p-2 flex gap-1">
+        <BaseNode className="flex gap-1 bg-cyan-900 p-2 text-white">
           <Handle type="target" position={Position.Top} />
           <Table2 />
           Tables created
@@ -69,7 +69,7 @@ const TablesCreatedNode = () => {
 
 const EndNode = () => {
   return (
-    <BaseNode className="bg-green-900 text-white p-2 flex items-center gap-1">
+    <BaseNode className="flex items-center gap-1 bg-green-900 p-2 text-white">
       <Handle type="target" position={Position.Top} />
       <SquareTerminal />
       <div>

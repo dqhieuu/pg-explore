@@ -67,6 +67,7 @@ export const PlaceholderDataNode = ({
         >
           From SQL
         </DropdownMenuItem>
+        <DropdownMenuItem disabled>From AI prompt</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

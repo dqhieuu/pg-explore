@@ -31,7 +31,7 @@ export const PlaceholderNode = ({
       ref={ref}
       selected={selected}
       className={cn(
-        ` border-gray-400 bg-card p-2 text-center text-gray-400 shadow-none`,
+        `bg-card border-gray-400 p-2 text-center text-gray-400 shadow-none`,
         compact ? "rounded-2xl p-0.5" : "border-dashed",
         className,
       )}

@@ -3,7 +3,7 @@ import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
 import { memDbId } from "@/lib/utils.ts";
 import { ReactNode } from "react";
 
-import { WorkflowMonitor } from "./use-workflow-monitor";
+import { WorkflowMonitorContext } from "./use-workflow-monitor";
 
 export const WorkflowMonitorProvider = ({
   children,
@@ -34,10 +34,10 @@ export const WorkflowMonitorProvider = ({
   );
 
   return (
-    <WorkflowMonitor.Provider
+    <WorkflowMonitorContext.Provider
       value={{ currentDbId, pgDb, schemaWorkflow, dataWorkflow }}
     >
       {children}
-    </WorkflowMonitor.Provider>
+    </WorkflowMonitorContext.Provider>
   );
 };

@@ -61,7 +61,7 @@ function TableHeadRow<DataType>({
 
   return (
     <TableRow
-      className="flex w-full bg-gray-100 min-w-auto"
+      className="flex w-full min-w-auto bg-gray-100"
       data-index={headerGroup.id}
       ref={rowVirtualizer.measureElement}
     >
@@ -74,7 +74,7 @@ function TableHeadRow<DataType>({
         return header.isPlaceholder ? null : (
           <TableHead
             key={header.id}
-            className="flex items-center min-w-auto break-all"
+            className="flex min-w-auto items-center break-all"
             style={{
               width: header.getSize(),
             }}
@@ -114,7 +114,7 @@ function TableBodyRow<DataType>({
       key={row.id}
       data-index={virtualRow.index}
       ref={rowVirtualizer.measureElement}
-      className="flex absolute min-w-full"
+      className="absolute flex min-w-full"
       style={{
         transform: `translateY(${virtualRow.start}px)`,
       }}
@@ -128,7 +128,7 @@ function TableBodyRow<DataType>({
         return (
           <TableCell
             key={cell.id}
-            className="min-w-auto flex break-all"
+            className="flex min-w-auto break-all"
             style={{
               width: cell.column.getSize(),
             }}
@@ -225,10 +225,10 @@ export function DataTable<TData, TValue>({
   return (
     <div
       ref={parentRef}
-      className="max-h-full w-full overflow-auto rounded-lg border relative will-change-transform"
+      className="relative max-h-full w-full overflow-auto rounded-lg border will-change-transform"
     >
       <Table className="grid">
-        <TableHeader className="grid sticky top-0 z-10 min-w-auto">
+        <TableHeader className="sticky top-0 z-10 grid min-w-auto">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableHeadRow
               key={headerGroup.id}
@@ -241,7 +241,7 @@ export function DataTable<TData, TValue>({
           ))}
         </TableHeader>
         <TableBody
-          className="grid relative"
+          className="relative grid"
           style={{
             height:
               rows.length > 0
@@ -268,7 +268,7 @@ export function DataTable<TData, TValue>({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="text-center italic text-foreground/50"
+                className="text-foreground/50 text-center italic"
               >
                 No results.
               </TableCell>

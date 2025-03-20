@@ -184,7 +184,7 @@ function FileCollapsibleSection({
       <Collapsible defaultOpen className="group/collapsible shrink-0">
         <SidebarGroup>
           <SidebarGroupLabel asChild>
-            <CollapsibleTrigger className="hover:bg-gray-100 mb-1">
+            <CollapsibleTrigger className="mb-1 hover:bg-gray-100">
               {sectionName}
               <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
             </CollapsibleTrigger>
@@ -209,7 +209,7 @@ function FileCollapsibleSection({
                     </SidebarMenuButton>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction className="hover:bg-gray-100 top-auto! p-4">
+                        <SidebarMenuAction className="top-auto! p-4 hover:bg-gray-100">
                           <MoreHorizontal
                             className={
                               isMobile ? "" : "hidden group-hover/file:block"
@@ -328,7 +328,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <div className="flex relative">
+              <div className="relative flex">
                 <img
                   alt="App logo"
                   className="w-8 rounded-md opacity-85"
@@ -409,7 +409,7 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup className="shrink-0 flex gap-2">
+        <SidebarGroup className="flex shrink-0 gap-2">
           <Button
             onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
           >
@@ -420,7 +420,7 @@ export function AppSidebar() {
             <Button
               onClick={() => dockviewApi && openAiChat(dockviewApi)}
               variant="secondary"
-              className="bg-gray-200 flex-1 rounded-r-none"
+              className="flex-1 rounded-r-none bg-gray-200"
             >
               <BotMessageSquare />
               AI chat
@@ -428,7 +428,7 @@ export function AppSidebar() {
             <Button
               variant="secondary"
               disabled
-              className="bg-gray-200 flex-1 rounded-l-none"
+              className="flex-1 rounded-l-none bg-gray-200"
             >
               <Table2 />
               Tables

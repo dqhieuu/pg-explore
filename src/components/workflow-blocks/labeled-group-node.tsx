@@ -15,7 +15,7 @@ export const GroupNodeLabel = ({
     <div className="h-full w-full" {...props}>
       <div
         className={cn(
-          "w-fit bg-secondary/80 p-2 text-card-foreground",
+          "bg-secondary/80 text-card-foreground w-fit p-2",
           className,
         )}
       >
@@ -40,7 +40,7 @@ export const LabeledGroupNode = ({ selected, data }: GroupNodeProps) => {
     <BaseNode
       selected={selected}
       className={cn(
-        "h-full overflow-hidden rounded-sm p-0 border-muted-foreground",
+        "border-muted-foreground h-full overflow-hidden rounded-sm p-0",
         backgroundClassName,
       )}
     >

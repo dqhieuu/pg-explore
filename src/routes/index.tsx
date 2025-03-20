@@ -79,12 +79,12 @@ function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-[100dvh] bg-gray-100">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100">
       <Card className="mx-1">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <img className="w-12 rounded-md shrink-0" src={Logo} />
+              <img className="w-12 shrink-0 rounded-md" src={Logo} />
               <div>
                 pgExplore
                 <CardDescription className="font-normal">
@@ -103,31 +103,31 @@ function HomePage() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-5 flex-col md:flex-row">
+        <CardContent className="flex flex-col gap-5 md:flex-row">
           <div className="flex flex-col gap-2">
             <div className="font-medium">Create a new database</div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               <div
-                className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto] transition ease-in-out"
+                className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none"
                 onClick={() => navigate({ to: `/database/memory` })}
               >
                 <div className="font-semibold">In-memory database</div>
                 <MemoryStick size={48} strokeWidth={1} className="my-2" />
-                <div className="text-sm text-center text-balance text-muted-foreground">
+                <div className="text-muted-foreground text-center text-sm text-balance">
                   Run PostgreSQL in memory
-                  <div className="text-red-600 max-w-[15rem]">
+                  <div className="max-w-[15rem] text-red-600">
                     All data is lost when the browser tab is closed.
                   </div>
                 </div>
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <div className="flex flex-col p-2 border rounded-xl shadow items-center w-[13rem] select-none hover:bg-muted flex-[1_0_auto] transition ease-in-out">
-                    <div className="font-semibold ">Persistent database</div>
+                  <div className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none">
+                    <div className="font-semibold">Persistent database</div>
                     <Database size={48} strokeWidth={1} className="my-2" />
-                    <div className="text-sm text-center text-balance text-muted-foreground">
+                    <div className="text-muted-foreground text-center text-sm text-balance">
                       Run PostgreSQL in IndexedDB
-                      <div className="text-green-600 max-w-[15rem]">
+                      <div className="max-w-[15rem] text-green-600">
                         Data is persisted across browser sessions.
                       </div>
                     </div>
@@ -138,9 +138,9 @@ function HomePage() {
             </div>
           </div>
           {/* divider */}
-          <div className="border-r border-gray-200 hidden md:block"></div>
+          <div className="hidden border-r border-gray-200 md:block"></div>
           {/* divider */}
-          <div className="flex flex-col gap-2 min-w-0 w-full md:w-auto ">
+          <div className="flex w-full min-w-0 flex-col gap-2 md:w-auto">
             <div className="font-medium">Open an existing database</div>
             {databases?.length === 0 ? (
               <div className="text-muted-foreground">No databases found.</div>
@@ -149,7 +149,7 @@ function HomePage() {
                 {databases?.map((db) => (
                   <div
                     key={db.id}
-                    className="flex md:w-[15rem] items-center gap-2 p-1 hover:bg-gray-100 rounded-xl select-none"
+                    className="flex items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
                     onClick={() => navigate({ to: `/database/${db.id}` })}
                   >
                     <Database strokeWidth={1.5} />

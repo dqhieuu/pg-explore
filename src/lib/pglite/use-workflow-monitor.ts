@@ -6,7 +6,7 @@ import {
 import { PGliteInterface } from "@electric-sql/pglite";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
-export const WorkflowMonitor = createContext<{
+export const WorkflowMonitorContext = createContext<{
   currentDbId?: string;
   pgDb?: PGliteInterface;
   schemaWorkflow?: WorkflowSection;
@@ -14,7 +14,7 @@ export const WorkflowMonitor = createContext<{
 } | null>(null);
 
 export const useWorkflowMonitor = () => {
-  const monitor = useContext(WorkflowMonitor);
+  const monitor = useContext(WorkflowMonitorContext);
 
   const currentDbId = monitor?.currentDbId;
   const pgDb = monitor?.pgDb;

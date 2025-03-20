@@ -59,8 +59,8 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
   });
 
   return (
-    <div className="flex flex-col h-full gap-1">
-      <div className="flex gap-1 justify-between items-center border-b -mx-2 -mt-2 px-2 py-0.5 ">
+    <div className="flex h-full flex-col gap-1">
+      <div className="-mx-2 -mt-2 flex items-center justify-between gap-1 border-b px-2 py-0.5">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="table">Table</TabsTrigger>
@@ -69,17 +69,17 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex-1 flex gap-2 items-center">
+        <div className="flex flex-1 items-center gap-2">
           <div className="flex-1" />
-          <label className="[&:has(:focus-visible)]:ring-2 ring-ring/20 flex items-center rounded-lg border pl-2">
-            <SearchIcon className="size-4 text-muted-foreground" />
+          <label className="ring-ring/20 flex items-center rounded-lg border pl-2 [&:has(:focus-visible)]:ring-2">
+            <SearchIcon className="text-muted-foreground size-4" />
             <Input
               onChange={(e) => setFilterDebounced(e.target.value)}
               placeholder="Filter..."
-              className="focus:max-w-[12rem] max-w-[4.5rem] transition-all ease-in-out duration-100 border-none bg-transparent shadow-none focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0 h-7"
+              className="h-7 max-w-[4.5rem] border-none bg-transparent shadow-none transition-all duration-100 ease-in-out focus:max-w-[12rem] focus-visible:shadow-none focus-visible:ring-0 focus-visible:outline-none"
             />
           </label>
-          <div className="text-sm text-primary/50 shrink-0">
+          <div className="text-primary/50 shrink-0 text-sm">
             {filter.length > 0 ? `${filteredCount} / ` : ""}
             {data.length} {data.length !== 1 ? "rows" : "row"}
           </div>

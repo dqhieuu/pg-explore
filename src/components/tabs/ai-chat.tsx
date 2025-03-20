@@ -77,8 +77,8 @@ export const AiChat = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full">
-      <div className="flex-1 flex gap-1 flex-col p-2 items-start overflow-auto">
+    <div className="flex h-full flex-col gap-2">
+      <div className="flex flex-1 flex-col items-start gap-1 overflow-auto p-2">
         {chatMessages.length === 0 ? (
           <>
             <div className="text-primary/50">
@@ -96,10 +96,10 @@ export const AiChat = () => {
             <div
               key={idx}
               className={cn(
-                "flex gap-2 px-3 py-2 border rounded-2xl shrink-0 overflow-auto",
+                "flex shrink-0 gap-2 overflow-auto rounded-2xl border px-3 py-2",
                 role === "user"
-                  ? "self-end bg-background rounded-br-sm"
-                  : "self-start bg-foreground text-background rounded-bl-sm",
+                  ? "bg-background self-end rounded-br-sm"
+                  : "bg-foreground text-background self-start rounded-bl-sm",
               )}
             >
               <Markdown>{content.toString()}</Markdown>
@@ -110,7 +110,7 @@ export const AiChat = () => {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(handleSubmit)}
-          className="p-1 flex gap-2 border-t bg-muted max-h-[15rem]"
+          className="bg-muted flex max-h-[15rem] gap-2 border-t p-1"
         >
           <FormField
             control={form.control}
