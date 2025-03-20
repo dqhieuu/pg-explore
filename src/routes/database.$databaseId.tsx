@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
+import { WorkflowMonitorProvider } from "@/lib/pglite/workflow-monitor.tsx";
 import { guid, memDbId } from "@/lib/utils";
 import { PGliteProvider } from "@electric-sql/pglite-react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -34,7 +35,7 @@ function NoEditors() {
     }) ?? [];
 
   return (
-    <div className="w-full h-full bg-background flex flex-col items-center justify-center gap-2">
+    <div className="bg-background flex h-full w-full flex-col items-center justify-center gap-2">
       {files.length === 0 ? (
         <>
           <div className="text-xl">Create a new file to get started</div>
@@ -68,7 +69,7 @@ const newDataWorkflowId = guid();
 
 function LoadingPlaceholder() {
   return (
-    <div className="flex items-center justify-center h-[100dvh] gap-2">
+    <div className="flex h-[100dvh] items-center justify-center gap-2">
       <LoaderCircle className="animate-spin" /> Loading database...
     </div>
   );
@@ -182,59 +183,65 @@ function MainApp() {
 
   return (
     <PGliteProvider db={pgDb}>
-      <ReactFlowProvider>
-        <SidebarProvider className="flex w-full">
-          <AppSidebar />
-          <SidebarTrigger className="h-[100dvh] rounded-none flex items-start py-2 border-r" />
+      <WorkflowMonitorProvider>
+        <ReactFlowProvider>
+          <SidebarProvider className="flex w-full">
+            <AppSidebar />
+            <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
 
-          <main className="flex-1 h-[100dvh]">
-            <DockviewReact
-              onReady={(event) => {
-                setDockviewApi(event.api);
+            <main className="h-[100dvh] flex-1">
+              <DockviewReact
+                onReady={(event) => {
+                  setDockviewApi(event.api);
 
-                const editorGroup = event.api.addGroup({
-                  direction: "right",
-                  id: "editor-group",
-                });
+                  const editorGroup = event.api.addGroup({
+                    direction: "right",
+                    id: "editor-group",
+                  });
 
-                event.api.addPanel({
-                  id: "no-editors",
-                  title: "No files opened",
-                  component: "noEditors",
-                  position: {
-                    referenceGroup: editorGroup,
-                  },
-                });
+                  event.api.addPanel({
+                    id: "no-editors",
+                    title: "No files opened",
+                    component: "noEditors",
+                    position: {
+                      referenceGroup: editorGroup,
+                    },
+                  });
 
-                createWorkflowPanel(event.api, true);
-              }}
-              components={{
-                queryEditor: (props: IDockviewPanelProps<QueryEditorProps>) => (
-                  <QueryEditor
-                    contextId={props.params.contextId}
-                    fileId={props.params.fileId}
-                  />
-                ),
-                queryResult: (props: IDockviewPanelProps<QueryResultProps>) => (
-                  <div className="p-2 w-full h-full overflow-auto">
-                    <QueryResult
+                  createWorkflowPanel(event.api, true);
+                }}
+                components={{
+                  queryEditor: (
+                    props: IDockviewPanelProps<QueryEditorProps>,
+                  ) => (
+                    <QueryEditor
                       contextId={props.params.contextId}
-                      lotNumber={props.params.lotNumber}
+                      fileId={props.params.fileId}
                     />
-                  </div>
-                ),
-                queryWorkflow: () => <QueryWorkflow />,
-                noEditors: () => <NoEditors />,
-                aiChat: () => <AiChat />,
-              }}
-              singleTabMode="default"
-              theme={{ ...themeReplit, gap: 0 }}
-              defaultTabComponent={DockviewCustomTab}
-              watermarkComponent={NoEditors}
-            />
-          </main>
-        </SidebarProvider>
-      </ReactFlowProvider>
+                  ),
+                  queryResult: (
+                    props: IDockviewPanelProps<QueryResultProps>,
+                  ) => (
+                    <div className="h-full w-full overflow-auto p-2">
+                      <QueryResult
+                        contextId={props.params.contextId}
+                        lotNumber={props.params.lotNumber}
+                      />
+                    </div>
+                  ),
+                  queryWorkflow: () => <QueryWorkflow />,
+                  noEditors: () => <NoEditors />,
+                  aiChat: () => <AiChat />,
+                }}
+                singleTabMode="default"
+                theme={{ ...themeReplit, gap: 0 }}
+                defaultTabComponent={DockviewCustomTab}
+                watermarkComponent={NoEditors}
+              />
+            </main>
+          </SidebarProvider>
+        </ReactFlowProvider>
+      </WorkflowMonitorProvider>
     </PGliteProvider>
   );
 }

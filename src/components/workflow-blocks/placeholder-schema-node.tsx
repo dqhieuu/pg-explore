@@ -33,7 +33,10 @@ export const PlaceholderSchemaNode = ({
       .first(),
   );
 
-  const addWorkflowStep = (insertBefore: number, stepType: "sql-query") => {
+  const addWorkflowStep = async (
+    insertBefore: number,
+    stepType: "sql-query",
+  ) => {
     if (schemaWorkflow == null) return;
 
     let newStep: WorkflowStep;
@@ -56,7 +59,7 @@ export const PlaceholderSchemaNode = ({
     <DropdownMenu>
       <DropdownMenuTrigger className="cursor-pointer">
         <PlaceholderNode compact={compact}>
-          <div className="w-[9rem] h-[4rem] flex items-center gap-2">
+          <div className="flex h-[4rem] w-[9rem] items-center gap-2">
             <PlusCircle className="size-8" strokeWidth={1} />
             Add table schema
           </div>

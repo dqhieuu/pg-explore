@@ -5,7 +5,7 @@ import {
   appDb,
 } from "@/lib/dexie/app-db.ts";
 import { evaluateSql, wipeDatabase } from "@/lib/pglite/pg-utils.ts";
-import { isEmptyOrSpaces } from "@/lib/utils.ts";
+import { devModeEnabled, isEmptyOrSpaces } from "@/lib/utils.ts";
 import { PGliteInterface } from "@electric-sql/pglite";
 
 interface EvaluationResult {
@@ -17,7 +17,12 @@ export async function applyWorkflow(
   db: PGliteInterface,
   databaseId: string,
   until?: { workflowType: "schema" | "data"; stepsToApply: number },
+  isReplayingBecauseOfError = false,
 ) {
+  if (until != null && until.stepsToApply < 0) {
+    throw new Error(`stepsToApply must be >= 0`);
+  }
+
   const dbInfo = await appDb.databases.get(databaseId);
   if (dbInfo == null) throw new Error(`Database ${databaseId} not found`);
 
@@ -43,7 +48,34 @@ export async function applyWorkflow(
     throw new Error(`Data workflow for database ${databaseId} not found`);
   }
 
-  if (workflowState == null || workflowState.currentProgress === "dirty") {
+  if (
+    workflowState?.currentProgress === "schema-error" ||
+    workflowState?.currentProgress === "data-error"
+  ) {
+    if (
+      !until ||
+      (workflowState.currentProgress === "schema-error" &&
+        (until.workflowType === "data" ||
+          until.stepsToApply >= workflowState.stepsDone)) ||
+      (workflowState.currentProgress === "data-error" &&
+        until.workflowType === "data" &&
+        until.stepsToApply >= workflowState.stepsDone)
+    ) {
+      if (devModeEnabled()) {
+        console.debug(
+          `Database in error state + requesting steps beyond error => do nothing`,
+        );
+      }
+
+      return;
+    }
+
+    if (devModeEnabled()) {
+      console.debug(
+        `Database in error state + requesting steps before error => resetting workflow state`,
+      );
+    }
+
     await wipeDatabase(db);
 
     workflowState = {
@@ -54,75 +86,115 @@ export async function applyWorkflow(
     };
   }
 
-  const stepsToApply = [];
-
-  if (until == null) {
-    if (workflowState.currentProgress === "schema") {
-      stepsToApply.push(
-        ...schemaWorkflow.workflowSteps.slice(workflowState.stepsDone),
-        ...dataWorkflow.workflowSteps,
-      );
-    } else if (workflowState.currentProgress === "data") {
-      stepsToApply.push(
-        ...dataWorkflow.workflowSteps.slice(workflowState.stepsDone),
-      );
-    }
-  } else {
-    if (
-      (until.workflowType === "schema" &&
+  if (
+    isReplayingBecauseOfError ||
+    workflowState == null ||
+    workflowState.currentProgress === "dirty" ||
+    (until &&
+      ((until.workflowType === "schema" &&
         workflowState.currentProgress === "data") ||
-      until.stepsToApply < workflowState.stepsDone
-    ) {
-      // Current progress is already further than the requested progress, must reset
-      await wipeDatabase(db);
-
-      workflowState = {
-        schemaWorkflowId: schemaWorkflow.id,
-        dataWorkflowId: dataWorkflow.id,
-        currentProgress: "schema",
-        stepsDone: 0,
-      };
+        until.stepsToApply < workflowState.stepsDone))
+  ) {
+    if (devModeEnabled()) {
+      console.debug(`Dirty database, wiping and resetting workflow state`);
     }
 
-    if (until.workflowType === "schema") {
-      stepsToApply.push(
-        ...schemaWorkflow.workflowSteps.slice(
-          workflowState.stepsDone,
-          until.stepsToApply,
-        ),
-      );
-    } else if (until.workflowType === "data") {
-      if (workflowState.currentProgress === "schema") {
-        stepsToApply.push(
-          ...schemaWorkflow.workflowSteps.slice(workflowState.stepsDone),
-          ...dataWorkflow.workflowSteps.slice(0, until.stepsToApply),
-        );
-      } else {
-        stepsToApply.push(
-          ...dataWorkflow.workflowSteps.slice(
-            workflowState.stepsDone,
-            until.stepsToApply,
-          ),
-        );
-      }
-    }
+    await wipeDatabase(db);
+
+    workflowState = {
+      schemaWorkflowId: schemaWorkflow.id,
+      dataWorkflowId: dataWorkflow.id,
+      currentProgress: "schema",
+      stepsDone: 0,
+    };
   }
 
-  for (const step of stepsToApply) {
-    const result = await evaluateWorkflowStep(db, step);
-    if (result.result === "error") {
-      await appDb.databases.update(databaseId, {
-        workflowState: {
-          ...workflowState,
-          currentProgress: "dirty",
-          stepsDone: 0,
-        } satisfies WorkflowState,
-      });
+  while (true) {
+    // If we reached the end of the workflow, we can stop
+    if (
+      workflowState.currentProgress === "data" &&
+      workflowState.stepsDone >= dataWorkflow.workflowSteps.length
+    )
+      break;
 
-      throw new Error(
-        `Error applying workflow step ${JSON.stringify(step)}: ${result.error}`,
+    // If we reached the desired state, we can stop
+    if (
+      until &&
+      ((workflowState.currentProgress === until.workflowType &&
+        workflowState.stepsDone >= until.stepsToApply) ||
+        // Data 0 steps = schema all steps
+        (until.workflowType === "data" &&
+          until.stepsToApply === 0 &&
+          workflowState.currentProgress === "schema" &&
+          workflowState.stepsDone >= schemaWorkflow.workflowSteps.length))
+    )
+      break;
+
+    const currentStepType =
+      workflowState.currentProgress === "data" ||
+      workflowState.stepsDone >= schemaWorkflow.workflowSteps.length
+        ? "data"
+        : "schema";
+
+    const currentStepIdx =
+      workflowState.currentProgress === currentStepType
+        ? workflowState.stepsDone
+        : 0;
+
+    const currentStep =
+      currentStepType === "schema"
+        ? schemaWorkflow.workflowSteps?.[currentStepIdx]
+        : dataWorkflow.workflowSteps?.[currentStepIdx];
+
+    if (currentStep == null) {
+      console.error(`Cannot find the next step to apply. Stopping workflow`);
+      break;
+    }
+
+    if (devModeEnabled()) {
+      console.debug(
+        `Applying workflow step ${currentStepIdx + 1} (${currentStepType})`,
       );
     }
+
+    const stepResult = await evaluateWorkflowStep(db, currentStep);
+
+    if (stepResult.result === "error") {
+      if (isReplayingBecauseOfError) {
+        console.error(`Failed to replaying workflow after error`);
+        return;
+      }
+
+      if (devModeEnabled()) {
+        console.debug(
+          `Error applying workflow step: ${stepResult.error}. Replaying to a non-error state`,
+        );
+      }
+
+      if (
+        workflowState.currentProgress !== "schema" &&
+        workflowState.currentProgress !== "data"
+      ) {
+        console.error(
+          `Current workflow state is not schema or data, stopping workflow`,
+        );
+
+        return;
+      }
+
+      return applyWorkflow(
+        db,
+        databaseId,
+        {
+          workflowType: workflowState.currentProgress,
+          stepsToApply: workflowState.stepsDone,
+        },
+        true,
+      );
+    }
+
+    workflowState.currentProgress = currentStepType;
+    workflowState.stepsDone = currentStepIdx + 1;
   }
 
   await appDb.databases.update(databaseId, {
@@ -134,10 +206,7 @@ export async function applyWorkflow(
   });
 }
 
-export async function markWorkflowDirty(
-  db: PGliteInterface,
-  databaseId: string,
-) {
+export async function markWorkflowDirty(databaseId: string) {
   const dbInfo = await appDb.databases.get(databaseId);
   if (dbInfo == null) {
     throw new Error(`Database ${databaseId} not found`);
@@ -148,19 +217,12 @@ export async function markWorkflowDirty(
     throw new Error(`Workflow state for database ${databaseId} not found`);
   }
 
-  if (
-    workflowState.currentProgress === "schema" &&
-    workflowState.stepsDone === 0
-  ) {
-    return;
-  }
-
-  await wipeDatabase(db);
-
-  workflowState.currentProgress = "schema";
-  workflowState.stepsDone = 0;
   return appDb.databases.update(databaseId, {
-    workflowState,
+    workflowState: {
+      ...workflowState,
+      currentProgress: "dirty",
+      stepsDone: 0,
+    },
   });
 }
 

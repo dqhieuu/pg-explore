@@ -10,8 +10,8 @@ import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
 import { pgLinter } from "@/lib/codemirror/pglinter";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
-import { applyWorkflow } from "@/lib/pglite/workflow-evaluator";
-import { memDbId } from "@/lib/utils.ts";
+import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
+import { devModeEnabled } from "@/lib/utils.ts";
 import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
 import { Prec } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -33,7 +33,6 @@ export interface QueryEditorProps {
 }
 export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   const db = usePGlite();
-  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
   const prevAssociatedFile = useRef(associatedFile);
@@ -133,6 +132,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     [queryEditorValue],
   );
 
+  const { notifyModifyEditor, notifyRunArbitraryQuery } = useWorkflowMonitor();
+
   useEffect(() => {
     // Save the query editor value to the database if needed
     if (!shouldSave) return;
@@ -143,12 +144,11 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   }, [shouldSave, fileId, queryEditorValue]);
 
   async function executeQuery() {
-    // await markWorkflowDirty(db, currentDbId);
-    await applyWorkflow(db, currentDbId);
-
     const sqlToQuery = isSelecting
       ? queryEditorValue.slice(...selectionRange)
       : queryEditorValue;
+
+    await notifyRunArbitraryQuery(fileId);
 
     evaluateSql(db, sqlToQuery)
       .then((res) => {
@@ -177,12 +177,12 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-1 flex gap-2">
+    <div className="flex h-full flex-col">
+      <div className="flex gap-2 p-1">
         <Save
           className={
             (isSaved ? "text-green-700" : "text-red-800") +
-            (import.meta.env.DEV ? " " : " hidden")
+            (devModeEnabled() ? " " : " hidden")
           }
         />
         <Tooltip>
@@ -226,7 +226,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
             ]);
           }
         }}
-        onChange={(val) => {
+        onChange={async (val) => {
+          await notifyModifyEditor(fileId);
           setQueryEditorValue(contextId, val);
         }}
         extensions={[

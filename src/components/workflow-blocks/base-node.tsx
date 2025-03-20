@@ -13,9 +13,10 @@ export function BaseNode({
   return (
     <div
       className={cn(
-        "relative rounded-md border bg-card p-5 text-card-foreground shadow",
+        "bg-card text-card-foreground relative rounded-md border p-5 shadow",
+        // "outline-3 outline-green-500",
         selected ? "border-muted-foreground shadow-lg" : "",
-        "hover:ring-1 ring-gray-400",
+        "ring-gray-400 hover:ring-1",
         className,
       )}
       tabIndex={0}

@@ -13,7 +13,7 @@ interface PGDatabase {
 export interface WorkflowState {
   schemaWorkflowId: string;
   dataWorkflowId: string;
-  currentProgress: "dirty" | "schema" | "data";
+  currentProgress: "dirty" | "schema-error" | "data-error" | "schema" | "data";
   stepsDone: number;
 }
 
@@ -48,7 +48,7 @@ export type SQLQueryStep = Modify<
   }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error TODO: Implement this
 type DbmlDataStep = Modify<
   CommonWorkflowStep,
   {
@@ -57,8 +57,8 @@ type DbmlDataStep = Modify<
   }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-type DrawdbDataStep = Modify<
+// @ts-expect-error TODO: Implement this
+type DrawDbDataStep = Modify<
   CommonWorkflowStep,
   {
     type: "drawdb-data";
@@ -66,7 +66,7 @@ type DrawdbDataStep = Modify<
   }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error TODO: Implement this
 type JsonDataStep = Modify<
   CommonWorkflowStep,
   {
@@ -75,7 +75,7 @@ type JsonDataStep = Modify<
   }
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error TODO: Implement this
 type CsvDataStep = Modify<
   CommonWorkflowStep,
   {

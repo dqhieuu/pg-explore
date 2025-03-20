@@ -8,6 +8,7 @@ import {
 } from "@/lib/dexie/app-db";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { openFileEditor } from "@/lib/dockview";
+import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { cn, memDbId } from "@/lib/utils";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { Node } from "@xyflow/react";
@@ -77,6 +78,8 @@ export const BaseWorkflowNode = ({
     ? databaseFiles.filter(fileFilterPredicate)
     : databaseFiles;
 
+  const { notifyUpdateWorkflow } = useWorkflowMonitor();
+
   const currentWorkflowStep = useAppDbLiveQuery(
     () =>
       appDb.workflows
@@ -111,6 +114,8 @@ export const BaseWorkflowNode = ({
         (_, index) => index !== workflowIndex,
       ),
     });
+
+    await notifyUpdateWorkflow();
   }
 
   async function setWorkflowFile(
@@ -135,16 +140,18 @@ export const BaseWorkflowNode = ({
         } satisfies WorkflowStep;
       }),
     });
+
+    await notifyUpdateWorkflow();
   }
 
   return (
     <>
       <Handle type="target" position={Position.Top} className="z-10" />
-      <BaseNode className="w-[10rem] bg-white py-1 px-2 rounded-lg overflow-hidden">
+      <BaseNode className="w-[10rem] overflow-hidden rounded-lg bg-white px-2 py-1">
         <div className="relative">
           <div className="relative z-10 flex gap-1">
             {headerIcon ?? <ScrollText strokeWidth={1.5} className="w-5" />}
-            <div className="font-medium text-sm self-center">{headerText}</div>
+            <div className="self-center text-sm font-medium">{headerText}</div>
             <Trash
               className="ml-auto w-4.5 hover:text-red-700"
               strokeWidth={1.5}
@@ -153,19 +160,19 @@ export const BaseWorkflowNode = ({
           </div>
           <div
             className={cn(
-              " top-0 bottom-0 left-0 right-0 absolute -mx-2 -mt-1 -mb-1",
+              "absolute top-0 right-0 bottom-0 left-0 -mx-2 -mt-1 -mb-1",
               headerBackgroundClass ?? "bg-amber-50",
             )}
           />
         </div>
 
-        <div className="border-b border-gray-200 my-1 -mx-2 relative" />
+        <div className="relative -mx-2 my-1 border-b border-gray-200" />
         <div className="flex flex-col gap-2 py-2">
           {useDefaultFileSelectorValue &&
             (currentFile == null ? (
-              <div className="h-6 w-full flex overflow-hidden">
+              <div className="flex h-6 w-full overflow-hidden">
                 <div
-                  className="flex-1 flex gap-0.5 bg-gray-100 hover:bg-gray-200 px-1 rounded-l"
+                  className="flex flex-1 gap-0.5 rounded-l bg-gray-100 px-1 hover:bg-gray-200"
                   onClick={async () => {
                     if (dockviewApi == null) return;
                     const fileId = await createNewFile(currentDbId, {
@@ -179,17 +186,17 @@ export const BaseWorkflowNode = ({
                   }}
                 >
                   <FilePlus className="w-4" />
-                  <div className="text-xs flex items-center">New</div>
+                  <div className="flex items-center text-xs">New</div>
                 </div>
                 {/* divider */}
                 <div className="h-full w-0.5 bg-gray-300" />
                 {/* divider */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <div className="flex-1 flex gap-0.5 bg-gray-100 hover:bg-gray-200 px-1 rounded-r">
+                    <div className="flex flex-1 gap-0.5 rounded-r bg-gray-100 px-1 hover:bg-gray-200">
                       {" "}
                       <ExternalLink className="w-4" />
-                      <div className="text-xs flex items-center">Open</div>
+                      <div className="flex items-center text-xs">Open</div>
                     </div>
                   </DialogTrigger>
                   <DialogContent>
@@ -198,13 +205,13 @@ export const BaseWorkflowNode = ({
                       <DialogDescription />
                       {/* empty description is needed otherwise it will throw warnings */}
                     </DialogHeader>
-                    <div className="flex flex-col gap-8 items-start">
-                      <div className="flex flex-col gap-1 max-h-[15rem] w-full overflow-auto">
+                    <div className="flex flex-col items-start gap-8">
+                      <div className="flex max-h-[15rem] w-full flex-col gap-1 overflow-auto">
                         {filteredFiles.length ? (
                           filteredFiles.map((file) => (
                             <div
                               key={file.id}
-                              className="select-none hover:bg-gray-100 rounded-lg p-2 flex gap-1 shrink-0 mr-1"
+                              className="mr-1 flex shrink-0 gap-1 rounded-lg p-2 select-none hover:bg-gray-100"
                               onClick={() => {
                                 setWorkflowFile(
                                   workflowType,
@@ -246,7 +253,7 @@ export const BaseWorkflowNode = ({
                 </Dialog>
               </div>
             ) : (
-              <div className="h-6 w-full flex overflow-hidden">
+              <div className="flex h-6 w-full overflow-hidden">
                 <Tooltip>
                   <TooltipTrigger
                     asChild
@@ -259,9 +266,9 @@ export const BaseWorkflowNode = ({
                       );
                     }}
                   >
-                    <div className="flex-1 flex gap-0.5 bg-gray-100 hover:bg-gray-200 px-1 rounded-l">
+                    <div className="flex flex-1 gap-0.5 rounded-l bg-gray-100 px-1 hover:bg-gray-200">
                       <FileText className="w-4 shrink-0" />
-                      <div className="text-xs flex items-center overflow-hidden whitespace-nowrap">
+                      <div className="flex items-center overflow-hidden text-xs whitespace-nowrap">
                         {currentFilename}
                       </div>
                     </div>
@@ -272,7 +279,7 @@ export const BaseWorkflowNode = ({
                 <div className="h-full w-0.5 bg-gray-300" />
                 {/* divider */}
                 <div
-                  className="flex items-center bg-gray-100 hover:bg-gray-200 px-1 rounded-r"
+                  className="flex items-center rounded-r bg-gray-100 px-1 hover:bg-gray-200"
                   onClick={() =>
                     setWorkflowFile(workflowType, workflowIndex, null)
                   }
