@@ -2,7 +2,7 @@ import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { WorkflowStep, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { memDbId } from "@/lib/utils";
 import { Node, NodeProps } from "@xyflow/react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ScrollText, WandSparkles } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -69,12 +69,17 @@ export const PlaceholderSchemaNode = ({
         <DropdownMenuItem
           onClick={() => addWorkflowStep(insertBefore, "sql-query")}
         >
+          <ScrollText />
           From SQL
         </DropdownMenuItem>
         <DropdownMenuItem disabled>
-          From DBML <DropdownMenuHint href="https://dbml.dbdiagram.io/home/" />
+          <ScrollText />
+          From DBML
+          <DropdownMenuHint href="https://dbml.dbdiagram.io/home/" />
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>From AI prompt</DropdownMenuItem>
+        <DropdownMenuItem disabled>
+          <WandSparkles /> From AI prompt
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

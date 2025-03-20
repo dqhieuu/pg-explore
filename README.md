@@ -5,23 +5,28 @@
 
 <h3 align="center">PostgreSQL data explorer that lives in your browser.</h3>
 
-![Demo scrrnshot](./public/demo1.png)
+![Demo screenshot](./public/demo1.png)
 
-Create and explore your in-browser PostgreSQL databases with a modern web interface. pgExplore is a Progressive Web App (PWA) that runs offline in your browser and doesn't require any server-side setup. Completely free and open-source. Powered by [PGlite](https://github.com/electric-sql/pglite).
+- Ever wanted to test out a SQL query without having to set up a database?  
+- Have a colossal database schema, and feel like AI (maybe your locally hosted one) can help you to write SQL queries? 
+- Or just want to utilize the versatility of PostgreSQL to analyze your sensitive JSON/CSV files, but importing files is a big hassle? 
+
+pgExplore is here to help you with that! pgExplore is a Progressive Web App (PWA) Postgres explorer and server that runs offline in your browser (works without Internet connection). Completely free and open-source. Powered by [PGlite](https://github.com/electric-sql/pglite) and my desire to build a SQL toolbox that meets my needs, while being more intuitive than '00s tech 😃
 
 Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app).
 
-## Features (TODO)
+## Features
 
-- [x] Create and manage PostgreSQL databases that persist in your browser
-- [ ] Add table schema & data files (SQL, DBML, JSON,...) to build your query workflow
-- [x] SQL query editor with error highlighting and schema autocompletion
-- [ ] Configurable AI chat integration for SQL query suggestions
-- [ ] Table & chart visualization for query results
+- [x] Create and manage Postgres databases that persist in your browser
+- [x] Add table schema & data files (SQL, DBML, JSON,...) to build your query workflow
+- [x] Configurable AI assistant fed with your database schema to help you write SQL queries
+- [x] SQL query editor with error highlighting and autocompletion
+- [x] Table & chart visualization for query results
 - [ ] Table relationship visualization
-- [ ] (Maybe) PostgreSQL query plan visualization
-- [ ] Embeddable SQL query widgets for your website
-- [ ] Export & import database files for sharing and collaboration
+- [ ] Embeddable SQL query widgets for interactive SQL sharing
+- [ ] Export & import database schema and data
+
+And of course, feel free to open an issue or PR if you have any suggestions or feature requests. I will be happy to consider them.
 
 ## Getting Started
 

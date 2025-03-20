@@ -2,7 +2,6 @@ import Logo from "@/assets/logo.svg";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -465,17 +464,11 @@ export function AppSidebar() {
         />
         <FileCollapsibleSection
           fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
-          sectionName="In-workflow SQL scripts"
+          sectionName="In-workflow SQL"
           itemIcon={<ScrollText />}
           hiddenIfEmpty={true}
         />
       </SidebarContent>
-      <SidebarFooter>
-        {/* <Button className="ml-auto" variant={"outline"}>
-          <SquareTerminalIcon size={25} />
-          Console
-        </Button> */}
-      </SidebarFooter>
     </Sidebar>
   );
 }

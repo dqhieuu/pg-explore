@@ -257,6 +257,10 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
               run: () => {
                 cancelDebouncedSave();
                 setShouldSave(contextId, true);
+                toast("File saved!", {
+                  duration: 1000,
+                });
+
                 return true;
               },
             },
