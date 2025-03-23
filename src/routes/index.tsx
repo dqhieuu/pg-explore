@@ -76,15 +76,19 @@ function HomePage() {
     appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray(),
   );
 
+  const sortedDatabases = databases?.sort(
+    (a, b) => b.lastOpened.getTime() - a.lastOpened.getTime(),
+  );
+
   const navigate = useNavigate();
 
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100">
-      <Card className="mx-1">
+      <Card className="mx-2 mt-2">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <img className="w-12 shrink-0 rounded-md" src={Logo} />
+              <img className="w-12 shrink-0 rounded-md" src={Logo} alt="logo" />
               <div>
                 pgExplore
                 <CardDescription className="font-normal">
@@ -145,11 +149,11 @@ function HomePage() {
             {databases?.length === 0 ? (
               <div className="text-muted-foreground">No databases found.</div>
             ) : (
-              <div className="flex flex-col gap-2">
-                {databases?.map((db) => (
+              <div className="flex max-h-none flex-col gap-1 overflow-auto md:max-h-[10rem]">
+                {sortedDatabases?.map((db) => (
                   <div
                     key={db.id}
-                    className="flex items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
+                    className="flex max-h-[3rem] shrink-0 items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
                     onClick={() => navigate({ to: `/database/${db.id}` })}
                   >
                     <Database strokeWidth={1.5} />

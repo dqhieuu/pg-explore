@@ -186,7 +186,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
           }
         />
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger asChild>
             <Button className="h-7 p-3" onClick={executeQuery}>
               Query {isSelecting ? "selection" : ""}
             </Button>

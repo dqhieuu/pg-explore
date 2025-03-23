@@ -1,3 +1,4 @@
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { v4 as uuidv4 } from "uuid";
@@ -30,7 +31,8 @@ export function nextIncrementedFilename(prefix: string, existing: string[]) {
   return `${prefix} ${zeroPaddedNumber}`;
 }
 
-export const devModeEnabled = () => import.meta.env.DEV;
+export const devModeEnabled = () =>
+  import.meta.env.DEV && useSettingsStore.getState().debugMode;
 
 export const sessionId = guid();
 export const MEM_DB_PREFIX = "mem_";

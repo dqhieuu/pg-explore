@@ -188,7 +188,6 @@ function MainApp() {
           <SidebarProvider className="flex w-full">
             <AppSidebar />
             <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
-
             <main className="h-[100dvh] flex-1">
               <DockviewReact
                 onReady={(event) => {

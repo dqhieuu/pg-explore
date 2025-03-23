@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -287,6 +288,10 @@ export function AppSidebar() {
       [currentDbId],
     )?.map((f) => f.name) ?? [];
 
+  const setSettingsDialogOpen = useAnimationStore(
+    (state) => state.setSettingsDialogOpen,
+  );
+
   const currentSchemaWorkflow = useAppDbLiveQuery(
     () =>
       appDb.workflows
@@ -370,9 +375,8 @@ export function AppSidebar() {
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
-
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSettingsDialogOpen(true)}>
                 <SettingsIcon />
                 <span>Settings</span>
               </DropdownMenuItem>

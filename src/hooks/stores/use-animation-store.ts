@@ -4,10 +4,16 @@ import { create } from "zustand";
 interface AnimationStore {
   highlightSqlScratchpad: () => void;
   setHighlightSqlScratchpad: (delegate: () => void) => void;
+
+  settingsDialogOpen: boolean;
+  setSettingsDialogOpen: (open: boolean) => void;
 }
 
 export const useAnimationStore = create<AnimationStore>((set) => ({
   highlightSqlScratchpad: () => {},
   setHighlightSqlScratchpad: (delegate) =>
     set({ highlightSqlScratchpad: delegate }),
+
+  settingsDialogOpen: false,
+  setSettingsDialogOpen: (open) => set({ settingsDialogOpen: open }),
 }));

@@ -1,3 +1,4 @@
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { Diagnostic, linter } from "@codemirror/lint";
 import { PGliteInterface } from "@electric-sql/pglite";
 
@@ -61,12 +62,15 @@ export const pgLinter = (db: PGliteInterface) =>
   linter(async (view) => {
     const diagnostics: Diagnostic[] = [];
 
+    const { editorShowAccurateSQLError } = useSettingsStore.getState();
+
+    if (!editorShowAccurateSQLError) return diagnostics;
+
     const lintResult = await detectQueryLineError_Experimental(
       db,
       view.state.doc.toString(),
     );
-
-    if (lintResult == null) return diagnostics;
+    if (!lintResult) return diagnostics;
 
     const line = view.state.doc.line(lintResult.line);
 
