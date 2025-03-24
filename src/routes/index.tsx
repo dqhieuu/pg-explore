@@ -156,7 +156,7 @@ function HomePage() {
                     className="flex max-h-[3rem] shrink-0 items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
                     onClick={() => navigate({ to: `/database/${db.id}` })}
                   >
-                    <Database strokeWidth={1.5} />
+                    <Database className="shrink-0" strokeWidth={1.5} />
                     <div>{db.name}</div>
                   </div>
                 ))}

@@ -16,7 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store";
-import { cn } from "@/lib/utils.ts";
+import { cn, resetApplication } from "@/lib/utils.ts";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { DatabaseBackup } from "lucide-react";
 import { ChangeEvent, ReactNode, useState } from "react";
@@ -97,6 +97,8 @@ const AdvancedSettings = () => {
   const debugMode = useSettingsStore((state) => state.debugMode);
   const setDebugMode = useSettingsStore((state) => state.setDebugMode);
 
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+
   return (
     <div className="flex flex-col gap-2">
       <OnOffSetting
@@ -105,10 +107,34 @@ const AdvancedSettings = () => {
         checked={debugMode}
         onCheckedChange={setDebugMode}
       />
-      <Button variant="destructive" className="mt-5 self-start">
-        <DatabaseBackup />
-        Reset everything
-      </Button>
+      {isConfirmingReset ? (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            className="mt-5 self-start"
+            onClick={() => setIsConfirmingReset(false)}
+          >
+            Cancel action
+          </Button>
+          <Button
+            variant="destructive"
+            className="mt-5 self-start"
+            onClick={resetApplication}
+          >
+            <DatabaseBackup />
+            Confirm reset
+          </Button>
+        </div>
+      ) : (
+        <Button
+          variant="destructive"
+          className="mt-5 self-start"
+          onClick={() => setIsConfirmingReset(true)}
+        >
+          <DatabaseBackup />
+          Reset everything
+        </Button>
+      )}
     </div>
   );
 };

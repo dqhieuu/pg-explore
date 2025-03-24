@@ -31,8 +31,23 @@ export function nextIncrementedFilename(prefix: string, existing: string[]) {
   return `${prefix} ${zeroPaddedNumber}`;
 }
 
-export const devModeEnabled = () =>
-  import.meta.env.DEV && useSettingsStore.getState().debugMode;
+export async function resetApplication() {
+  const databases = await window.indexedDB.databases();
+  for (const db of databases) {
+    if (db.name == null) continue;
+
+    const request = window.indexedDB.deleteDatabase(db.name);
+    await new Promise((resolve, reject) => {
+      request.onsuccess = resolve;
+      request.onerror = reject;
+    });
+  }
+  localStorage.clear();
+
+  window.location.href = "/";
+}
+
+export const devModeEnabled = () => useSettingsStore.getState().debugMode;
 
 export const sessionId = guid();
 export const MEM_DB_PREFIX = "mem_";
