@@ -1,4 +1,5 @@
 import { Modify } from "@/lib/ts-utils";
+import { MEM_DB_PREFIX } from "@/lib/utils.ts";
 import Dexie, { Table } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 
@@ -106,3 +107,6 @@ appDb.version(1).stores({
   workflows: "id, databaseId",
   sessions: "id, expirationDate",
 });
+
+export const getNonMemoryDatabases = () =>
+  appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray();

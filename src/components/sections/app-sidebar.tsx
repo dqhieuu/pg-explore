@@ -1,4 +1,5 @@
 import Logo from "@/assets/logo.svg";
+import { DatabaseListDialogContent } from "@/components/sections/database-list-dialog-content.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -16,14 +17,19 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
-import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import {
+  FileEntry,
+  appDb,
+  getNonMemoryDatabases,
+  useAppDbLiveQuery,
+} from "@/lib/dexie/app-db";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import {
   createWorkflowPanel,
   openAiChat,
   openFileEditor,
 } from "@/lib/dockview";
-import { MEM_DB_PREFIX, memDbId } from "@/lib/utils";
+import { memDbId } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Blocks,
@@ -265,9 +271,7 @@ function FileCollapsibleSection({
 
 export function AppSidebar() {
   const navigate = useNavigate();
-  const databases = useAppDbLiveQuery(() =>
-    appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray(),
-  );
+  const databases = useAppDbLiveQuery(getNonMemoryDatabases);
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
 
   const databaseId = usePostgresStore((state) => state.databaseId);
@@ -317,162 +321,177 @@ export function AppSidebar() {
     ...(currentDataWorkflow?.workflowSteps ?? []).map((step) => step.fileId),
   ];
 
+  const [currentDialogType, setCurrentDialogType] =
+    useState<"database-list">("database-list");
+
   return (
     <Sidebar>
-      <SidebarHeader>
-        <SidebarMenu>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                className={`h-auto ${isInMemoryDatabase ? "italic" : ""}`}
-              >
-                <DatabaseIcon />
-                <span className="font-semibold">{currentDatabaseName}</span>
-                <ChevronDown className="ml-auto" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <div className="relative flex">
-                <img
-                  alt="App logo"
-                  className="w-8 rounded-md opacity-85"
-                  src={Logo}
-                />
-                <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
-              </div>
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                onClick={() => {
-                  navigate({ to: "/" });
-                }}
-              >
-                <Plus />
-                <span>New database</span>
-              </DropdownMenuItem>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Database />
-                  <span>Open database</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    {lastOpenedDatabases?.map((db) => (
-                      <DropdownMenuItem
-                        key={db.id}
-                        onClick={() => {
-                          navigate({ to: `/database/${db.id}` });
-                        }}
-                      >
-                        <span>{db.name}</span>
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <PlusCircle />
-                      <span>More...</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSettingsDialogOpen(true)}>
-                <SettingsIcon />
-                <span>Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <HelpCircle />
-                  <span>Help</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem disabled>
-                      <BookText />
-                      <span>Documentation (TODO)</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a href={`${GITHUB_URL}/issues`} target="_blank">
-                        <Bug />
-                        <span>Report an issue / Feedback</span>
-                      </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <a href={GITHUB_URL} target="_blank">
-                        <Star />
-                        <span>Star / Fork this repo</span>
-                      </a>
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup className="flex shrink-0 gap-2">
-          <Button
-            onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
-          >
-            <Workflow />
-            Setup pre-query workflow
-          </Button>
-          <div className="flex">
-            <Button
-              onClick={() => dockviewApi && openAiChat(dockviewApi)}
-              variant="secondary"
-              className="flex-1 rounded-r-none bg-gray-200"
-            >
-              <BotMessageSquare />
-              AI chat
-            </Button>
-            <Button
-              variant="secondary"
-              disabled
-              className="flex-1 rounded-l-none bg-gray-200"
-            >
-              <Table2 />
-              Tables
-            </Button>
+      <Dialog>
+        <DialogContent>
+          {currentDialogType === "database-list" && (
+            <DatabaseListDialogContent />
+          )}
+        </DialogContent>
+        <SidebarHeader>
+          <SidebarMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
-                  <EllipsisIcon />
-                </Button>
+                <SidebarMenuButton
+                  className={`h-auto ${isInMemoryDatabase ? "italic" : ""}`}
+                >
+                  <DatabaseIcon />
+                  <span className="font-semibold">{currentDatabaseName}</span>
+                  <ChevronDown className="ml-auto" />
+                </SidebarMenuButton>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem disabled>
-                  <Blocks />
-                  Manage plugins
+              <DropdownMenuContent className="w-56">
+                <div className="relative flex">
+                  <img
+                    alt="App logo"
+                    className="w-8 rounded-md opacity-85"
+                    src={Logo}
+                  />
+                  <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
+                </div>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate({ to: "/" });
+                  }}
+                >
+                  <Plus />
+                  <span>New database</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem disabled>
-                  <TerminalSquare />
-                  Console
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <Database />
+                    <span>Open database</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      {lastOpenedDatabases?.map((db) => (
+                        <DropdownMenuItem
+                          key={db.id}
+                          onClick={() => {
+                            navigate({ to: `/database/${db.id}` });
+                          }}
+                        >
+                          <span>{db.name}</span>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DialogTrigger
+                        asChild
+                        onClick={() => setCurrentDialogType("database-list")}
+                      >
+                        <DropdownMenuItem>
+                          <PlusCircle />
+                          <span>More...</span>
+                        </DropdownMenuItem>
+                      </DialogTrigger>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSettingsDialogOpen(true)}>
+                  <SettingsIcon />
+                  <span>Settings</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <HelpCircle />
+                    <span>Help</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem disabled>
+                        <BookText />
+                        <span>Documentation (TODO)</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={`${GITHUB_URL}/issues`} target="_blank">
+                          <Bug />
+                          <span>Report an issue / Feedback</span>
+                        </a>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <a href={GITHUB_URL} target="_blank">
+                          <Star />
+                          <span>Star / Fork this repo</span>
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </SidebarGroup>
-        <FileCollapsibleSection
-          fileFilterPredicate={(file) => !fileIdsInUse.includes(file.id)}
-          sectionName="SQL scratchpad"
-          itemIcon={<SquareTerminal />}
-          newButtonAction={() =>
-            createNewFile(currentDbId, {
-              prefix: "SQL Query",
-              existingFileNames: existingFileNames,
-            })
-          }
-        />
-        <FileCollapsibleSection
-          fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
-          sectionName="In-workflow SQL"
-          itemIcon={<ScrollText />}
-          hiddenIfEmpty={true}
-        />
-      </SidebarContent>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup className="flex shrink-0 gap-2">
+            <Button
+              onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
+            >
+              <Workflow />
+              Setup pre-query workflow
+            </Button>
+            <div className="flex">
+              <Button
+                onClick={() => dockviewApi && openAiChat(dockviewApi)}
+                variant="secondary"
+                className="flex-1 rounded-r-none bg-gray-200"
+              >
+                <BotMessageSquare />
+                AI chat
+              </Button>
+              <Button
+                variant="secondary"
+                disabled
+                className="flex-1 rounded-l-none bg-gray-200"
+              >
+                <Table2 />
+                Tables
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost">
+                    <EllipsisIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem disabled>
+                    <Blocks />
+                    Manage plugins
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled>
+                    <TerminalSquare />
+                    Console
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </SidebarGroup>
+          <FileCollapsibleSection
+            fileFilterPredicate={(file) => !fileIdsInUse.includes(file.id)}
+            sectionName="SQL scratchpad"
+            itemIcon={<SquareTerminal />}
+            newButtonAction={() =>
+              createNewFile(currentDbId, {
+                prefix: "SQL Query",
+                existingFileNames: existingFileNames,
+              })
+            }
+          />
+          <FileCollapsibleSection
+            fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
+            sectionName="In-workflow SQL"
+            itemIcon={<ScrollText />}
+            hiddenIfEmpty={true}
+          />
+        </SidebarContent>
+      </Dialog>
     </Sidebar>
   );
 }

@@ -11,7 +11,7 @@
 - Have a colossal database schema, and feel like AI (maybe your locally hosted one) can help you to write SQL queries? 
 - Or just want to utilize the versatility of PostgreSQL to analyze your sensitive JSON/CSV files, but importing files is a big hassle? 
 
-pgExplore is here to help you with that! pgExplore is a Progressive Web App (PWA) Postgres explorer and server that runs offline in your browser (works without Internet connection). Completely free and open-source. Powered by [PGlite](https://github.com/electric-sql/pglite) and my desire to build a SQL toolbox that meets my needs, while being more intuitive than '00s tech 😃
+pgExplore is here to help you with that! pgExplore is a Progressive Web App (PWA) Postgres explorer and server that runs offline in your browser (works without Internet connection). Completely free and open-source. Powered by [PGlite](https://github.com/electric-sql/pglite) and my desire to build a capable and user-friendly SQL toolbox 😃
 
 Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app).
 

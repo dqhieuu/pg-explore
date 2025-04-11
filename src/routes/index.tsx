@@ -16,11 +16,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { GITHUB_URL } from "@/lib/constants";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { MEM_DB_PREFIX, guid } from "@/lib/utils";
+import {
+  appDb,
+  getNonMemoryDatabases,
+  useAppDbLiveQuery,
+} from "@/lib/dexie/app-db";
+import { guid } from "@/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Database, MemoryStick } from "lucide-react";
+import { Database, MemoryStick, SettingsIcon } from "lucide-react";
 import { generateSlug } from "random-word-slugs";
 import { useState } from "react";
 
@@ -72,9 +77,7 @@ function Link({ href, children }: { href: string; children: React.ReactNode }) {
 }
 
 function HomePage() {
-  const databases = useAppDbLiveQuery(() =>
-    appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray(),
-  );
+  const databases = useAppDbLiveQuery(getNonMemoryDatabases);
 
   const sortedDatabases = databases?.sort(
     (a, b) => b.lastOpened.getTime() - a.lastOpened.getTime(),
@@ -82,11 +85,15 @@ function HomePage() {
 
   const navigate = useNavigate();
 
+  const setSettingsDialogOpen = useAnimationStore(
+    (state) => state.setSettingsDialogOpen,
+  );
+
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100">
       <Card className="mx-2 mt-2">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle>
             <div className="flex items-center gap-2">
               <img className="w-12 shrink-0 rounded-md" src={Logo} alt="logo" />
               <div>
@@ -104,6 +111,13 @@ function HomePage() {
                   .
                 </CardDescription>
               </div>
+              <div className="flex-1" />
+              <Button
+                variant="ghost"
+                onClick={() => setSettingsDialogOpen(true)}
+              >
+                <SettingsIcon />
+              </Button>
             </div>
           </CardTitle>
         </CardHeader>
@@ -151,14 +165,18 @@ function HomePage() {
             ) : (
               <div className="flex max-h-none flex-col gap-1 overflow-auto md:max-h-[10rem]">
                 {sortedDatabases?.map((db) => (
-                  <div
+                  <a
                     key={db.id}
-                    className="flex max-h-[3rem] shrink-0 items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
-                    onClick={() => navigate({ to: `/database/${db.id}` })}
+                    className="flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      navigate({ to: `/database/${db.id}` });
+                    }}
+                    href={`/database/${db.id}`}
                   >
                     <Database className="shrink-0" strokeWidth={1.5} />
                     <div>{db.name}</div>
-                  </div>
+                  </a>
                 ))}
               </div>
             )}
@@ -166,7 +184,7 @@ function HomePage() {
         </CardContent>
       </Card>
       <div className="my-5">
-        Reach me at <Link href={GITHUB_URL}>Github</Link>
+        Source code: <Link href={GITHUB_URL}>Github</Link>
       </div>
     </main>
   );
