@@ -27,7 +27,6 @@ import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -199,11 +198,9 @@ export const BaseWorkflowNode = ({
                       <div className="flex items-center text-xs">Open</div>
                     </div>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent aria-describedby={undefined}>
                     <DialogHeader>
                       <DialogTitle>Select a file</DialogTitle>
-                      <DialogDescription />
-                      {/* empty description is needed otherwise it will throw warnings */}
                     </DialogHeader>
                     <div className="flex flex-col items-start gap-8">
                       <div className="flex max-h-[15rem] w-full flex-col gap-1 overflow-auto">

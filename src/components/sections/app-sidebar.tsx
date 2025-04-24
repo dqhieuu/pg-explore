@@ -352,7 +352,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <Dialog>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           {currentDialogType === "database-list" && (
             <DatabaseListDialogContent />
           )}

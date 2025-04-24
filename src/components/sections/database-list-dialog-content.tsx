@@ -5,7 +5,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog.tsx";
 import {
   Form,
@@ -31,6 +30,7 @@ import {
 } from "@/lib/dexie/app-db.ts";
 import { cn, memDbId } from "@/lib/utils.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import { DatabaseIcon, PencilIcon, TrashIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -173,6 +173,7 @@ export const DatabaseListDialogContent = () => {
     action: "rename" | "delete";
     databaseId: string;
   } | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updateDiskUsage = async () => {
@@ -201,7 +202,7 @@ export const DatabaseListDialogContent = () => {
               value={availableDisk < 1 ? 0 : totalDiskUsage / availableDisk}
             />
           </div>
-          <div className="-mt-2 self-end">
+          <div className="-mt-2 self-end text-sm">
             {(totalDiskUsage / 1024 / 1024).toFixed(2)} MB /{" "}
             {(availableDisk / 1024 / 1024).toFixed(2)} MB
           </div>
@@ -224,6 +225,11 @@ export const DatabaseListDialogContent = () => {
                       "flex flex-1 items-center gap-2 rounded-md p-1 px-3 select-none",
                       db.id !== currentDbId ? "hover:bg-muted" : "",
                     )}
+                    onClick={() => {
+                      if (db.id !== currentDbId) {
+                        navigate({ to: `/database/${db.id}` });
+                      }
+                    }}
                   >
                     <DatabaseIcon />
                     <div>
@@ -240,19 +246,17 @@ export const DatabaseListDialogContent = () => {
                     <Tooltip>
                       <TooltipContent>Rename database</TooltipContent>
                       <TooltipTrigger asChild>
-                        <DialogTrigger>
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setPopupActionState({
-                                action: "rename",
-                                databaseId: db.id,
-                              });
-                            }}
-                          >
-                            <PencilIcon className="" />
-                          </Button>
-                        </DialogTrigger>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setPopupActionState({
+                              action: "rename",
+                              databaseId: db.id,
+                            });
+                          }}
+                        >
+                          <PencilIcon className="" />
+                        </Button>
                       </TooltipTrigger>
                     </Tooltip>
                     {db.id !== currentDbId && (
@@ -277,7 +281,7 @@ export const DatabaseListDialogContent = () => {
                 </li>
               ))}
               {popupActionState && (
-                <DialogContent>
+                <DialogContent aria-describedby={undefined}>
                   {popupActionState.action === "rename" && (
                     <RenameDatabaseDialogContent
                       databaseId={popupActionState.databaseId}

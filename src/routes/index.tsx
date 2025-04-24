@@ -168,7 +168,7 @@ function HomePage() {
                 {sortedDatabases?.map((db) => (
                   <a
                     key={db.id}
-                    className="flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1 select-none hover:bg-gray-100 md:w-[15rem]"
+                    className="flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1.5 select-none hover:bg-gray-100 md:w-[15rem]"
                     onClick={(event) => {
                       event.preventDefault();
                       navigate({ to: `/database/${db.id}` });
