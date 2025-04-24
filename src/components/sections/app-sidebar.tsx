@@ -1,6 +1,12 @@
 import Logo from "@/assets/logo.svg";
 import { DatabaseListDialogContent } from "@/components/sections/database-list-dialog-content.tsx";
 import {
+  Form,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form.tsx";
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -30,6 +36,7 @@ import {
   openFileEditor,
 } from "@/lib/dockview";
 import { memDbId } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Blocks,
@@ -55,6 +62,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "../ui/button";
 import {
@@ -65,7 +74,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -85,6 +93,10 @@ import {
 } from "../ui/dropdown-menu";
 import { Input } from "../ui/input";
 
+const renameFileFormSchema = z.object({
+  name: z.string().min(1, "File name is required"),
+});
+
 function RenameFileDialogContent({
   fileId,
   onClose,
@@ -92,48 +104,60 @@ function RenameFileDialogContent({
   fileId: string | null;
   onClose?: () => void;
 }) {
-  const [newFileName, setNewFileName] = useState("");
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
 
-  useEffect(() => {
-    if (fileId == null) return;
+  const form = useForm<z.infer<typeof renameFileFormSchema>>({
+    resolver: zodResolver(renameFileFormSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
 
-    (async () => {
-      const file = await appDb.files.get(fileId);
-
-      if (file != null) {
-        setNewFileName(file.name);
-      }
-    })();
-  }, [fileId]);
-
-  const updateFileName = async () => {
-    if (newFileName.trim() === "") return;
-
-    await appDb.files.update(fileId, { name: newFileName });
+  const onSubmit = async (values: z.infer<typeof renameFileFormSchema>) => {
+    await appDb.files.update(fileId, { name: values.name });
 
     if (dockviewApi != null && fileId != null) {
-      dockviewApi.getPanel(fileId)?.setTitle(newFileName);
+      dockviewApi.getPanel(fileId)?.setTitle(values.name);
     }
 
     if (onClose) onClose();
   };
 
+  useEffect(() => {
+    if (fileId == null) return;
+
+    appDb.files.get(fileId).then((file) => {
+      if (file == null) return;
+
+      form.setValue("name", file.name);
+    });
+  }, [fileId, form]);
+
   return (
     <DialogContent>
       <DialogHeader>
         <DialogTitle>Rename file</DialogTitle>
-        <DialogDescription>
-          <Input
-            placeholder="New file name"
-            value={newFileName}
-            onChange={(e) => setNewFileName(e.target.value)}
-          />
-        </DialogDescription>
       </DialogHeader>
-      <DialogFooter>
-        <Button onClick={updateFileName}>Rename</Button>
-      </DialogFooter>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <Input
+                  placeholder="New file name"
+                  autoComplete="off"
+                  {...field}
+                />
+                <FormMessage className="text-destructive" />
+              </FormItem>
+            )}
+          />
+          <DialogFooter>
+            <Button type="submit">Rename</Button>
+          </DialogFooter>
+        </form>
+      </Form>
     </DialogContent>
   );
 }
@@ -264,6 +288,7 @@ function FileCollapsibleSection({
         onClose={() => {
           setDialogFileId(null);
         }}
+        key={dialogFileId}
       />
     </Dialog>
   );
@@ -380,7 +405,9 @@ export function AppSidebar() {
                           <span>{db.name}</span>
                         </DropdownMenuItem>
                       ))}
-                      <DropdownMenuSeparator />
+                      {(lastOpenedDatabases?.length ?? 0) > 0 && (
+                        <DropdownMenuSeparator />
+                      )}
                       <DialogTrigger
                         asChild
                         onClick={() => setCurrentDialogType("database-list")}

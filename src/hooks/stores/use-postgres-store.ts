@@ -61,6 +61,8 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
 }));
 
 export const deleteDatabase = async (id: string) => {
+  await appDb.workflows.where("databaseId").equals(id).delete();
+  await appDb.files.where("databaseId").equals(id).delete();
   await appDb.databases.delete(id);
   return Dexie.delete(`/pglite/pg_${id}`);
 };

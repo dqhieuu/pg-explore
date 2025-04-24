@@ -57,6 +57,7 @@ function CreatePersistentDatabaseDialogContent() {
         <DialogTitle>Enter your database name</DialogTitle>
         <DialogDescription className="flex flex-col gap-2">
           <Input
+            autoComplete="off"
             placeholder="Database name"
             value={newDbName}
             onChange={(e) => setNewDbName(e.target.value)}
