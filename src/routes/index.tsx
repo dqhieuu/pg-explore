@@ -80,7 +80,7 @@ function Link({ href, children }: { href: string; children: React.ReactNode }) {
 function HomePage() {
   const databases = useAppDbLiveQuery(getNonMemoryDatabases);
 
-  const sortedDatabases = databases?.sort(
+  const sortedDatabases = databases?.toSorted(
     (a, b) => b.lastOpened.getTime() - a.lastOpened.getTime(),
   );
 

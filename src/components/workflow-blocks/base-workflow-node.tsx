@@ -71,7 +71,7 @@ export const BaseWorkflowNode = ({
       () => appDb.files.where("databaseId").equals(currentDbId).toArray(),
       [currentDbId],
     ) ?? []
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).toSorted((a, b) => a.name.localeCompare(b.name));
 
   const filteredFiles = fileFilterPredicate
     ? databaseFiles.filter(fileFilterPredicate)

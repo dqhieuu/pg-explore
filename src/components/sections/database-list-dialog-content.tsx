@@ -24,6 +24,7 @@ import {
   usePostgresStore,
 } from "@/hooks/stores/use-postgres-store.ts";
 import {
+  PGDatabase,
   appDb,
   getNonMemoryDatabases,
   useAppDbLiveQuery,
@@ -156,10 +157,66 @@ function DeleteDatabaseDialogContent({
   );
 }
 
+const DatabaseList = ({
+  databases,
+  currentDbId,
+  onSelectDatabase,
+  onRenameDatabase,
+  onDeleteDatabase,
+}: {
+  databases: PGDatabase[];
+  currentDbId: string;
+  onSelectDatabase: (database: PGDatabase) => void;
+  onRenameDatabase: (database: PGDatabase) => void;
+  onDeleteDatabase: (database: PGDatabase) => void;
+}) => {
+  return databases.map((db) => (
+    <li key={db.id} className="flex items-center gap-2">
+      <div
+        className={cn(
+          "flex flex-1 items-center gap-2 rounded-md p-1 px-3 select-none",
+          db.id !== currentDbId ? "hover:bg-muted" : "",
+        )}
+        onClick={() => onSelectDatabase(db)}
+      >
+        <DatabaseIcon />
+        <div>
+          <div className="font-medium">
+            {db.name} {db.id === currentDbId ? "(Current)" : ""}
+          </div>
+          <em className="text-muted-foreground text-sm">
+            Last opened {dayjs(db.lastOpened).format("YYYY-MM-DD HH:mm:ss")}
+          </em>
+        </div>
+      </div>
+      <div className="j flex gap-1">
+        <Tooltip>
+          <TooltipContent>Rename database</TooltipContent>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" onClick={() => onRenameDatabase(db)}>
+              <PencilIcon className="" />
+            </Button>
+          </TooltipTrigger>
+        </Tooltip>
+        {db.id !== currentDbId && (
+          <Tooltip>
+            <TooltipContent>Delete database</TooltipContent>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" onClick={() => onDeleteDatabase(db)}>
+                <TrashIcon className="text-destructive" />
+              </Button>
+            </TooltipTrigger>
+          </Tooltip>
+        )}
+      </div>
+    </li>
+  ));
+};
+
 export const DatabaseListDialogContent = () => {
   const databases = useAppDbLiveQuery(getNonMemoryDatabases);
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
-  const orderedDatabases = (databases ?? []).sort((a, b) => {
+  const orderedDatabases = (databases ?? []).toSorted((a, b) => {
     // Current database should be first
     if (a.id === currentDbId) return -1;
     // Then sort by last opened date
@@ -208,7 +265,7 @@ export const DatabaseListDialogContent = () => {
           </div>
         </div>
 
-        {databases?.length === 0 ? (
+        {orderedDatabases.length === 0 ? (
           <p>No databases found.</p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -218,68 +275,28 @@ export const DatabaseListDialogContent = () => {
                 if (!open) setPopupActionState(null);
               }}
             >
-              {orderedDatabases.map((db) => (
-                <li key={db.id} className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      "flex flex-1 items-center gap-2 rounded-md p-1 px-3 select-none",
-                      db.id !== currentDbId ? "hover:bg-muted" : "",
-                    )}
-                    onClick={() => {
-                      if (db.id !== currentDbId) {
-                        navigate({ to: `/database/${db.id}` });
-                      }
-                    }}
-                  >
-                    <DatabaseIcon />
-                    <div>
-                      <div className="font-medium">
-                        {db.name} {db.id === currentDbId ? "(Current)" : ""}
-                      </div>
-                      <em className="text-muted-foreground text-sm">
-                        Last opened{" "}
-                        {dayjs(db.lastOpened).format("YYYY-MM-DD HH:mm")}
-                      </em>
-                    </div>
-                  </div>
-                  <div className="j flex gap-1">
-                    <Tooltip>
-                      <TooltipContent>Rename database</TooltipContent>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setPopupActionState({
-                              action: "rename",
-                              databaseId: db.id,
-                            });
-                          }}
-                        >
-                          <PencilIcon className="" />
-                        </Button>
-                      </TooltipTrigger>
-                    </Tooltip>
-                    {db.id !== currentDbId && (
-                      <Tooltip>
-                        <TooltipContent>Delete database</TooltipContent>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            onClick={() => {
-                              setPopupActionState({
-                                action: "delete",
-                                databaseId: db.id,
-                              });
-                            }}
-                          >
-                            <TrashIcon className="text-destructive" />
-                          </Button>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    )}
-                  </div>
-                </li>
-              ))}
+              <DatabaseList
+                databases={orderedDatabases}
+                currentDbId={currentDbId}
+                onSelectDatabase={(db) => {
+                  if (currentDbId !== memDbId) {
+                    navigate({ to: `/database/${db.id}` });
+                  }
+                }}
+                onRenameDatabase={(db) => {
+                  setPopupActionState({
+                    action: "rename",
+                    databaseId: db.id,
+                  });
+                }}
+                onDeleteDatabase={(db) => {
+                  setPopupActionState({
+                    action: "delete",
+                    databaseId: db.id,
+                  });
+                }}
+              />
+
               {popupActionState && (
                 <DialogContent aria-describedby={undefined}>
                   {popupActionState.action === "rename" && (

@@ -188,7 +188,7 @@ function FileCollapsibleSection({
       () => appDb.files.where("databaseId").equals(currentDatabaseId).toArray(),
       [currentDatabaseId],
     ) ?? []
-  ).sort((a, b) => a.name.localeCompare(b.name));
+  ).toSorted((a, b) => a.name.localeCompare(b.name));
 
   const filteredFiles = fileFilterPredicate
     ? databaseFiles.filter(fileFilterPredicate)
@@ -308,7 +308,7 @@ export function AppSidebar() {
   const currentDbId = databaseId ?? memDbId;
 
   const lastOpenedDatabases = databases
-    ?.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
+    ?.toSorted((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime())
     ?.slice(0, 3);
 
   const existingFileNames =

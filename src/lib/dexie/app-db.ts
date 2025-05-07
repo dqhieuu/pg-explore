@@ -3,7 +3,7 @@ import { MEM_DB_PREFIX } from "@/lib/utils.ts";
 import Dexie, { Table } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 
-interface PGDatabase {
+export interface PGDatabase {
   id: string;
   name: string;
   createdAt: Date;
