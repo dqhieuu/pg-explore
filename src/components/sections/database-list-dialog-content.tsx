@@ -170,7 +170,14 @@ const DatabaseList = ({
   onRenameDatabase: (database: PGDatabase) => void;
   onDeleteDatabase: (database: PGDatabase) => void;
 }) => {
-  return databases.map((db) => (
+  const orderedDatabases = [
+    ...databases.filter((db) => db.id === currentDbId),
+    ...databases
+      .filter((db) => db.id !== currentDbId)
+      .toSorted((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime()),
+  ];
+
+  return orderedDatabases.map((db) => (
     <li key={db.id} className="flex items-center gap-2">
       <div
         className={cn(
@@ -214,14 +221,8 @@ const DatabaseList = ({
 };
 
 export const DatabaseListDialogContent = () => {
-  const databases = useAppDbLiveQuery(getNonMemoryDatabases);
+  const databases = useAppDbLiveQuery(getNonMemoryDatabases) ?? [];
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
-  const orderedDatabases = (databases ?? []).toSorted((a, b) => {
-    // Current database should be first
-    if (a.id === currentDbId) return -1;
-    // Then sort by last opened date
-    return b.lastOpened.getTime() - a.lastOpened.getTime();
-  });
 
   const [totalDiskUsage, setTotalDiskUsage] = useState(0);
   const [availableDisk, setAvailableDisk] = useState(0);
@@ -265,7 +266,7 @@ export const DatabaseListDialogContent = () => {
           </div>
         </div>
 
-        {orderedDatabases.length === 0 ? (
+        {databases.length === 0 ? (
           <p>No databases found.</p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -276,7 +277,7 @@ export const DatabaseListDialogContent = () => {
               }}
             >
               <DatabaseList
-                databases={orderedDatabases}
+                databases={databases}
                 currentDbId={currentDbId}
                 onSelectDatabase={(db) => {
                   if (currentDbId !== memDbId) {
