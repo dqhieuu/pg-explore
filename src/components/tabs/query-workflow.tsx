@@ -1,3 +1,4 @@
+import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { memDbId } from "@/lib/utils";
@@ -33,17 +34,24 @@ import { PlaceholderSchemaNode } from "../workflow-blocks/placeholder-schema-nod
 import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
 
 const DatabaseSourceNode = () => {
+  const setExtensionsDialogOpen = useAnimationStore(
+    (state) => state.setExtensionsDialogOpen,
+  );
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <BaseNode className="flex gap-1 bg-neutral-700 p-2 text-white">
+        <BaseNode
+          className="flex gap-1 bg-neutral-700 p-2 text-white"
+          onClick={() => setExtensionsDialogOpen(true)}
+        >
           <DatabaseIcon />
           Empty database
           <Handle type="source" position={Position.Bottom} />
         </BaseNode>
       </TooltipTrigger>
       <TooltipContent>
-        Add database plugins and configurations (TODO)
+        Configure database extensions and other settings
       </TooltipContent>
     </Tooltip>
   );

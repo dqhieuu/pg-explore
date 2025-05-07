@@ -9,6 +9,7 @@ export interface PGDatabase {
   createdAt: Date;
   lastOpened: Date;
   workflowState?: WorkflowState;
+  enabledExtensions: string[];
 }
 
 export interface WorkflowState {
@@ -106,6 +107,18 @@ appDb.version(1).stores({
   files: "id, databaseId",
   workflows: "id, databaseId",
   sessions: "id, expirationDate",
+});
+
+// New `enabledExtensions` field added `databases`
+appDb.version(2).upgrade((tx) => {
+  return tx
+    .table("databases")
+    .toCollection()
+    .modify((db) => {
+      if (db.enabledExtensions == null) {
+        db.enabledExtensions = [];
+      }
+    });
 });
 
 export const getNonMemoryDatabases = () =>

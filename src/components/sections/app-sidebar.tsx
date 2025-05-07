@@ -321,6 +321,10 @@ export function AppSidebar() {
     (state) => state.setSettingsDialogOpen,
   );
 
+  const setExtensionsDialogOpen = useAnimationStore(
+    (state) => state.setExtensionsDialogOpen,
+  );
+
   const currentSchemaWorkflow = useAppDbLiveQuery(
     () =>
       appDb.workflows
@@ -488,9 +492,13 @@ export function AppSidebar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem disabled>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setExtensionsDialogOpen(true);
+                    }}
+                  >
                     <Blocks />
-                    Manage plugins
+                    Manage extensions
                   </DropdownMenuItem>
                   <DropdownMenuItem disabled>
                     <TerminalSquare />

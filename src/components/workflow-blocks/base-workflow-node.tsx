@@ -193,7 +193,6 @@ export const BaseWorkflowNode = ({
                 <Dialog>
                   <DialogTrigger asChild>
                     <div className="flex flex-1 gap-0.5 rounded-r bg-gray-100 px-1 hover:bg-gray-200">
-                      {" "}
                       <ExternalLink className="w-4" />
                       <div className="flex items-center text-xs">Open</div>
                     </div>

@@ -7,6 +7,9 @@ interface AnimationStore {
 
   settingsDialogOpen: boolean;
   setSettingsDialogOpen: (open: boolean) => void;
+
+  extensionsDialogOpen: boolean;
+  setExtensionsDialogOpen: (open: boolean) => void;
 }
 
 export const useAnimationStore = create<AnimationStore>((set) => ({
@@ -16,4 +19,7 @@ export const useAnimationStore = create<AnimationStore>((set) => ({
 
   settingsDialogOpen: false,
   setSettingsDialogOpen: (open) => set({ settingsDialogOpen: open }),
+
+  extensionsDialogOpen: false,
+  setExtensionsDialogOpen: (open) => set({ extensionsDialogOpen: open }),
 }));

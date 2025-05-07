@@ -1,5 +1,8 @@
 import { appDb } from "@/lib/dexie/app-db";
-import { querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
+import {
+  extensionNamesToExtensions,
+  querySchemaForCodeMirror,
+} from "@/lib/pglite/pg-utils";
 import { PGlite } from "@electric-sql/pglite";
 import { PGliteWithLive, live } from "@electric-sql/pglite/live";
 import Dexie from "dexie";
@@ -12,6 +15,9 @@ interface PostgresStore {
 
   schema: Record<string, string[]>;
   setSchema: (schema: Record<string, string[]>) => void;
+
+  enabledExtensionsChanged: boolean;
+  setEnabledExtensionsChanged: (changed: boolean) => void;
 }
 
 let isLockingSetDatabase = false;
@@ -36,8 +42,13 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
 
       let newDatabase: PGliteWithLive;
       if (databaseId != null) {
+        const existingDatabaseConfig = await appDb.databases.get(databaseId);
+        const enabledExtensions = extensionNamesToExtensions(
+          existingDatabaseConfig?.enabledExtensions ?? [],
+        );
+
         newDatabase = await PGlite.create(`idb://pg_${databaseId}`, {
-          extensions: { live },
+          extensions: { live, ...enabledExtensions },
           relaxedDurability: true,
         });
       } else {
@@ -58,6 +69,10 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
 
   schema: {},
   setSchema: (schema) => set({ schema }),
+
+  enabledExtensionsChanged: false,
+  setEnabledExtensionsChanged: (changed) =>
+    set({ enabledExtensionsChanged: changed }),
 }));
 
 export const deleteDatabase = async (id: string) => {

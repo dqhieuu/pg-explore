@@ -1,8 +1,11 @@
 import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
+import { ExtensionListDialogContent } from "@/components/sections/extension-list-dialog-content.tsx";
 import { AiChat } from "@/components/tabs/ai-chat.tsx";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAnimationStore } from "@/hooks/stores/use-animation-store";
 import { createNewFile } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
 import { WorkflowMonitorProvider } from "@/lib/pglite/workflow-monitor.tsx";
@@ -13,6 +16,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { DockviewReact, IDockviewPanelProps, themeReplit } from "dockview";
 import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 import { QueryEditor, QueryEditorProps } from "../components/tabs/query-editor";
 import { QueryResult, QueryResultProps } from "../components/tabs/query-result";
@@ -77,14 +81,15 @@ function LoadingPlaceholder() {
 
 function MainApp() {
   const navigate = useNavigate();
-  const { databaseId } = Route.useParams();
+  const { databaseId: databaseIdUrlPath } = Route.useParams();
 
   const setDockviewApi = useDockviewStore((state) => state.setDockviewApi);
 
   const pgDb = usePostgresStore((state) => state.database);
   const setPgDb = usePostgresStore((state) => state.setDatabase);
 
-  const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+  const internalDbId = usePostgresStore((state) => state.databaseId);
+  const currentDbId = internalDbId ?? memDbId;
 
   const dataWorkflow = useAppDbLiveQuery(
     () =>
@@ -108,20 +113,37 @@ function MainApp() {
     "loading",
   );
 
+  const extensionsDialogOpen = useAnimationStore(
+    (state) => state.extensionsDialogOpen,
+  );
+
+  const setExtensionsDialogOpen = useAnimationStore(
+    (state) => state.setExtensionsDialogOpen,
+  );
+
+  const enabledExtensionsChanged = usePostgresStore(
+    (state) => state.enabledExtensionsChanged,
+  );
+  const setEnabledExtensionsChanged = usePostgresStore(
+    (state) => state.setEnabledExtensionsChanged,
+  );
+
   useEffect(() => {
     (async () => {
       const appDbPgList = await appDb.databases.toArray();
 
-      if (databaseId === "memory") {
+      if (databaseIdUrlPath === "memory") {
         setPgDb(null);
-      } else if (appDbPgList.find((db) => db.id === databaseId) != null) {
-        setPgDb(databaseId);
-        appDb.databases.update(databaseId, { lastOpened: new Date() });
+      } else if (
+        appDbPgList.find((db) => db.id === databaseIdUrlPath) != null
+      ) {
+        setPgDb(databaseIdUrlPath);
+        appDb.databases.update(databaseIdUrlPath, { lastOpened: new Date() });
       } else {
         navigate({ to: "/" });
       }
     })();
-  }, [setPgDb, databaseId, navigate]);
+  }, [setPgDb, databaseIdUrlPath, navigate]);
 
   useEffect(() => {
     if (pgDb == null) return;
@@ -155,6 +177,7 @@ function MainApp() {
           name: "In-memory database",
           createdAt: new Date(),
           lastOpened: new Date(),
+          enabledExtensions: [],
         });
 
         db = await appDb.databases.get(currentDbId);
@@ -186,58 +209,76 @@ function MainApp() {
       <WorkflowMonitorProvider>
         <ReactFlowProvider>
           <SidebarProvider className="flex w-full">
-            <AppSidebar />
-            <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
-            <main className="h-[100dvh] flex-1">
-              <DockviewReact
-                onReady={(event) => {
-                  setDockviewApi(event.api);
-
-                  const editorGroup = event.api.addGroup({
-                    direction: "right",
-                    id: "editor-group",
+            <Dialog
+              open={extensionsDialogOpen}
+              onOpenChange={(open) => {
+                setExtensionsDialogOpen(open);
+                if (!open && enabledExtensionsChanged) {
+                  setPgDb(internalDbId);
+                  toast("Extensions updated!", {
+                    duration: 1000,
                   });
+                  setEnabledExtensionsChanged(false);
+                }
+              }}
+            >
+              <AppSidebar />
+              <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
+              <main className="h-[100dvh] flex-1">
+                <DockviewReact
+                  onReady={(event) => {
+                    setDockviewApi(event.api);
 
-                  event.api.addPanel({
-                    id: "no-editors",
-                    title: "No files opened",
-                    component: "noEditors",
-                    position: {
-                      referenceGroup: editorGroup,
-                    },
-                  });
+                    const editorGroup = event.api.addGroup({
+                      direction: "right",
+                      id: "editor-group",
+                    });
 
-                  createWorkflowPanel(event.api, true);
-                }}
-                components={{
-                  queryEditor: (
-                    props: IDockviewPanelProps<QueryEditorProps>,
-                  ) => (
-                    <QueryEditor
-                      contextId={props.params.contextId}
-                      fileId={props.params.fileId}
-                    />
-                  ),
-                  queryResult: (
-                    props: IDockviewPanelProps<QueryResultProps>,
-                  ) => (
-                    <div className="h-full w-full overflow-auto p-2">
-                      <QueryResult
+                    event.api.addPanel({
+                      id: "no-editors",
+                      title: "No files opened",
+                      component: "noEditors",
+                      position: {
+                        referenceGroup: editorGroup,
+                      },
+                    });
+
+                    createWorkflowPanel(event.api, true);
+                  }}
+                  components={{
+                    queryEditor: (
+                      props: IDockviewPanelProps<QueryEditorProps>,
+                    ) => (
+                      <QueryEditor
                         contextId={props.params.contextId}
-                        lotNumber={props.params.lotNumber}
+                        fileId={props.params.fileId}
                       />
-                    </div>
-                  ),
-                  queryWorkflow: () => <QueryWorkflow />,
-                  noEditors: () => <NoEditors />,
-                  aiChat: () => <AiChat />,
-                }}
-                singleTabMode="default"
-                theme={{ ...themeReplit, gap: 0 }}
-                defaultTabComponent={DockviewCustomTab}
-                watermarkComponent={NoEditors}
-              />
-            </main>
+                    ),
+                    queryResult: (
+                      props: IDockviewPanelProps<QueryResultProps>,
+                    ) => (
+                      <div className="h-full w-full overflow-auto p-2">
+                        <QueryResult
+                          contextId={props.params.contextId}
+                          lotNumber={props.params.lotNumber}
+                        />
+                      </div>
+                    ),
+                    queryWorkflow: () => <QueryWorkflow />,
+                    noEditors: () => <NoEditors />,
+                    aiChat: () => <AiChat />,
+                  }}
+                  singleTabMode="default"
+                  theme={{ ...themeReplit, gap: 0 }}
+                  defaultTabComponent={DockviewCustomTab}
+                  watermarkComponent={NoEditors}
+                />
+              </main>
+
+              <DialogContent>
+                <ExtensionListDialogContent databaseId={currentDbId} />
+              </DialogContent>
+            </Dialog>
           </SidebarProvider>
         </ReactFlowProvider>
       </WorkflowMonitorProvider>

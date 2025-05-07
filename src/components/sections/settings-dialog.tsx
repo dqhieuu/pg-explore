@@ -201,7 +201,7 @@ const AISettings = () => {
     <div className="flex flex-col gap-2">
       <OnOffSetting
         label="Use custom API endpoint"
-        description="Provide your own API endpoint instead of the default one"
+        description="Provide your own API endpoint for AI features"
         checked={useCustomAIEndpoint}
         onCheckedChange={setUseCustomAIEndpoint}
       />

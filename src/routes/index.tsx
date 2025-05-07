@@ -46,6 +46,7 @@ function CreatePersistentDatabaseDialogContent() {
       name: newDbName,
       createdAt: new Date(),
       lastOpened: new Date(),
+      enabledExtensions: [],
     });
 
     navigate({ to: `/database/${newDbId}` });
