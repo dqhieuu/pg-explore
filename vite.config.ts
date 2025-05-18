@@ -19,7 +19,7 @@ export default defineConfig({
         enabled: false,
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 10_000_000,
+        maximumFileSizeToCacheInBytes: 20_000_000,
         globPatterns: ["**/*.{js,css,html,svg,data,wasm}"],
       },
       includeAssets: [
