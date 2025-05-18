@@ -2,6 +2,11 @@ import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { ExtensionListDialogContent } from "@/components/sections/extension-list-dialog-content.tsx";
 import { AiChat } from "@/components/tabs/ai-chat.tsx";
+import { DbmlEditor } from "@/components/tabs/dbml-editor.tsx";
+import {
+  SqlQueryEditor,
+  SqlQueryEditorProps,
+} from "@/components/tabs/sql-query-editor.tsx";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -18,7 +23,7 @@ import { LoaderCircle } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { QueryEditor, QueryEditorProps } from "../components/tabs/query-editor";
+import { QueryEditorProps } from "../components/tabs/base/query-editor.tsx";
 import { QueryResult, QueryResultProps } from "../components/tabs/query-result";
 import { QueryWorkflow } from "../components/tabs/query-workflow";
 import { useDockviewStore } from "../hooks/stores/use-dockview-store";
@@ -48,11 +53,12 @@ function NoEditors() {
               if (dockviewApi == null) return;
 
               const fileId = await createNewFile(currentDbId, {
+                type: "sql",
                 prefix: "SQL Query",
                 existingFileNames: files.map((f) => f.name),
               });
 
-              openFileEditor(dockviewApi, fileId, "SQL Query 01");
+              openFileEditor(dockviewApi, fileId);
             }}
           >
             Create new file
@@ -246,10 +252,18 @@ function MainApp() {
                     createWorkflowPanel(event.api, true);
                   }}
                   components={{
-                    queryEditor: (
+                    sqlQueryEditor: (
+                      props: IDockviewPanelProps<SqlQueryEditorProps>,
+                    ) => (
+                      <SqlQueryEditor
+                        contextId={props.params.contextId}
+                        fileId={props.params.fileId}
+                      />
+                    ),
+                    dbmlEditor: (
                       props: IDockviewPanelProps<QueryEditorProps>,
                     ) => (
-                      <QueryEditor
+                      <DbmlEditor
                         contextId={props.params.contextId}
                         fileId={props.params.fileId}
                       />
@@ -268,7 +282,7 @@ function MainApp() {
                     noEditors: () => <NoEditors />,
                     aiChat: () => <AiChat />,
                   }}
-                  singleTabMode="default"
+                  singleTabMode="fullwidth"
                   theme={{ ...themeReplit, gap: 0 }}
                   defaultTabComponent={DockviewCustomTab}
                   watermarkComponent={NoEditors}

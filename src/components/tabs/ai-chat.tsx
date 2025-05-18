@@ -180,7 +180,7 @@ export const AiChat = () => {
           />
 
           <Tooltip>
-            <TooltipTrigger className="self-start">
+            <TooltipTrigger className="self-start" asChild>
               <Button type="submit" disabled={mustFillCustomAIFields}>
                 Ask
               </Button>

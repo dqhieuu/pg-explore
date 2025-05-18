@@ -22,7 +22,7 @@ export interface WorkflowState {
 export interface FileEntry {
   id: string;
   databaseId: string;
-  type: "sql" | "data";
+  type: "sql" | "dbml";
   name: string;
   content?: string;
   blob?: Blob;
@@ -42,7 +42,7 @@ interface CommonWorkflowStep {
   options: Record<string, unknown>;
 }
 
-export type SQLQueryStep = Modify<
+export type SqlQueryStep = Modify<
   CommonWorkflowStep,
   {
     type: "sql-query";
@@ -50,43 +50,15 @@ export type SQLQueryStep = Modify<
   }
 >;
 
-// @ts-expect-error TODO: Implement this
-type DbmlDataStep = Modify<
+type DbmlStep = Modify<
   CommonWorkflowStep,
   {
-    type: "dbml-data";
+    type: "dbml";
     options: Record<string, never>;
   }
 >;
 
-// @ts-expect-error TODO: Implement this
-type DrawDbDataStep = Modify<
-  CommonWorkflowStep,
-  {
-    type: "drawdb-data";
-    options: Record<string, never>;
-  }
->;
-
-// @ts-expect-error TODO: Implement this
-type JsonDataStep = Modify<
-  CommonWorkflowStep,
-  {
-    type: "json-data";
-    options: Record<string, never>;
-  }
->;
-
-// @ts-expect-error TODO: Implement this
-type CsvDataStep = Modify<
-  CommonWorkflowStep,
-  {
-    type: "csv-data";
-    options: Record<string, never>;
-  }
->;
-
-export type WorkflowStep = SQLQueryStep;
+export type WorkflowStep = SqlQueryStep | DbmlStep;
 
 interface AppSession {
   id: string;

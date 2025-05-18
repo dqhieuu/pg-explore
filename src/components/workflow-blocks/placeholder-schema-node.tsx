@@ -11,7 +11,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { PlaceholderNode, PlaceholderNodeData } from "./placeholder-node";
+import {
+  PlaceholderNode,
+  PlaceholderNodeData,
+} from "./base/placeholder-node.tsx";
 
 export type PlaceholderSchemaNode = Node<
   PlaceholderNodeData,
@@ -35,13 +38,15 @@ export const PlaceholderSchemaNode = ({
 
   const addWorkflowStep = async (
     insertBefore: number,
-    stepType: "sql-query",
+    stepType: "sql-query" | "dbml",
   ) => {
     if (schemaWorkflow == null) return;
 
     let newStep: WorkflowStep;
     if (stepType === "sql-query") {
       newStep = { type: "sql-query", options: {} };
+    } else if (stepType === "dbml") {
+      newStep = { type: "dbml", options: {} };
     } else {
       throw new Error("Invalid step type");
     }
@@ -72,7 +77,7 @@ export const PlaceholderSchemaNode = ({
           <ScrollText />
           From SQL
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onClick={() => addWorkflowStep(insertBefore, "dbml")}>
           <ScrollText />
           From DBML
           <DropdownMenuHint href="https://dbml.dbdiagram.io/home/" />

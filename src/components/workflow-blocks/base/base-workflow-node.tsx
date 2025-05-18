@@ -1,15 +1,15 @@
-import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
-import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
+import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
+import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
 import {
   FileEntry,
   WorkflowStep,
   appDb,
   useAppDbLiveQuery,
-} from "@/lib/dexie/app-db";
-import { createNewFile } from "@/lib/dexie/dexie-utils";
-import { openFileEditor } from "@/lib/dockview";
+} from "@/lib/dexie/app-db.ts";
+import { createNewFile } from "@/lib/dexie/dexie-utils.ts";
+import { openFileEditor } from "@/lib/dockview.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
-import { cn, memDbId } from "@/lib/utils";
+import { cn, memDbId } from "@/lib/utils.ts";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { Node } from "@xyflow/react";
 import {
@@ -23,20 +23,22 @@ import {
 } from "lucide-react";
 import { ReactNode } from "react";
 
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button.tsx";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { BaseNode } from "./base-node";
+} from "../../ui/dialog.tsx";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip.tsx";
+import { BaseNode } from "./base-node.tsx";
 
 export type BaseWorkflowNodeData = {
   workflowIndex: number;
   workflowType: "schema" | "data";
+  newFileType: FileEntry["type"];
+  newFilePrefix: string;
   headerText: string;
   headerIcon?: ReactNode;
   headerBackgroundClass?: string;
@@ -58,6 +60,8 @@ export const BaseWorkflowNode = ({
     headerText,
     useDefaultFileSelector,
     fileFilterPredicate,
+    newFilePrefix,
+    newFileType,
   } = data;
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
@@ -146,7 +150,7 @@ export const BaseWorkflowNode = ({
   return (
     <>
       <Handle type="target" position={Position.Top} className="z-10" />
-      <BaseNode className="w-[10rem] overflow-hidden rounded-lg bg-white px-2 py-1">
+      <BaseNode className="w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1">
         <div className="relative">
           <div className="relative z-10 flex gap-1">
             {headerIcon ?? <ScrollText strokeWidth={1.5} className="w-5" />}
@@ -175,13 +179,12 @@ export const BaseWorkflowNode = ({
                   onClick={async () => {
                     if (dockviewApi == null) return;
                     const fileId = await createNewFile(currentDbId, {
-                      prefix: "SQL Script",
+                      type: newFileType,
+                      prefix: newFilePrefix,
                       existingFileNames: databaseFiles.map((file) => file.name),
                     });
                     setWorkflowFile(workflowType, workflowIndex, fileId);
-
-                    const fileEntry = await appDb.files.get(fileId);
-                    openFileEditor(dockviewApi, fileId, fileEntry?.name);
+                    openFileEditor(dockviewApi, fileId);
                   }}
                 >
                   <FilePlus className="w-4" />
@@ -238,6 +241,7 @@ export const BaseWorkflowNode = ({
                           const file = e.target.files?.[0];
                           if (file == null) return;
                           const fileId = await createNewFile(currentDbId, {
+                            type: newFileType,
                             filename: file.name,
                             content: await file.text(),
                           });
@@ -255,11 +259,7 @@ export const BaseWorkflowNode = ({
                     asChild
                     onClick={() => {
                       if (dockviewApi == null) return;
-                      openFileEditor(
-                        dockviewApi,
-                        currentFile.id,
-                        currentFile.name,
-                      );
+                      openFileEditor(dockviewApi, currentFile.id);
                     }}
                   >
                     <div className="flex flex-1 gap-0.5 rounded-l bg-gray-100 px-1 hover:bg-gray-200">
@@ -275,12 +275,12 @@ export const BaseWorkflowNode = ({
                 <div className="h-full w-0.5 bg-gray-300" />
                 {/* divider */}
                 <div
-                  className="flex items-center rounded-r bg-gray-100 px-1 hover:bg-gray-200"
+                  className="group flex items-center rounded-r bg-gray-100 px-1 hover:bg-gray-200"
                   onClick={() =>
                     setWorkflowFile(workflowType, workflowIndex, null)
                   }
                 >
-                  <CircleMinus className="w-3.5" />
+                  <CircleMinus className="group-hover:text-destructive w-3.5" />
                 </div>
               </div>
             ))}

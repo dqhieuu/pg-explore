@@ -1,5 +1,5 @@
 import { guid, nextIncrementedFilename } from "../utils";
-import { appDb } from "./app-db";
+import { FileEntry, appDb } from "./app-db";
 
 interface PrefixOption {
   existingFileNames?: string[];
@@ -10,26 +10,27 @@ interface FilenameOption {
   filename: string;
 }
 
-interface FileContent {
+interface FileInfo {
+  type: FileEntry["type"];
   content?: string;
 }
 
 /**
  * Create a new file for the given database
  * @param databaseId
- * @param option Filename or prefix
+ * @param options Filename or prefix
  * @returns Promise of the new file id
  */
 export function createNewFile(
   databaseId: string,
-  option: (PrefixOption | FilenameOption) & FileContent,
+  options: FileInfo & (PrefixOption | FilenameOption),
 ) {
   let filename;
-  if ("filename" in option) {
-    filename = option.filename;
-  } else if ("prefix" in option) {
-    const existingFileNames = option.existingFileNames ?? [];
-    filename = nextIncrementedFilename(option.prefix, existingFileNames);
+  if ("filename" in options) {
+    filename = options.filename;
+  } else if ("prefix" in options) {
+    const existingFileNames = options.existingFileNames ?? [];
+    filename = nextIncrementedFilename(options.prefix, existingFileNames);
   }
 
   filename ??= "Untitled file";
@@ -37,8 +38,8 @@ export function createNewFile(
   return appDb.files.add({
     id: guid(),
     databaseId,
-    type: "sql",
+    type: options.type,
     name: filename,
-    content: option.content,
+    content: options.content,
   }) as Promise<string>;
 }

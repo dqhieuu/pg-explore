@@ -1,5 +1,5 @@
-import { BaseNode } from "@/components/workflow-blocks/base-node";
-import { cn } from "@/lib/utils";
+import { BaseNode } from "@/components/workflow-blocks/base/base-node.tsx";
+import { cn } from "@/lib/utils.ts";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import { ReactNode, Ref } from "react";

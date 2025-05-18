@@ -35,7 +35,7 @@ import {
   openAiChat,
   openFileEditor,
 } from "@/lib/dockview";
-import { memDbId } from "@/lib/utils";
+import { cn, memDbId } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -52,7 +52,6 @@ import {
   MoreHorizontal,
   Plus,
   PlusCircle,
-  ScrollText,
   SettingsIcon,
   SquareTerminal,
   Star,
@@ -162,6 +161,33 @@ function RenameFileDialogContent({
   );
 }
 
+interface TypeToStyle {
+  name: string;
+  style: string;
+}
+
+const typeToStyleMappings: Record<string, TypeToStyle> = {
+  sql: {
+    name: "SQL",
+    style: "bg-blue-900 text-white",
+  },
+  dbml: {
+    name: "DBML",
+    style: "bg-yellow-800 text-white",
+  },
+};
+
+function FileTextIcon({ type }: { type: string }) {
+  const displayName = typeToStyleMappings[type]?.name ?? type.toUpperCase();
+  const style = typeToStyleMappings[type]?.style;
+
+  return (
+    <div className={cn("rounded-md px-2 py-1 text-xs", style)}>
+      {displayName}
+    </div>
+  );
+}
+
 function FileCollapsibleSection({
   newButtonAction,
   sectionName,
@@ -231,10 +257,10 @@ function FileCollapsibleSection({
                       className="h-auto"
                       onClick={() => {
                         if (dockviewApi == null) return;
-                        openFileEditor(dockviewApi, file.id, file.name);
+                        openFileEditor(dockviewApi, file.id);
                       }}
                     >
-                      {itemIcon ?? <ScrollText />}
+                      {itemIcon ?? <FileTextIcon type={file.type} />}
                       {file.name}
                     </SidebarMenuButton>
                     <DropdownMenu>
@@ -514,6 +540,7 @@ export function AppSidebar() {
             itemIcon={<SquareTerminal />}
             newButtonAction={() =>
               createNewFile(currentDbId, {
+                type: "sql",
                 prefix: "SQL Query",
                 existingFileNames: existingFileNames,
               })
@@ -521,8 +548,7 @@ export function AppSidebar() {
           />
           <FileCollapsibleSection
             fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
-            sectionName="In-workflow SQL"
-            itemIcon={<ScrollText />}
+            sectionName="In-workflow files"
             hiddenIfEmpty={true}
           />
         </SidebarContent>

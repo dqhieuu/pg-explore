@@ -1,3 +1,4 @@
+import { DbmlNode } from "@/components/workflow-blocks/dbml-node.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
@@ -27,11 +28,11 @@ import { useEffect, useRef, useState } from "react";
 import { useDebounceCallback, useResizeObserver } from "usehooks-ts";
 
 import { TooltipContent } from "../ui/tooltip";
-import { BaseNode } from "../workflow-blocks/base-node";
+import { BaseNode } from "../workflow-blocks/base/base-node.tsx";
 import { LabeledGroupNode } from "../workflow-blocks/labeled-group-node";
 import { PlaceholderDataNode } from "../workflow-blocks/placeholder-data-node";
 import { PlaceholderSchemaNode } from "../workflow-blocks/placeholder-schema-node";
-import { SQLScriptNode } from "../workflow-blocks/sql-script-node";
+import { SqlScriptNode } from "../workflow-blocks/sql-script-node";
 
 const DatabaseSourceNode = () => {
   const setExtensionsDialogOpen = useAnimationStore(
@@ -93,7 +94,8 @@ const nodeTypes: NodeTypes = {
   end: EndNode,
   placeholderSchema: PlaceholderSchemaNode,
   placeholderData: PlaceholderDataNode,
-  sqlScript: SQLScriptNode,
+  sqlScript: SqlScriptNode,
+  dbml: DbmlNode,
   labeledGroup: LabeledGroupNode,
 };
 
@@ -213,6 +215,16 @@ export function QueryWorkflow() {
             draft.push({
               id: `schema-step-${i}`,
               type: "sqlScript",
+              position: { x: 0, y: 0 },
+              data: {
+                section: "schema",
+                ...workflowInfo,
+              },
+            });
+          } else if (schemaSteps[i].type === "dbml") {
+            draft.push({
+              id: `schema-step-${i}`,
+              type: "dbml",
               position: { x: 0, y: 0 },
               data: {
                 section: "schema",
@@ -377,7 +389,7 @@ export function QueryWorkflow() {
         position: { x: bbox.x - 20, y: bbox.y - 40 },
         data: {
           label: "Create tables",
-          backgroundClassName: "bg-blue-200/50",
+          backgroundClassName: "bg-blue-100/50",
         },
         width: groupWidth,
         height: bbox.height + 60,
@@ -408,7 +420,7 @@ export function QueryWorkflow() {
         position: { x: bbox.x - 20, y: bbox.y - 40 },
         data: {
           label: "Populate data",
-          backgroundClassName: "bg-green-200/50",
+          backgroundClassName: "bg-green-100/50",
         },
         width: groupWidth,
         height: bbox.height + 60,

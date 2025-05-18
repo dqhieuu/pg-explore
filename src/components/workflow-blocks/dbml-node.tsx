@@ -4,17 +4,14 @@ import { ScrollText } from "lucide-react";
 
 import { BaseWorkflowNode } from "./base/base-workflow-node.tsx";
 
-export type SqlScriptNodeData = {
+export type DbmlNodeData = {
   workflowIndex: number;
   workflowType: "schema" | "data";
 };
 
-export type SqlScriptNodeType = Node<SqlScriptNodeData, "workflow">;
+export type DbmlNodeType = Node<DbmlNodeData, "workflow">;
 
-export const SqlScriptNode = ({
-  data,
-  ...props
-}: NodeProps<SqlScriptNodeType>) => {
+export const DbmlNode = ({ data, ...props }: NodeProps<DbmlNodeType>) => {
   const { workflowIndex, workflowType } = data;
 
   return (
@@ -22,11 +19,11 @@ export const SqlScriptNode = ({
       data={{
         workflowIndex: workflowIndex,
         workflowType: workflowType,
-        newFileType: "sql",
-        fileFilterPredicate: (file) => file.type === "sql",
-        newFilePrefix: "SQL Script",
-        headerText: "SQL Script",
-        headerBackgroundClass: "bg-amber-50",
+        newFileType: "dbml",
+        fileFilterPredicate: (file) => file.type === "dbml",
+        newFilePrefix: "DBML Schema",
+        headerText: "DBML File",
+        headerBackgroundClass: "bg-purple-100",
         headerIcon: <ScrollText strokeWidth={1.5} className="w-5" />,
       }}
       {...props}

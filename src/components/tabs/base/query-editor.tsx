@@ -1,24 +1,17 @@
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
-import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
-import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store";
-import { pgLinter } from "@/lib/codemirror/pglinter";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
-import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils";
+import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
+import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
+import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store.ts";
+import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
+import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { devModeEnabled } from "@/lib/utils.ts";
-import { PostgreSQL as PostgreSQLDialect, sql } from "@codemirror/lang-sql";
-import { Prec } from "@codemirror/state";
+import { Extension } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
+import { PGliteInterface } from "@electric-sql/pglite";
 import { usePGlite } from "@electric-sql/pglite-react";
 import CodeMirror, { ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { Save } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { useDebounce } from "react-use";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
@@ -30,8 +23,23 @@ const filterNonSelectResult = (result: QueryResult) => {
 export interface QueryEditorProps {
   contextId: string;
   fileId: string;
+  extensions?: ((ctx: QueryEditorContext) => Extension)[];
+  headerComponent?: (ctx: QueryEditorContext) => ReactNode;
 }
-export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
+
+export interface QueryEditorContext {
+  executeCurrentQuery: () => void;
+  currentDatabase: PGliteInterface;
+  currentSchema: Record<string, string[]>;
+  isHighlightingSelection: boolean;
+}
+
+export function QueryEditor({
+  contextId,
+  fileId,
+  extensions,
+  headerComponent,
+}: QueryEditorProps) {
   const db = usePGlite();
 
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
@@ -58,6 +66,64 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
 
   const schema = usePostgresStore((state) => state.schema);
   const setSchema = usePostgresStore((state) => state.setSchema);
+
+  const editor = useRef<ReactCodeMirrorRef>(null);
+  const [selectionRange, setSelectionRange] = useState<[number, number]>([
+    0, 0,
+  ]);
+  const setSelectionRangeDebounced = useDebounceCallback(setSelectionRange, 50);
+  const isHighlightingSelection = selectionRange[0] < selectionRange[1];
+
+  const { notifyModifyEditor, notifyRunArbitraryQuery } = useWorkflowMonitor();
+
+  const [, cancelDebouncedSave] = useDebounce(
+    () => {
+      if (isSaved) return;
+      setShouldSave(contextId, true);
+    },
+    3000,
+    [queryEditorValue],
+  );
+
+  const ctx: QueryEditorContext = {
+    executeCurrentQuery: executeQuery,
+    currentDatabase: db,
+    currentSchema: schema,
+    isHighlightingSelection,
+  };
+
+  // Component first mount, set the query editor value
+  useEffect(() => {
+    if (associatedFile == null) {
+      // Nothing is loaded yet. Do nothing
+      if (prevAssociatedFile.current == null) return;
+
+      // File state changed from valued to null -> close the panel
+      dockviewApi?.getPanel(fileId)?.api?.close();
+      return;
+    }
+
+    prevAssociatedFile.current = associatedFile;
+
+    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
+    setShouldSave(contextId, false);
+  }, [
+    contextId,
+    fileId,
+    associatedFile,
+    dockviewApi,
+    setQueryEditorValue,
+    setShouldSave,
+  ]);
+
+  useEffect(() => {
+    // Save the query editor value to the database if needed
+    if (!shouldSave) return;
+
+    appDb.files.update(fileId, {
+      content: queryEditorValue,
+    });
+  }, [shouldSave, fileId, queryEditorValue]);
 
   function createQueryResultTabsIfNeeded(result: object[]) {
     if (dockviewApi == null) return;
@@ -92,59 +158,8 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
     }
   }
 
-  const editor = useRef<ReactCodeMirrorRef>(null);
-  const [selectionRange, setSelectionRange] = useState<[number, number]>([
-    0, 0,
-  ]);
-  const setSelectionRangeDebounced = useDebounceCallback(setSelectionRange, 50);
-  const isSelecting = selectionRange[0] < selectionRange[1];
-
-  // Component first mount, set the query editor value
-  useEffect(() => {
-    if (associatedFile == null) {
-      // Nothing is loaded yet. Do nothing
-      if (prevAssociatedFile.current == null) return;
-
-      // File state changed from valued to null -> close the panel
-      dockviewApi?.getPanel(fileId)?.api?.close();
-      return;
-    }
-
-    prevAssociatedFile.current = associatedFile;
-
-    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
-    setShouldSave(contextId, false);
-  }, [
-    contextId,
-    fileId,
-    associatedFile,
-    dockviewApi,
-    setQueryEditorValue,
-    setShouldSave,
-  ]);
-
-  const [, cancelDebouncedSave] = useDebounce(
-    () => {
-      if (isSaved) return;
-      setShouldSave(contextId, true);
-    },
-    3000,
-    [queryEditorValue],
-  );
-
-  const { notifyModifyEditor, notifyRunArbitraryQuery } = useWorkflowMonitor();
-
-  useEffect(() => {
-    // Save the query editor value to the database if needed
-    if (!shouldSave) return;
-
-    appDb.files.update(fileId, {
-      content: queryEditorValue,
-    });
-  }, [shouldSave, fileId, queryEditorValue]);
-
   async function executeQuery() {
-    const sqlToQuery = isSelecting
+    const sqlToQuery = isHighlightingSelection
       ? queryEditorValue.slice(...selectionRange)
       : queryEditorValue;
 
@@ -178,23 +193,14 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex gap-2 p-1">
+      <div className="flex gap-2 p-1 border-b">
         <Save
           className={
             (isSaved ? "text-green-700" : "text-red-800") +
             (devModeEnabled() ? " " : " hidden")
           }
         />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button className="h-7 p-3" onClick={executeQuery}>
-              Query {isSelecting ? "selection" : ""}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            Hotkey <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
-          </TooltipContent>
-        </Tooltip>
+        {headerComponent != null && headerComponent(ctx)}
       </div>
 
       <CodeMirror
@@ -231,24 +237,7 @@ export function QueryEditor({ contextId, fileId }: QueryEditorProps) {
           setQueryEditorValue(contextId, val);
         }}
         extensions={[
-          sql({
-            dialect: PostgreSQLDialect,
-            defaultSchema: "public",
-            schema,
-          }),
-          pgLinter(db),
-
-          Prec.high(
-            keymap.of([
-              {
-                key: "Mod-Enter",
-                run: () => {
-                  executeQuery();
-                  return true;
-                },
-              },
-            ]),
-          ),
+          ...(extensions != null ? extensions.map((e) => e(ctx)) : []),
 
           keymap.of([
             {

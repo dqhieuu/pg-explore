@@ -1,5 +1,5 @@
 import {
-  SQLQueryStep,
+  SqlQueryStep,
   WorkflowState,
   WorkflowStep,
   appDb,
@@ -233,17 +233,19 @@ async function evaluateWorkflowStep(
   switch (step.type) {
     case "sql-query":
       return evaluateSqlQueryStep(db, step);
+    case "dbml":
+      return { result: "success" }; // TODO implement this
     default:
       return {
         result: "error",
-        error: `Unknown step type: ${step.type}`,
+        error: `Unknown step type: ${(step as WorkflowStep).type}`,
       };
   }
 }
 
 async function evaluateSqlQueryStep(
   db: PGliteInterface,
-  step: SQLQueryStep,
+  step: SqlQueryStep,
 ): Promise<EvaluationResult> {
   const { fileId } = step;
   if (fileId == null) {

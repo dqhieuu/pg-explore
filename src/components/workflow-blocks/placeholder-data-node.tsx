@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { PlaceholderNode, PlaceholderNodeData } from "./placeholder-node";
+import { PlaceholderNode, PlaceholderNodeData } from "./base/placeholder-node.tsx";
 
 export type PlaceholderDataNode = Node<PlaceholderNodeData, "placeholderData">;
 

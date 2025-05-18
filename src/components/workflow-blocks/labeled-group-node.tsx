@@ -1,9 +1,7 @@
-import { BaseNode } from "@/components/workflow-blocks/base-node";
+import { BaseNode } from "@/components/workflow-blocks/base/base-node.tsx";
 import { cn } from "@/lib/utils";
 import { Node, NodeProps, Panel } from "@xyflow/react";
 import { HTMLAttributes, ReactNode } from "react";
-
-/* GROUP NODE Label ------------------------------------------------------- */
 
 export type GroupNodeLabelProps = HTMLAttributes<HTMLDivElement>;
 export const GroupNodeLabel = ({

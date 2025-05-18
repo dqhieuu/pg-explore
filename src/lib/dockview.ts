@@ -1,3 +1,4 @@
+import { appDb } from "@/lib/dexie/app-db.ts";
 import { DockviewApi } from "dockview";
 
 import { guid } from "./utils";
@@ -46,12 +47,26 @@ export function createWorkflowPanel(
   }
 }
 
-export function openFileEditor(
-  dockviewApi: DockviewApi,
-  fileId: string,
-  fileName?: string,
-) {
+const fileTypeToComponent = {
+  sql: "sqlQueryEditor",
+  dbml: "dbmlEditor",
+};
+export async function openFileEditor(dockviewApi: DockviewApi, fileId: string) {
   if (dockviewApi == null) return;
+
+  const file = await appDb.files.get(fileId);
+  if (!file) {
+    console.error(`Could not find file ${fileId} to open file editor`);
+    return;
+  }
+
+  const componentToAdd = fileTypeToComponent[file.type];
+  if (componentToAdd == null) {
+    console.error(
+      `There isn't a suitable component for this file type ${file.type}`,
+    );
+    return;
+  }
 
   let editorGroup = dockviewApi.getGroup("editor-group");
 
@@ -70,8 +85,8 @@ export function openFileEditor(
 
   dockviewApi.addPanel({
     id: fileId,
-    component: "queryEditor",
-    title: fileName ?? fileId,
+    component: componentToAdd,
+    title: file.name,
     params: {
       fileId,
       contextId: guid(),
