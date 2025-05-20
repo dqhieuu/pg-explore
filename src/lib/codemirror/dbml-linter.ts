@@ -19,7 +19,7 @@ export const dbmlLinter = linter((view) => {
   const currentText = view.state.doc.toString();
 
   const errors = detectDbmlError(currentText);
-  console.log(errors);
+
   for (const error of errors) {
     const { location } = error;
 

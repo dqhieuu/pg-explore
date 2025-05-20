@@ -2,7 +2,10 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
-import { evaluateSql, querySchemaForCodeMirror } from "@/lib/pglite/pg-utils.ts";
+import {
+  evaluateSql,
+  querySchemaForCodeMirror,
+} from "@/lib/pglite/pg-utils.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { devModeEnabled } from "@/lib/utils.ts";
 import { Extension } from "@codemirror/state";
@@ -193,7 +196,7 @@ export function QueryEditor({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex gap-2 p-1 border-b">
+      <div className="flex gap-2 border-b p-1">
         <Save
           className={
             (isSaved ? "text-green-700" : "text-red-800") +

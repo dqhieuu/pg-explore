@@ -1,0 +1,231 @@
+@top Program { statement* }
+
+statement {
+  ProjectDeclaration |
+  TableGroupDeclaration |
+  TableDeclaration |
+  EnumDeclaration |
+  RefDeclaration |
+  NoteDeclaration |
+  TablePartialDeclaration
+}
+
+ProjectDeclaration {
+  kw<"project"> Identifier "{" projectBody "}"
+}
+
+projectBody { projectItem* }
+
+projectItem {
+  Setting |
+  NoteDeclaration
+}
+
+TableGroupDeclaration {
+  kw<"tablegroup"> Identifier "{" tableGroupBody "}"
+}
+
+tableGroupBody { tableGroupItem* }
+
+tableGroupItem {
+  TableReference |
+  Setting
+}
+
+TableDeclaration {
+  Kw<"table"> Identifier ("." Identifier)? "{" tableBody "}"
+}
+
+tableBody { tableItem* }
+
+tableItem {
+  ColumnDefinition |
+  Setting |
+  NoteDeclaration
+}
+
+ColumnDefinition {
+  Identifier DataType ColumnSettings?
+}
+
+ColumnSettings {
+  "[" columnSetting ("," columnSetting)* "]"
+}
+
+columnSetting {
+  PrimarySetting |
+  UniqueSetting |
+  NullSetting |
+  IncrementSetting |
+  DefaultSetting |
+  NoteSetting |
+  RefSetting
+}
+
+PrimarySetting { kw<"pk"> }
+UniqueSetting { kw<"unique"> }
+NullSetting { kw<"null"> | (kw<"not"> kw<"null">) }
+IncrementSetting { kw<"increment"> }
+DefaultSetting { kw<"default"> ":" (String | Number | Identifier) }
+NoteSetting { kw<"note"> ":" String }
+RefSetting { kw<"ref"> ":" RefExpression }
+
+EnumDeclaration {
+  kw<"enum"> Identifier "{" enumBody "}"
+}
+
+enumBody { enumItem* }
+
+enumItem {
+  Identifier ("[" enumItemSettings "]")?
+}
+
+enumItemSettings {
+  enumItemSetting ("," enumItemSetting)*
+}
+
+enumItemSetting {
+  NoteSetting
+}
+
+RefDeclaration {
+  kw<"ref"> RefName? "{" RefBody "}"
+}
+
+RefName { Identifier }
+
+RefBody { RefExpression }
+
+RefExpression {
+  TableColumn RelationType TableColumn
+}
+
+TableColumn {
+  Identifier ("." Identifier)?
+}
+
+RelationType {
+  OneToOne |
+  OneToMany |
+  ManyToOne |
+  ManyToMany
+}
+
+OneToOne { "-" }
+OneToMany { "<" }
+ManyToOne { ">" }
+ManyToMany { "<>" }
+
+NoteDeclaration {
+  kw<"note"> NoteTarget? "{" String "}"
+}
+
+NoteTarget {
+  Identifier ("." Identifier)?
+}
+
+TablePartialDeclaration {
+  kw<"tablepartial"> Identifier "{" tableBody "}"
+}
+
+TableReference { Identifier }
+
+Setting {
+  SettingName ":" SettingValue
+}
+
+SettingName {
+  kw<"indexes"> |
+  kw<"ref"> |
+  kw<"note"> |
+  kw<"headercolor"> |
+  kw<"pk"> |
+  kw<"null"> |
+  kw<"increment"> |
+  kw<"unique"> |
+  kw<"default"> |
+  kw<"primary"> |
+  kw<"key"> |
+  kw<"name"> |
+  kw<"as"> |
+  kw<"color">
+}
+
+SettingValue {
+  String | Number | Identifier | Boolean
+}
+
+DataType {
+  // Numeric types
+  kw<"TINYINT"> | kw<"SMALLINT"> | kw<"MEDIUMINT"> | kw<"INT"> | kw<"BIGINT"> |
+  kw<"FLOAT"> | kw<"DOUBLE"> | kw<"DECIMAL"> | kw<"DEC"> | kw<"BIT"> |
+  kw<"BOOL"> | kw<"REAL"> | kw<"MONEY"> | kw<"BINARY_FLOAT"> | kw<"BINARY_DOUBLE"> |
+  kw<"smallmoney"> |
+
+  // String types
+  kw<"ENUM"> | kw<"CHAR"> | kw<"BINARY"> | kw<"VARCHAR"> | kw<"VARBINARY"> |
+  kw<"TINYBLOB"> | kw<"TINYTEXT"> | kw<"BLOB"> | kw<"TEXT"> | kw<"MEDIUMBLOB"> |
+  kw<"MEDIUMTEXT"> | kw<"LONGBLOB"> | kw<"LONGTEXT"> | kw<"SET"> | kw<"INET6"> |
+  kw<"UUID"> | kw<"NVARCHAR"> | kw<"NCHAR"> | kw<"NTEXT"> | kw<"IMAGE"> |
+  kw<"VARCHAR2"> | kw<"NVARCHAR2"> |
+
+  // Date/Time types
+  kw<"DATE"> | kw<"TIME"> | kw<"DATETIME"> | kw<"DATETIME2"> | kw<"TIMESTAMP"> |
+  kw<"YEAR"> | kw<"smalldatetime"> | kw<"datetimeoffset"> |
+
+  // Other types
+  kw<"XML"> | kw<"sql_variant"> | kw<"uniqueidentifier"> | kw<"CURSOR"> |
+  kw<"BFILE"> | kw<"CLOB"> | kw<"NCLOB"> | kw<"RAW">
+}
+
+Boolean { @specialize<Identifier, "true" | "false"> }
+
+@tokens {
+  Identifier { $[a-zA-Z_] $[a-zA-Z0-9_]* }
+
+  Number {
+    $[0-9]+ |
+    "0x" $[0-9a-fA-F]+ |
+    $[0-9]+ "." $[0-9]* |
+    "." $[0-9]+ |
+    ($[0-9]+ ("." $[0-9]*)? | "." $[0-9]+) ("e" | "E") ("+" | "-")? $[0-9]+ |
+    "#" $[0-9a-fA-F]$[0-9a-fA-F]$[0-9a-fA-F] |
+    "#" $[0-9a-fA-F]$[0-9a-fA-F]$[0-9a-fA-F]$[0-9a-fA-F]$[0-9a-fA-F]$[0-9a-fA-F]
+  }
+
+  String {
+    '"' (!["\\] | "\\" _)* '"' |
+    "'" (!['\\] | "\\" _)* "'" |
+    "`" (![`\\] | "\\" _)* "`" |
+    threeSingleQuotes (!threeSingleQuotes)* threeSingleQuotes
+  }
+
+  threeSingleQuotes { "\'\'\'" }
+  LineComment { "//" ![\n]* }
+  BlockComment { "/*" blockCommentRest }
+  blockCommentRest { ![*] blockCommentRest | "*" blockCommentAfterStar }
+  blockCommentAfterStar { "/" | "*" blockCommentAfterStar | ![/*] blockCommentRest }
+
+  @precedence { BlockComment, LineComment }
+
+  whitespace { $[ \t\r\n]+ }
+
+  "{" "}" "[" "]" "(" ")"
+  "," ":" "."
+  "-" "<" ">" "<>"
+  "=" "+" "*" "/" "^" "%" "!" "~" "?" "&" "|"
+}
+
+@skip { whitespace | LineComment | BlockComment }
+
+@precedence {
+  OneToMany,
+  OneToOne,
+  ManyToOne
+}
+
+// Helper to define keywords with case insensitivity
+kw<term> { @specialize<Identifier, term> }
+Kw<term> { @specialize<Identifier, term> }
+
+// @external specialize

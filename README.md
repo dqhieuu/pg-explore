@@ -3,34 +3,102 @@
     <h1>pgExplore</h1>
 </div>
 
-<h3 align="center">PostgreSQL data explorer that lives in your browser.</h3>
+<h3 align="center">Web PostgreSQL data explorer with AI, extensions, workflow builder, visualizer, integration,... and God knows what I will add in the future??</h3>
 
 ![Demo screenshot](./public/demo1.png)
 
-- Ever wanted to test out a SQL query without having to set up a database?  
-- Have a colossal database schema, and feel like AI (maybe your locally hosted one) can help you to write SQL queries? 
-- Or just want to utilize the versatility of PostgreSQL to analyze your sensitive JSON/CSV files, but importing files to a database is a big hassle? 
+"Most database clients are so unintuitive, except those integrated in Jetbrains' apps, which I already use daily." But even with the most advanced clients, it still can't help my unreasonably specific use cases. 
 
-pgExplore is here to help you with that! pgExplore is a Progressive Web App (PWA) Postgres explorer and server that runs offline in your browser (works without Internet connection). Completely free and open-source. Powered by [PGlite](https://github.com/electric-sql/pglite) and my desire to build a capable and user-friendly SQL toolbox :)
+Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that can run in a browser. "Why don't I create my own Postgres toolbox that can run anywhere to ease my gridmaxxing at work?", I wondered. And so began this repo—purely to support my use-case driven needs.
 
-Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app).
+- I have CSV, JSON data of unknown structure. I want to dump all of them into Postgres and use some LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data, unless specified) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
-## Features
+- The other time, I want to create the tables with my DBML schema I wrote some time ago, and also I want to store my reusable queries in the browser. Why not make it work as a workflow/node-chain and language agnostic while I'm at it?
 
-- [x] Create and manage Postgres databases that persist in your browser
-- [x] Add table schema & data files (SQL, DBML, JSON,...) to build your query workflow
-- [x] Configurable AI assistant fed with your database schema to help you write SQL queries
-- [x] SQL query editor with error highlighting and autocompletion
-- [x] Table & chart visualization for query results
-- [ ] Table relationship visualization
-- [ ] Embeddable SQL query widgets for interactive SQL sharing
-- [ ] Export & import database schema and data
+---
 
-And of course, feel free to open an issue or PR if you have any suggestions or feature requests. I will be happy to consider them.
+Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app). It will download to your browser once, and then you can use it offline the next time you visit the site (PWA). Or host it locally in the section below!
 
-## Getting Started
+The more people use it, or star this repo, the more I am motivated to develop more! Gotta love those steadily increasing numbers :)
 
-### Local Development
+## TODO backlog :D
+Suggest any ideas, report bugs - it helps!
+
+### Currently doing
+- [x] Create Postgres databases
+  - [x] Non-persistent (for embeddable iframes in the future)
+  - [x] Persistent (IndexedDB)
+- [x] Reorderable layout (implement with Dockview)
+- [x] File browser sidebar
+  - [x] File interaction
+    - [x] Create/Rename/Delete file
+- [x] SQL query (tab #1)
+  - [x] Run
+    - [x] Run selected
+    - [x] Run hotkey
+  - [x] Parse
+    - [x] Inject pg_dump schema
+  - [x] Lint (kinda ass rn)
+- [x] Query result as table (tab #2 / subtab #1)
+  - [x] Infinite scroll
+  - [x] Filter
+- [x] Workflow builder and step runner (implement with React Flow) (tab #3)
+  - [x] Base nodes and groups
+  - [x] Begin-to-end evaluation
+  - [x] Replay n-1 steps before error
+- [x] AI chat (tab #4)
+  - [x] Inject pg_dump schema
+  - [x] Q&A
+  - [x] Clear screen
+- [x] Settings popup
+  - [x] Dark mode
+  - [x] Enable SQL linter
+  - [x] Use custom AI endpoint
+  - [x] Debug mode & reset everything
+- [x] More databases popup
+  - [x] Rename/Delete database
+  - [x] See disk usage
+- [x] Postgres extensions
+  - [x] Enable/disable extensions per database
+- [x] DBML schema (tab #5)
+  - [ ] Parse (with Lezer grammar)
+  - [x] Lint
+- [ ] Table data editor (tab #6) (with AG grid / open-source alt in the future)
+  - [ ] Import CSV
+  - [ ] Import JSON
+  - [ ] Data type selector
+    - [ ] Data type
+    - [ ] Unique/null
+  - [ ] Auto detect column type
+
+### Will do next
+- [ ] AI node in workflow builder
+- [ ] Tables & relationship visualization
+  - [ ] Table
+    - [ ] Name
+    - [ ] Datatype
+    - [ ] Null/unique/primary
+  - [ ] Relationship
+  - [ ] Auto-layout
+- [ ] Dark mode
+
+### In consideration
+- [ ] Export embeddable iframes
+- [ ] Import/Export workflow and files
+- [ ] Import/Export database dump
+- [ ] REPL console (supporting \d commands, pg_dump,...)
+- [ ] Populate random data step (implement with Faker.js)
+
+## Development
+
+(Optional) You can setup some env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
+```
+VITE_AI_API_KEY=<YOUR_API_KEY>
+VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+VITE_AI_MODEL=gemini-2.0-flash
+```
+
+### Start the site
 
 ```bash
 git clone https://github.com/dqhieuu/pg-explore.git
@@ -39,11 +107,9 @@ pnpm i
 pnpm dev
 ```
 
-### Build
+### Build distribution
 
 ```bash
-git clone https://github.com/dqhieuu/pg-explore.git
-cd pg-explore
-pnpm i
+npx tsc -b
 pnpm build
 ```
