@@ -3,23 +3,25 @@
     <h1>pgExplore</h1>
 </div>
 
-<h3 align="center">Web PostgreSQL data explorer with AI, extensions, workflow builder, visualizer, integration,... and God knows what I will add in the future??</h3>
+<h3 align="center">Web-based PostgreSQL data explorer with AI, workflow builder, integration, ... and more features are being added!</h3>
 
 ![Demo screenshot](./public/demo1.png)
 
 "Most database clients are so unintuitive, except those integrated in Jetbrains' apps, which I already use daily." But even with the most advanced clients, it still can't help my unreasonably specific use cases. 
 
-Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that can run in a browser. "Why don't I create my own Postgres toolbox that can run anywhere to ease my gridmaxxing at work?", I wondered. And so began this repo—purely to support my use-case driven needs.
+Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that runs in a browser. "Why don't I create my own Postgres toolbox that can run anywhere to ease my gridmaxxing at work?", I wondered. And so began this repo—purely to support my use-case driven needs.
 
 - I have CSV, JSON data of unknown structure. I want to dump all of them into Postgres and use some LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data, unless specified) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
-- The other time, I want to create the tables with my DBML schema I wrote some time ago, and also I want to store my reusable queries in the browser. Why not make it work as a workflow/node-chain and language agnostic while I'm at it?
+- The other time, I want to create the tables with my DBML schema I wrote some time ago, and also I want to store my reusable queries in the browser. Why not make it work as a workflow/node-chain runner and language-agnostic while I'm at it?
 
 ---
 
-Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app). It will download to your browser once, and then you can use it offline the next time you visit the site (PWA). Or host it locally in the section below!
+Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app). It will cache the data in your browser (PWA), and then you can use it offline the next time you visit the site. Or host it locally in the section below!
 
-The more people use it, or star this repo, the more I am motivated to develop more! Gotta love those steadily increasing numbers :)
+You can keep me motivated by using this site or starring this repo. Motivation powers open-source development, as always!
+
+---
 
 ## TODO backlog :D
 Suggest any ideas, report bugs - it helps!
@@ -91,14 +93,14 @@ Suggest any ideas, report bugs - it helps!
 
 ## Development
 
-(Optional) You can setup some env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
+(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
 ```
 VITE_AI_API_KEY=<YOUR_API_KEY>
 VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
 VITE_AI_MODEL=gemini-2.0-flash
 ```
 
-### Start the site
+### To start the site
 
 ```bash
 git clone https://github.com/dqhieuu/pg-explore.git

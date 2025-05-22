@@ -8,6 +8,7 @@ const parserWithMetadata = parser.configure({
   props: [
     styleTags({
       Identifier: t.variableName,
+      Table: t.keyword,
       Boolean: t.bool,
       String: t.string,
       Number: t.number,
