@@ -11,7 +11,11 @@ statement {
 }
 
 ProjectDeclaration {
-  Project Identifier "{" projectItem* "}"
+  Project Identifier ProjectBody
+}
+
+ProjectBody {
+  BlockStart projectItem* BlockEnd
 }
 
 projectItem {
@@ -23,24 +27,37 @@ DatabaseTypeItem { Database_type ":" String }
 NoteItem { Note ":" String}
 
 TableDeclaration {
-  Table Identifier ("." Identifier)? (As Identifier)? TableSettings? "{" tableItem* "}"
+  Table Identifier ("." Identifier)? (As Identifier)? TableSettings? TableBody
+}
+
+TableBody {
+  BlockStart tableItem* BlockEnd
 }
 
 TableSettings { "[" tableSetting ("," tableSetting)* "]" }
 tableSetting { HeadercolorSetting }
 
 tableItem {
-  PartialTableReferenceItem |
+  TablePartialReferenceItem |
   ColumnItem |
   NoteItem |
   IndexDeclaration
 }
 
-PartialTableReferenceItem {
-  "~" Identifier
+TablePartialReferenceItem {
+  TablePartialReferenceKeyword Identifier
 }
 
-ColumnItem { Identifier DataType ("(" Identifier ")")? ColumnSettings? }
+TablePartialReferenceKeyword { "~" }
+
+ColumnItem {
+  (String | Identifier) ColumnDataType ("(" Identifier ")")? ColumnSettings?
+}
+
+ColumnDataType {
+  DataType |
+  Identifier ("." Identifier)*
+}
 
 ColumnSettings { "[" columnSetting ("," columnSetting)* "]" }
 
@@ -69,7 +86,11 @@ DeleteSetting { Delete ":" RefAction}
 UpdateSetting { Update ":" RefAction}
 
 IndexDeclaration {
-  Indexes "{" IndexItem (IndexItem)* "}"
+  Indexes IndexBody
+}
+
+IndexBody {
+  BlockStart IndexItem (IndexItem)* BlockEnd
 }
 
 IndexItem {
@@ -89,10 +110,11 @@ indexSetting {
 }
 
 RefDeclaration {
-  Ref Identifier?
-  ("{" RefItem* "}" |
-   ":" RefItem
-  )
+  Ref Identifier? ( RefBody | ":" RefItem)
+}
+
+RefBody {
+  BlockStart RefItem* BlockEnd
 }
 
 RefItem {
@@ -128,7 +150,11 @@ relationType {
 }
 
 EnumDeclaration {
-  Enum Identifier "{" EnumItem* "}"
+  Enum Identifier EnumBody
+}
+
+EnumBody {
+  BlockStart EnumItem* BlockEnd
 }
 
 EnumItem { (Identifier | String) ("[" EnumItemSettings "]")? }
@@ -138,11 +164,19 @@ enumItemSetting {
 }
 
 NoteDeclaration {
-  Note Identifier "{" String "}"
+  Note Identifier NoteBody
+}
+
+NoteBody {
+  BlockStart String BlockEnd
 }
 
 TableGroupDeclaration {
-  TableGroup Identifier TableGroupSettings? "{" tableGroupItem* "}"
+  TableGroup Identifier TableGroupSettings? TableGroupBody
+}
+
+TableGroupBody {
+  BlockStart tableGroupItem* BlockEnd
 }
 
 tableGroupItem {
@@ -158,7 +192,7 @@ tableGroupSetting {
 }
 
 TablePartialDeclaration {
-  Tablepartial Identifier TableSettings? "{" tableItem* "}"
+  TablePartial Identifier TableSettings? TableBody
 }
 
 DataType {
@@ -188,6 +222,9 @@ BooleanType { True | False }
 
 @tokens {
   Identifier { $[a-zA-Z0-9_]+ }
+
+  BlockStart { "{" }
+  BlockEnd { "}" }
 
   Number {
     "0x" $[0-9a-fA-F]+ |
@@ -228,6 +265,7 @@ BooleanType { True | False }
   @precedence { BlockComment, LineComment }
 
   whitespace { $[ \t\r\n]+ }
+  linebreak { "\n" }
 
   OneToOne { "-" }
   OneToMany { "<" }
@@ -240,7 +278,7 @@ BooleanType { True | False }
   Project,
   TableGroup,
   Table,
-  Tablepartial,
+  TablePartial,
   Enum,
 
   // Common keywords

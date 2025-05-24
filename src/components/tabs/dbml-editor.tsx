@@ -1,7 +1,7 @@
 import { QueryEditor } from "@/components/tabs/base/query-editor.tsx";
 import { Button } from "@/components/ui/button.tsx";
-import { dbmlLinter } from "@/lib/codemirror/dbml-linter.ts";
-import { dbmlParser } from "@/lib/codemirror/dbml-parser.ts";
+import { dbmlLinter } from "@/lib/codemirror/dbml/linter.ts";
+import { dbmlParser } from "@/lib/codemirror/dbml/parser.ts";
 
 export function DbmlEditor({
   contextId,

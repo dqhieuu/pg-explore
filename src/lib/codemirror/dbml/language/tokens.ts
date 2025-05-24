@@ -66,7 +66,7 @@ import {
   Sql_variant,
   Table,
   TableGroup,
-  Tablepartial,
+  TablePartial,
   Text,
   Time,
   Timestamp,
@@ -84,14 +84,14 @@ import {
   Varchar2,
   Xml,
   Year,
-} from "./parser.terms";
+} from "./lezer-parser.terms.ts";
 
 const keywordMap: Record<string, number> = {
   // Main declaration keywords
   project: Project,
   tablegroup: TableGroup,
   table: Table,
-  tablepartial: Tablepartial,
+  tablepartial: TablePartial,
   enum: Enum,
 
   // Common keywords

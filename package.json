@@ -9,10 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "generate-pwa-assets": "pwa-assets-generator",
-    "generate-lezer-grammar": "lezer-generator --typeScript src/lib/codemirror/dbml-lezer/dbml.grammar -o src/lib/codemirror/dbml-lezer/parser.ts"
+    "generate-lezer-grammar": "lezer-generator --typeScript src/lib/codemirror/dbml/language/dbml.grammar -o src/lib/codemirror/dbml/language/lezer-parser.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^0.2.14",
+    "@codemirror/autocomplete": "^6.18.6",
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/language": "^6.11.0",
