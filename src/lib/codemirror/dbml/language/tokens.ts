@@ -191,7 +191,8 @@ const keywordMap: Record<string, number> = {
   boolean: BooleanToken,
 };
 
-export const keywords = (token: string) => {
+// @ts-expect-error Unused `stack` to match the signature of the generated parser
+export const keywords = (token: string, stack: unknown) => {
   const found = keywordMap[token.toLowerCase()];
   return found == null ? -1 : found;
 };

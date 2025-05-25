@@ -85,6 +85,8 @@ const autocompletion = parserDefinition.data.of({
     const currentNode = syntaxTree(context.state).resolveInner(context.pos, -1);
     const parent = currentNode?.parent?.parent;
     const prevSibling = currentNode?.prevSibling;
+
+    // Orphan child. We don't know where we are in the syntax tree.
     if (!parent) return null;
 
     if (parent.type.id === Program && prevSibling == null) {

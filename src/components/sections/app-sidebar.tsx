@@ -492,7 +492,7 @@ export function AppSidebar() {
               onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
             >
               <Workflow />
-              Setup pre-query workflow
+              Set up pre-query steps
             </Button>
             <div className="flex">
               <Button
