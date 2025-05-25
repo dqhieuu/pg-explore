@@ -534,23 +534,34 @@ export function AppSidebar() {
               </DropdownMenu>
             </div>
           </SidebarGroup>
-          <FileCollapsibleSection
-            fileFilterPredicate={(file) => !fileIdsInUse.includes(file.id)}
-            sectionName="SQL scratchpad"
-            itemIcon={<SquareTerminal />}
-            newButtonAction={() =>
-              createNewFile(currentDbId, {
-                type: "sql",
-                prefix: "SQL Query",
-                existingFileNames: existingFileNames,
-              })
-            }
-          />
-          <FileCollapsibleSection
-            fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
-            sectionName="In-workflow files"
-            hiddenIfEmpty={true}
-          />
+          <SidebarGroup className="flex overflow-auto p-0">
+            <FileCollapsibleSection
+              fileFilterPredicate={(file) =>
+                file.type === "sql" && !fileIdsInUse.includes(file.id)
+              }
+              sectionName="SQL scratchpad"
+              itemIcon={<SquareTerminal />}
+              newButtonAction={() =>
+                createNewFile(currentDbId, {
+                  type: "sql",
+                  prefix: "SQL Query",
+                  existingFileNames: existingFileNames,
+                })
+              }
+            />
+            <FileCollapsibleSection
+              fileFilterPredicate={(file) => fileIdsInUse.includes(file.id)}
+              sectionName="In-workflow files"
+              hiddenIfEmpty
+            />
+            <FileCollapsibleSection
+              fileFilterPredicate={(file) =>
+                file.type !== "sql" && !fileIdsInUse.includes(file.id)
+              }
+              sectionName="Unused files"
+              hiddenIfEmpty
+            />
+          </SidebarGroup>
         </SidebarContent>
       </Dialog>
     </Sidebar>

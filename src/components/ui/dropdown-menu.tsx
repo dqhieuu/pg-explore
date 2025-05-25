@@ -208,6 +208,9 @@ function DropdownMenuHint({
       target="_blank"
       href={redirectUrl}
       {...props}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
     >
       <HelpCircle />
     </a>

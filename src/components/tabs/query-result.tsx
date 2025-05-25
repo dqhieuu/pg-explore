@@ -1,12 +1,11 @@
+import { DataTable } from "@/components/sections/data-table.tsx";
 import { Input } from "@/components/ui/input.tsx";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { ColumnDef } from "@tanstack/react-table";
 import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { useDebounceCallback } from "usehooks-ts";
-
-import { DataTable } from "../sections/data-table";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 export interface QueryResultProps {
   contextId: string;
@@ -64,9 +63,9 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="table">Table</TabsTrigger>
-            <TabsTrigger value="chart" disabled>
-              Chart
-            </TabsTrigger>
+            {/*<TabsTrigger value="chart" disabled>*/}
+            {/*  Chart*/}
+            {/*</TabsTrigger>*/}
           </TabsList>
         </Tabs>
         <div className="flex flex-1 items-center gap-2">

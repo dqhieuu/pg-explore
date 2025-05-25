@@ -15,7 +15,7 @@ Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightw
 
 - I want to create some tables with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, then ask AI to create more tables, and store my reusable queries in the browser. And, I have multiple types of data sources and want to combine them.
 
-- [TODO] I want to add Codepen/JSFiddle-like snippets but for SQL queries in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, CTE/subquery vs lateral join performance of multiple cardinalities)
+- (TODO) I want to add "Codepen/JSFiddle snippets but for SQL queries" in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, CTE/subquery vs lateral join performance of multiple cardinalities)
 
 ---
 

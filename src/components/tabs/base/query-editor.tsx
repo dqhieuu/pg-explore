@@ -1,3 +1,4 @@
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
 import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store.ts";
@@ -28,6 +29,7 @@ export interface QueryEditorProps {
   fileId: string;
   extensions?: ((ctx: QueryEditorContext) => Extension)[];
   headerComponent?: (ctx: QueryEditorContext) => ReactNode;
+  generatedViewConfig?: GeneratedViewConfig;
 }
 
 export interface QueryEditorContext {
@@ -37,11 +39,22 @@ export interface QueryEditorContext {
   isHighlightingSelection: boolean;
 }
 
+interface GeneratedViewConfig {
+  transformFunc: (content: string) => GeneratedViewTransformResult;
+  extensions?: ((ctx: QueryEditorContext) => Extension)[];
+}
+
+interface GeneratedViewTransformResult {
+  success: boolean;
+  value?: string;
+}
+
 export function QueryEditor({
   contextId,
   fileId,
   extensions,
   headerComponent,
+  generatedViewConfig,
 }: QueryEditorProps) {
   const db = usePGlite();
 
@@ -88,12 +101,31 @@ export function QueryEditor({
     [queryEditorValue],
   );
 
+  const [generatedEditorView, setGeneratedEditorView] = useState("original");
+  const [generatedEditorValue, setGeneratedEditorValue] = useState<
+    string | null
+  >(null);
+
   const ctx: QueryEditorContext = {
     executeCurrentQuery: executeQuery,
     currentDatabase: db,
     currentSchema: schema,
     isHighlightingSelection,
   };
+
+  useEffect(() => {
+    if (generatedViewConfig != null) {
+      const transformOriginalValueRes =
+        generatedViewConfig.transformFunc(queryEditorValue);
+
+      if (
+        transformOriginalValueRes.success &&
+        transformOriginalValueRes.value != null
+      ) {
+        setGeneratedEditorValue(transformOriginalValueRes.value);
+      }
+    }
+  }, [generatedViewConfig, queryEditorValue]);
 
   // Component first mount, set the query editor value
   useEffect(() => {
@@ -194,71 +226,106 @@ export function QueryEditor({
     querySchemaForCodeMirror(db).then(setSchema);
   }
 
+  const generatedViewExtensions = generatedViewConfig?.extensions ?? [];
+  const GeneratedView = () =>
+    generatedViewConfig != null ? (
+      <CodeMirror
+        value={generatedEditorValue ?? "-- Value currently unavailable."}
+        extensions={[...generatedViewExtensions.map((e) => e(ctx))]}
+        className="h-full w-full flex-1"
+        width="100%"
+        height="100%"
+        readOnly={true}
+      />
+    ) : (
+      <></>
+    );
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex gap-2 border-b p-1">
+    <div className="@container flex h-full flex-col">
+      <div className="flex items-center gap-2 border-b p-1">
         <Save
           className={
             (isSaved ? "text-green-700" : "text-red-800") +
             (devModeEnabled() ? " " : " hidden")
           }
         />
+        {generatedViewConfig != null && (
+          <Tabs
+            value={generatedEditorView}
+            className="h-8"
+            onValueChange={setGeneratedEditorView}
+          >
+            <TabsList>
+              <TabsTrigger value="original">Editor</TabsTrigger>
+              <TabsTrigger value="generated">Generated</TabsTrigger>
+              <TabsTrigger value="split">Split view</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         {headerComponent != null && headerComponent(ctx)}
       </div>
 
-      <CodeMirror
-        ref={editor}
-        value={queryEditorValue}
-        className="flex-1"
-        width="100%"
-        height="100%"
-        onUpdate={(update) => {
-          const newSelectionRanges = update.view.state.selection.ranges;
+      <div className="flex flex-1 flex-col items-center @2xl:flex-row">
+        {(generatedEditorView === "original" ||
+          generatedEditorView === "split") && (
+          <CodeMirror
+            ref={editor}
+            value={queryEditorValue}
+            className="h-full w-full flex-1 border-b-2 @2xl:border-r-2 @2xl:border-b-0"
+            width="100%"
+            height="100%"
+            onUpdate={(update) => {
+              const newSelectionRanges = update.view.state.selection.ranges;
 
-          if (
-            newSelectionRanges.length != 1 ||
-            newSelectionRanges[0].from >= newSelectionRanges[0].to
-          ) {
-            if (selectionRange[0] != 0 || selectionRange[1] != 0) {
-              setSelectionRangeDebounced([0, 0]);
-            }
-            return;
-          }
+              if (
+                newSelectionRanges.length != 1 ||
+                newSelectionRanges[0].from >= newSelectionRanges[0].to
+              ) {
+                if (selectionRange[0] != 0 || selectionRange[1] != 0) {
+                  setSelectionRangeDebounced([0, 0]);
+                }
+                return;
+              }
 
-          if (
-            selectionRange[0] != newSelectionRanges[0].from ||
-            selectionRange[1] != newSelectionRanges[0].to
-          ) {
-            setSelectionRangeDebounced([
-              newSelectionRanges[0].from,
-              newSelectionRanges[0].to,
-            ]);
-          }
-        }}
-        onChange={async (val) => {
-          await notifyModifyEditor(fileId);
-          setQueryEditorValue(contextId, val);
-        }}
-        extensions={[
-          ...(extensions != null ? extensions.map((e) => e(ctx)) : []),
+              if (
+                selectionRange[0] != newSelectionRanges[0].from ||
+                selectionRange[1] != newSelectionRanges[0].to
+              ) {
+                setSelectionRangeDebounced([
+                  newSelectionRanges[0].from,
+                  newSelectionRanges[0].to,
+                ]);
+              }
+            }}
+            onChange={async (val) => {
+              await notifyModifyEditor(fileId);
+              setQueryEditorValue(contextId, val);
+            }}
+            extensions={[
+              ...(extensions != null ? extensions.map((e) => e(ctx)) : []),
 
-          keymap.of([
-            {
-              key: "Mod-s",
-              preventDefault: true,
-              run: () => {
-                cancelDebouncedSave();
-                setShouldSave(contextId, true);
-                toast("File saved!", {
-                  duration: 1000,
-                });
+              keymap.of([
+                {
+                  key: "Mod-s",
+                  preventDefault: true,
+                  run: () => {
+                    cancelDebouncedSave();
+                    setShouldSave(contextId, true);
+                    toast("File saved!", {
+                      duration: 1000,
+                    });
 
-                return true;
-              },
-            },
-          ]),
-        ]}
-      />
+                    return true;
+                  },
+                },
+              ]),
+            ]}
+          />
+        )}
+        {(generatedEditorView === "generated" ||
+          generatedEditorView === "split") && <GeneratedView />}
+      </div>
     </div>
   );
 }
