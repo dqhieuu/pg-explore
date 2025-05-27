@@ -93,6 +93,12 @@ export const useWorkflowMonitor = () => {
         await runWorkflowStepsBeforeFile(fileId);
       },
 
+      notifySendingChat: async () => {
+        if (pgDb == null || currentDbId == null) return;
+
+        return applyWorkflow(pgDb, currentDbId);
+      },
+
       notifyUpdateWorkflow: async () => {
         if (currentDbId == null) {
           throw new Error("notifyUpdateWorkflow: No current database ID");
@@ -101,6 +107,6 @@ export const useWorkflowMonitor = () => {
         await markWorkflowDirty(currentDbId);
       },
     }),
-    [currentDbId, runWorkflowStepsBeforeFile],
+    [currentDbId, pgDb, runWorkflowStepsBeforeFile],
   );
 };

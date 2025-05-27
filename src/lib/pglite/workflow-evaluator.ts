@@ -1,5 +1,8 @@
+import { transformDbmlToSql } from "@/lib/dbml.ts";
 import {
+  DbmlStep,
   SqlQueryStep,
+  StepExecutionResult,
   WorkflowState,
   WorkflowStep,
   appDb,
@@ -19,6 +22,7 @@ export async function applyWorkflow(
   databaseId: string,
   until?: { workflowType: "schema" | "data"; stepsToApply: number },
   isReplayingBecauseOfError = false,
+  _executionResultDict: Record<string, StepExecutionResult> = {},
 ) {
   if (until != null && until.stepsToApply < 0) {
     throw new Error(`stepsToApply must be >= 0`);
@@ -74,6 +78,7 @@ export async function applyWorkflow(
       dataWorkflowId: dataWorkflow.id,
       currentProgress: "schema",
       stepsDone: 0,
+      stepResults: [],
     };
   }
 
@@ -97,6 +102,7 @@ export async function applyWorkflow(
       dataWorkflowId: dataWorkflow.id,
       currentProgress: "schema",
       stepsDone: 0,
+      stepResults: [],
     };
   }
 
@@ -150,9 +156,16 @@ export async function applyWorkflow(
 
     const stepResult = await evaluateWorkflowStep(db, currentStep);
 
+    _executionResultDict[`${currentStepType}__${currentStepIdx}`] = {
+      type: currentStepType,
+      index: currentStepIdx,
+      result: stepResult.result,
+      error: stepResult.error,
+    };
+
     if (stepResult.result === "error") {
       if (isReplayingBecauseOfError) {
-        console.error(`Failed to replaying workflow after error`);
+        console.error(`Failed to replay workflow after error`);
         return;
       }
 
@@ -181,6 +194,7 @@ export async function applyWorkflow(
           stepsToApply: workflowState.stepsDone,
         },
         true,
+        _executionResultDict,
       );
     }
 
@@ -193,6 +207,7 @@ export async function applyWorkflow(
       ...workflowState,
       currentProgress: until?.workflowType ?? "data",
       stepsDone: until?.stepsToApply ?? dataWorkflow.workflowSteps.length,
+      stepResults: Object.values(_executionResultDict),
     } satisfies WorkflowState,
   });
 }
@@ -225,7 +240,7 @@ async function evaluateWorkflowStep(
     case "sql-query":
       return evaluateSqlQueryStep(db, step);
     case "dbml":
-      return { result: "success" }; // TODO implement this
+      return evaluateDbmlStep(db, step);
     default:
       return {
         result: "error",
@@ -240,16 +255,51 @@ async function evaluateSqlQueryStep(
 ): Promise<EvaluationResult> {
   const { fileId } = step;
   if (fileId == null) {
-    return { result: "noop" };
+    return { result: "noop", error: "There was nothing to execute" };
   }
 
   const file = await appDb.files.get(fileId);
 
   if (file == null || isEmptyOrSpaces(file.content)) {
-    return { result: "noop" };
+    return { result: "noop", error: "There was nothing to execute" };
   }
 
   const sql = file.content!;
+
+  try {
+    await evaluateSql(db, sql);
+    return { result: "success" };
+  } catch (e) {
+    return {
+      result: "error",
+      error: (e as Error).message,
+    };
+  }
+}
+
+async function evaluateDbmlStep(
+  db: PGliteInterface,
+  step: DbmlStep,
+): Promise<EvaluationResult> {
+  const { fileId } = step;
+  if (fileId == null)
+    return { result: "noop", error: "There was nothing to execute" };
+
+  const file = await appDb.files.get(fileId);
+
+  if (file == null || isEmptyOrSpaces(file.content))
+    return { result: "noop", error: "There was nothing to execute" };
+
+  const dbmlContent = file.content!;
+  const transformResult = transformDbmlToSql(dbmlContent);
+  if (!transformResult.success) {
+    return {
+      result: "noop",
+      error: `Failed to convert DBML to SQL`,
+    };
+  }
+
+  const sql = transformResult.value!;
 
   try {
     await evaluateSql(db, sql);

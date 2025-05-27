@@ -12,11 +12,19 @@ export interface PGDatabase {
   version: string;
 }
 
+export interface StepExecutionResult {
+  type: string;
+  index: number;
+  result: "success" | "error" | "noop";
+  error?: string;
+}
+
 export interface WorkflowState {
   schemaWorkflowId: string;
   dataWorkflowId: string;
   currentProgress: "dirty" | "schema-error" | "data-error" | "schema" | "data";
   stepsDone: number;
+  stepResults: StepExecutionResult[];
 }
 
 export interface FileEntry {
@@ -50,7 +58,7 @@ export type SqlQueryStep = Modify<
   }
 >;
 
-type DbmlStep = Modify<
+export type DbmlStep = Modify<
   CommonWorkflowStep,
   {
     type: "dbml";
@@ -81,7 +89,7 @@ appDb.version(1).stores({
   sessions: "id, expirationDate",
 });
 
-// New `enabledExtensions` field added `databases`
+// New `enabledExtensions` field added in `databases`
 appDb.version(2).upgrade((tx) => {
   return tx
     .table("databases")
@@ -93,7 +101,7 @@ appDb.version(2).upgrade((tx) => {
     });
 });
 
-// New `version` field added `databases`
+// New `version` field added in `databases`
 appDb.version(3).upgrade((tx) => {
   return tx
     .table("databases")
@@ -101,6 +109,18 @@ appDb.version(3).upgrade((tx) => {
     .modify((db) => {
       if (db.version == null) {
         db.version = "16.4"; // Everything starts at 16.4
+      }
+    });
+});
+
+// New `stepResults` field added in `databases.workflowState`
+appDb.version(4).upgrade((tx) => {
+  return tx
+    .table("databases")
+    .toCollection()
+    .modify((db) => {
+      if (db.workflowState != null && db.workflowState.stepResults == null) {
+        db.workflowState.stepResults = [];
       }
     });
 });

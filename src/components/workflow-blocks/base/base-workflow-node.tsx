@@ -9,7 +9,7 @@ import {
 import { createNewFile, getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { openFileEditor } from "@/lib/dockview.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
-import { cn, memDbId } from "@/lib/utils.ts";
+import { cn, isEmptyOrSpaces, memDbId } from "@/lib/utils.ts";
 import { Handle, NodeProps, Position } from "@xyflow/react";
 import { Node } from "@xyflow/react";
 import {
@@ -20,6 +20,7 @@ import {
   FileText,
   ScrollText,
   Trash,
+  TriangleAlert,
 } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -94,6 +95,24 @@ export const BaseWorkflowNode = ({
     [currentDbId, workflowType],
   );
 
+  const workflowStepExecutionResult = useAppDbLiveQuery(
+    () =>
+      appDb.databases
+        .where("id")
+        .equals(currentDbId)
+        .first()
+        .then((db) => {
+          if (db?.workflowState == null) return undefined;
+
+          return db.workflowState.stepResults.find(
+            (workflowResult) =>
+              workflowResult.type === workflowType &&
+              workflowResult.index === workflowIndex,
+          );
+        }),
+    [currentDbId, workflowType, workflowIndex],
+  );
+
   const currentFile = databaseFiles.find(
     (file) => file.id === currentWorkflowStep?.fileId,
   );
@@ -142,10 +161,36 @@ export const BaseWorkflowNode = ({
   return (
     <>
       <Handle type="target" position={Position.Top} className="z-10" />
-      <BaseNode className="w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1 outline outline-3">
+      <BaseNode
+        className={cn(
+          "w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1",
+          workflowStepExecutionResult != null ? "outline-3" : "",
+          workflowStepExecutionResult?.result === "success"
+            ? "outline-green-600"
+            : "",
+          workflowStepExecutionResult?.result === "noop"
+            ? "outline-amber-300"
+            : "",
+          workflowStepExecutionResult?.result === "error"
+            ? "outline-destructive"
+            : "",
+        )}
+      >
         <div className="relative">
           <div className="relative z-10 flex gap-1">
-            {headerIcon ?? <ScrollText strokeWidth={1.5} className="w-5" />}
+            {isEmptyOrSpaces(workflowStepExecutionResult?.error) ? (
+              (headerIcon ?? <ScrollText strokeWidth={1.5} className="w-5" />)
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <TriangleAlert className="w-5 text-yellow-600" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {workflowStepExecutionResult!.error}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             <div className="self-center text-sm font-medium">{headerText}</div>
             <Trash
               className="ml-auto w-4.5 hover:text-red-700"

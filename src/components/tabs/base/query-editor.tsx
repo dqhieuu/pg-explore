@@ -8,6 +8,7 @@ import {
   querySchemaForCodeMirror,
 } from "@/lib/pglite/pg-utils.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
+import { TransformValueResult } from "@/lib/types.ts";
 import { devModeEnabled } from "@/lib/utils.ts";
 import { Extension } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -40,13 +41,8 @@ export interface QueryEditorContext {
 }
 
 interface GeneratedViewConfig {
-  transformFunc: (content: string) => GeneratedViewTransformResult;
+  transformFunc: (content: string) => TransformValueResult;
   extensions?: ((ctx: QueryEditorContext) => Extension)[];
-}
-
-interface GeneratedViewTransformResult {
-  success: boolean;
-  value?: string;
 }
 
 export function QueryEditor({

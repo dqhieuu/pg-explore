@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tooltip.tsx";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { getDatabaseSchemaDump } from "@/lib/pglite/pg-utils.ts";
+import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { cn } from "@/lib/utils";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { usePGlite } from "@electric-sql/pglite-react";
@@ -28,6 +29,8 @@ export const AiChat = () => {
   const db = usePGlite();
 
   const [chatMessages, setChatMessages] = useState<CoreMessage[]>([]);
+
+  const { notifySendingChat } = useWorkflowMonitor();
 
   const useCustomAIEndpoint = useSettingsStore(
     (state) => state.useCustomAIEndpoint,
@@ -81,6 +84,9 @@ export const AiChat = () => {
     });
 
     setChatMessages(updatedChatMessages);
+
+    // Ensure the workflow is applied before sending the chat message
+    await notifySendingChat();
 
     const dbSchema = await getDatabaseSchemaDump(db);
     const res = streamText({

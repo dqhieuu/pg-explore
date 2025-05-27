@@ -192,6 +192,7 @@ function MainApp() {
             dataWorkflowId: newDataWorkflowId,
             currentProgress: "schema",
             stepsDone: 0,
+            stepResults: [],
           } satisfies WorkflowState,
         });
       }
