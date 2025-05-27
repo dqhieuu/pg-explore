@@ -1,5 +1,6 @@
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
+import { useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
+import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { memDbId } from "@/lib/utils.ts";
 import { ReactNode } from "react";
 
@@ -14,22 +15,12 @@ export const WorkflowMonitorProvider = ({
   const pgDb = usePostgresStore((state) => state.database) ?? undefined;
 
   const schemaWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "schema")
-        .first(),
+    () => getWorkflow(currentDbId, "schema"),
     [currentDbId],
   );
 
   const dataWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "data")
-        .first(),
+    () => getWorkflow(currentDbId, "data"),
     [currentDbId],
   );
 

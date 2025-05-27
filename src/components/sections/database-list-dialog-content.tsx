@@ -23,12 +23,8 @@ import {
   deleteDatabase,
   usePostgresStore,
 } from "@/hooks/stores/use-postgres-store.ts";
-import {
-  PGDatabase,
-  appDb,
-  getNonMemoryDatabases,
-  useAppDbLiveQuery,
-} from "@/lib/dexie/app-db.ts";
+import { PGDatabase, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
+import { getNonMemoryDatabases } from "@/lib/dexie/dexie-utils.ts";
 import { cn, memDbId } from "@/lib/utils.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";

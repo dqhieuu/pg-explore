@@ -1,5 +1,6 @@
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { WorkflowStep, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { memDbId } from "@/lib/utils";
 import { Node, NodeProps } from "@xyflow/react";
 import {
@@ -16,7 +17,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { PlaceholderNode, PlaceholderNodeData } from "./base/placeholder-node.tsx";
+import {
+  PlaceholderNode,
+  PlaceholderNodeData,
+} from "./base/placeholder-node.tsx";
 
 export type PlaceholderDataNode = Node<PlaceholderNodeData, "placeholderData">;
 
@@ -28,11 +32,7 @@ export const PlaceholderDataNode = ({
   const { compact, insertBefore } = data;
 
   const dataWorkflow = useAppDbLiveQuery(() =>
-    appDb.workflows
-      .where("databaseId")
-      .equals(currentDbId)
-      .and((wf) => wf.type === "data")
-      .first(),
+    getWorkflow(currentDbId, "data"),
   );
 
   const addWorkflowStep = async (

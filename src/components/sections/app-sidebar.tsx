@@ -23,13 +23,12 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { APP_NAME, GITHUB_URL } from "@/lib/constants";
+import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
-  FileEntry,
-  appDb,
+  createNewFile,
   getNonMemoryDatabases,
-  useAppDbLiveQuery,
-} from "@/lib/dexie/app-db";
-import { createNewFile } from "@/lib/dexie/dexie-utils";
+  getWorkflow,
+} from "@/lib/dexie/dexie-utils";
 import {
   createWorkflowPanel,
   openAiChat,
@@ -352,22 +351,12 @@ export function AppSidebar() {
   );
 
   const currentSchemaWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "schema")
-        .first(),
+    () => getWorkflow(currentDbId, "schema"),
     [currentDbId],
   );
 
   const currentDataWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "data")
-        .first(),
+    () => getWorkflow(currentDbId, "data"),
     [currentDbId],
   );
 

@@ -1,7 +1,8 @@
 import { DbmlNode } from "@/components/workflow-blocks/dbml-node.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { memDbId } from "@/lib/utils";
 import { Tooltip, TooltipTrigger } from "@radix-ui/react-tooltip";
 import {
@@ -137,22 +138,12 @@ export function QueryWorkflow() {
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
   const dataWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "data")
-        .first(),
+    () => getWorkflow(currentDbId, "data"),
     [currentDbId],
   );
 
   const schemaWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "schema")
-        .first(),
+    () => getWorkflow(currentDbId, "schema"),
     [currentDbId],
   );
 

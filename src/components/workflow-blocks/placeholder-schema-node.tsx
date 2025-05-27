@@ -1,5 +1,6 @@
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
 import { WorkflowStep, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { memDbId } from "@/lib/utils";
 import { Node, NodeProps } from "@xyflow/react";
 import { PlusCircle, ScrollText, WandSparkles } from "lucide-react";
@@ -29,11 +30,7 @@ export const PlaceholderSchemaNode = ({
   const { compact, insertBefore } = data;
 
   const schemaWorkflow = useAppDbLiveQuery(() =>
-    appDb.workflows
-      .where("databaseId")
-      .equals(currentDbId)
-      .and((wf) => wf.type === "schema")
-      .first(),
+    getWorkflow(currentDbId, "schema"),
   );
 
   const addWorkflowStep = async (

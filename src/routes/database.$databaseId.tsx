@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store";
-import { createNewFile } from "@/lib/dexie/dexie-utils";
+import { CURRENT_POSTGRES_VERSION } from "@/lib/constants.ts";
+import { createNewFile, getWorkflow } from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
 import { WorkflowMonitorProvider } from "@/lib/pglite/workflow-monitor.tsx";
 import { guid, memDbId } from "@/lib/utils";
@@ -98,23 +99,13 @@ function MainApp() {
   const currentDbId = internalDbId ?? memDbId;
 
   const dataWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "data")
-        .first(),
+    () => getWorkflow(currentDbId, "data"),
     [currentDbId],
     "loading",
   );
 
   const schemaWorkflow = useAppDbLiveQuery(
-    () =>
-      appDb.workflows
-        .where("databaseId")
-        .equals(currentDbId)
-        .and((wf) => wf.type === "schema")
-        .first(),
+    () => getWorkflow(currentDbId, "schema"),
     [currentDbId],
     "loading",
   );
@@ -184,6 +175,7 @@ function MainApp() {
           createdAt: new Date(),
           lastOpened: new Date(),
           enabledExtensions: [],
+          version: CURRENT_POSTGRES_VERSION,
         });
 
         db = await appDb.databases.get(currentDbId);

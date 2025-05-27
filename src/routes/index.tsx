@@ -17,12 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
-import { GITHUB_URL } from "@/lib/constants";
-import {
-  appDb,
-  getNonMemoryDatabases,
-  useAppDbLiveQuery,
-} from "@/lib/dexie/app-db";
+import { CURRENT_POSTGRES_VERSION, GITHUB_URL } from "@/lib/constants";
+import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
+import { getNonMemoryDatabases } from "@/lib/dexie/dexie-utils.ts";
 import { guid } from "@/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Database, MemoryStick, SettingsIcon } from "lucide-react";
@@ -47,6 +44,7 @@ function CreatePersistentDatabaseDialogContent() {
       createdAt: new Date(),
       lastOpened: new Date(),
       enabledExtensions: [],
+      version: CURRENT_POSTGRES_VERSION,
     });
 
     navigate({ to: `/database/${newDbId}` });

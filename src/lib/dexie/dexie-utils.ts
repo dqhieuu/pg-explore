@@ -1,4 +1,4 @@
-import { guid, nextIncrementedFilename } from "../utils";
+import { MEM_DB_PREFIX, guid, nextIncrementedFilename } from "../utils";
 import { FileEntry, appDb } from "./app-db";
 
 interface PrefixOption {
@@ -43,3 +43,13 @@ export function createNewFile(
     content: options.content,
   }) as Promise<string>;
 }
+
+export const getNonMemoryDatabases = () =>
+  appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray();
+
+export const getWorkflow = (dbId: string, type: "schema" | "data") =>
+  appDb.workflows
+    .where("databaseId")
+    .equals(dbId)
+    .and((wf) => wf.type === type)
+    .first();

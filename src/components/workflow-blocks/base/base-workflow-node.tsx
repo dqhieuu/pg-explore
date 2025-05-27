@@ -6,7 +6,7 @@ import {
   appDb,
   useAppDbLiveQuery,
 } from "@/lib/dexie/app-db.ts";
-import { createNewFile } from "@/lib/dexie/dexie-utils.ts";
+import { createNewFile, getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { openFileEditor } from "@/lib/dockview.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { cn, memDbId } from "@/lib/utils.ts";
@@ -101,14 +101,10 @@ export const BaseWorkflowNode = ({
   const currentFilename = currentFile?.name ?? "File not found.";
 
   async function deleteWorkflowStep(
-    workflowType: string,
+    workflowType: "schema" | "data",
     workflowIndex: number,
   ) {
-    const workflow = await appDb.workflows
-      .where("databaseId")
-      .equals(currentDbId)
-      .and((wf) => wf.type === workflowType)
-      .first();
+    const workflow = await getWorkflow(currentDbId, workflowType);
 
     if (workflow == null) return;
 
@@ -122,15 +118,11 @@ export const BaseWorkflowNode = ({
   }
 
   async function setWorkflowFile(
-    workflowType: string,
+    workflowType: "schema" | "data",
     workflowIndex: number,
     fileId: string | null,
   ) {
-    const workflow = await appDb.workflows
-      .where("databaseId")
-      .equals(currentDbId)
-      .and((wf) => wf.type === workflowType)
-      .first();
+    const workflow = await getWorkflow(currentDbId, workflowType);
 
     if (workflow == null) return;
 
@@ -150,7 +142,7 @@ export const BaseWorkflowNode = ({
   return (
     <>
       <Handle type="target" position={Position.Top} className="z-10" />
-      <BaseNode className="w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1">
+      <BaseNode className="w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1 outline outline-3">
         <div className="relative">
           <div className="relative z-10 flex gap-1">
             {headerIcon ?? <ScrollText strokeWidth={1.5} className="w-5" />}

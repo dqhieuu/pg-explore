@@ -1,5 +1,4 @@
 import { Modify } from "@/lib/ts-utils";
-import { MEM_DB_PREFIX } from "@/lib/utils.ts";
 import Dexie, { Table } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 
@@ -10,6 +9,7 @@ export interface PGDatabase {
   lastOpened: Date;
   workflowState?: WorkflowState;
   enabledExtensions: string[];
+  version: string;
 }
 
 export interface WorkflowState {
@@ -93,5 +93,14 @@ appDb.version(2).upgrade((tx) => {
     });
 });
 
-export const getNonMemoryDatabases = () =>
-  appDb.databases.filter((db) => !db.id.startsWith(MEM_DB_PREFIX)).toArray();
+// New `version` field added `databases`
+appDb.version(3).upgrade((tx) => {
+  return tx
+    .table("databases")
+    .toCollection()
+    .modify((db) => {
+      if (db.version == null) {
+        db.version = "16.4"; // Everything starts at 16.4
+      }
+    });
+});

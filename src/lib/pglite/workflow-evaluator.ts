@@ -4,6 +4,7 @@ import {
   WorkflowStep,
   appDb,
 } from "@/lib/dexie/app-db.ts";
+import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
 import { evaluateSql, wipeDatabase } from "@/lib/pglite/pg-utils.ts";
 import { devModeEnabled, isEmptyOrSpaces } from "@/lib/utils.ts";
 import { PGliteInterface } from "@electric-sql/pglite";
@@ -28,22 +29,12 @@ export async function applyWorkflow(
 
   let workflowState = dbInfo.workflowState;
 
-  const schemaWorkflow = await appDb.workflows
-    .where("databaseId")
-    .equals(databaseId)
-    .and((wf) => wf.type === "schema")
-    .first();
-
+  const schemaWorkflow = await getWorkflow(databaseId, "schema");
   if (schemaWorkflow == null) {
     throw new Error(`Schema workflow for database ${databaseId} not found`);
   }
 
-  const dataWorkflow = await appDb.workflows
-    .where("databaseId")
-    .equals(databaseId)
-    .and((wf) => wf.type === "data")
-    .first();
-
+  const dataWorkflow = await getWorkflow(databaseId, "data");
   if (dataWorkflow == null) {
     throw new Error(`Data workflow for database ${databaseId} not found`);
   }
@@ -122,7 +113,7 @@ export async function applyWorkflow(
       until &&
       ((workflowState.currentProgress === until.workflowType &&
         workflowState.stepsDone >= until.stepsToApply) ||
-        // Data 0 steps = schema all steps
+        // Done 0 steps of data = done all steps of schema
         (until.workflowType === "data" &&
           until.stepsToApply === 0 &&
           workflowState.currentProgress === "schema" &&

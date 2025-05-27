@@ -17,7 +17,11 @@ export function DbmlEditor({
       contextId={contextId}
       fileId={fileId}
       headerComponent={() => (
-        <Button className="h-7 p-3">Visualize tables</Button>
+        <>
+          <Button className="h-7 p-3" disabled>
+            Preview tables
+          </Button>
+        </>
       )}
       extensions={[() => dbmlLinter, () => dbmlParser]}
       generatedViewConfig={{

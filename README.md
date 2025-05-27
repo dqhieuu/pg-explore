@@ -9,11 +9,11 @@
 
 "Most database clients are so unintuitive, except those integrated in Jetbrains' apps, which I already use daily." But even with the most advanced clients, they still can't help my unreasonably specific use cases. 
 
-Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that runs in a browser. "Why don't I create my own Postgres toolbox runnable anywhere for my gridsmaxxing at work?", I wondered. And so began this repo—purely to support my use-case driven needs. If your needs align with mine, this project could help:
+Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that runs in a browser. "Why don't I create my own Postgres toolbox runnable anywhere for my gridsmaxxing at work?", I wondered. And so I created this project—purely to support my arbitrary data analysis cases. If your needs align with mine, this project could help:
 
 - I have CSV, JSON data of unknown structure that people sent to me. I want to dump all of them into Postgres and use some LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data, unless I specify that) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
-- I want to create some tables with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, then ask AI to create more tables, and store my reusable queries in the browser. And, I have multiple types of data sources and want to combine them.
+- I want to interact with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, then ask AI to create more tables and store my reusable queries in the browser. Moreover, I have multiple types of data sources and being able to combine them would be great.
 
 - (TODO) I want to add "Codepen/JSFiddle snippets but for SQL queries" in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, CTE/subquery vs lateral join performance of multiple cardinalities)
 
@@ -24,6 +24,28 @@ Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app). It will ca
 You can keep me motivated just by using this site or starring this repo. Motivation powers open-source development, as always!
 
 ---
+
+## Development
+
+(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
+```
+VITE_AI_API_KEY=<YOUR_API_KEY>
+VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+VITE_AI_MODEL=gemini-2.0-flash
+```
+
+### To start the site
+
+```bash
+pnpm i
+pnpm dev
+```
+
+### Build distribution
+
+```bash
+npx tsc -b && pnpm build
+```
 
 ## TODO backlog :D
 Suggest any ideas, report bugs - it helps!
@@ -87,6 +109,7 @@ Suggest any ideas, report bugs - it helps!
 
 ### In consideration
 - [ ] Export embeddable iframes
+- [ ] View query result as charts
 - [ ] Import/Export workflow and files
 - [ ] Import/Export database dump
 - [ ] REPL console (supporting \d commands, pg_dump,...)
@@ -94,27 +117,4 @@ Suggest any ideas, report bugs - it helps!
 - [ ] More AI (actually, I'm not too hyped for this)
   - Copilot/Cursor-like suggestion
   - Inline suggestion
-- [ ] Proper unit tests (pardon my overconfidence in code)
-
-## Development
-
-(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
-```
-VITE_AI_API_KEY=<YOUR_API_KEY>
-VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
-VITE_AI_MODEL=gemini-2.0-flash
-```
-
-### To start the site
-
-```bash
-pnpm i
-pnpm dev
-```
-
-### Build distribution
-
-```bash
-npx tsc -b
-pnpm build
-```
+- [ ] Proper unit tests (pardon my overconfidence in code -_-)
