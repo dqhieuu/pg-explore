@@ -26,6 +26,7 @@ import { APP_NAME, GITHUB_URL } from "@/lib/constants";
 import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import {
   createNewFile,
+  getDatabaseFiles,
   getNonMemoryDatabases,
   getWorkflow,
 } from "@/lib/dexie/dexie-utils";
@@ -210,7 +211,7 @@ function FileCollapsibleSection({
 
   const databaseFiles = (
     useAppDbLiveQuery(
-      () => appDb.files.where("databaseId").equals(currentDatabaseId).toArray(),
+      () => getDatabaseFiles(currentDatabaseId),
       [currentDatabaseId],
     ) ?? []
   ).toSorted((a, b) => a.name.localeCompare(b.name));
@@ -337,10 +338,9 @@ export function AppSidebar() {
     ?.slice(0, 3);
 
   const existingFileNames =
-    useAppDbLiveQuery(
-      () => appDb.files.where("databaseId").equals(currentDbId).toArray(),
-      [currentDbId],
-    )?.map((f) => f.name) ?? [];
+    useAppDbLiveQuery(() => getDatabaseFiles(currentDbId), [currentDbId])?.map(
+      (f) => f.name,
+    ) ?? [];
 
   const setSettingsDialogOpen = useAnimationStore(
     (state) => state.setSettingsDialogOpen,

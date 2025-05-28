@@ -12,7 +12,11 @@ import { Dialog, DialogContent } from "@/components/ui/dialog.tsx";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store";
 import { CURRENT_POSTGRES_VERSION } from "@/lib/constants.ts";
-import { createNewFile, getWorkflow } from "@/lib/dexie/dexie-utils";
+import {
+  createNewFile,
+  getDatabaseFiles,
+  getWorkflow,
+} from "@/lib/dexie/dexie-utils";
 import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
 import { WorkflowMonitorProvider } from "@/lib/pglite/workflow-monitor.tsx";
 import { guid, memDbId } from "@/lib/utils";
@@ -39,10 +43,7 @@ function NoEditors() {
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
-  const files =
-    useAppDbLiveQuery(() => {
-      return appDb.files.where("databaseId").equals(currentDbId).toArray();
-    }) ?? [];
+  const files = useAppDbLiveQuery(() => getDatabaseFiles(currentDbId)) ?? [];
 
   return (
     <div className="bg-background flex h-full w-full flex-col items-center justify-center gap-2">

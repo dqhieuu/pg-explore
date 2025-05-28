@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
 import {
-  deleteDatabase,
+  deleteDatabaseAndDependencies,
   usePostgresStore,
 } from "@/hooks/stores/use-postgres-store.ts";
 import { PGDatabase, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
@@ -109,7 +109,7 @@ function DeleteDatabaseDialogContent({
   onClose?: () => void;
 }) {
   const onDelete = async () => {
-    await deleteDatabase(databaseId);
+    await deleteDatabaseAndDependencies(databaseId);
 
     if (onClose) {
       onClose();

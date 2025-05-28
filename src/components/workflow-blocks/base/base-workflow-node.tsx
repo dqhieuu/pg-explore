@@ -6,7 +6,11 @@ import {
   appDb,
   useAppDbLiveQuery,
 } from "@/lib/dexie/app-db.ts";
-import { createNewFile, getWorkflow } from "@/lib/dexie/dexie-utils.ts";
+import {
+  createNewFile,
+  getDatabaseFiles,
+  getWorkflow,
+} from "@/lib/dexie/dexie-utils.ts";
 import { openFileEditor } from "@/lib/dockview.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { cn, isEmptyOrSpaces, memDbId } from "@/lib/utils.ts";
@@ -72,10 +76,7 @@ export const BaseWorkflowNode = ({
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
   const databaseFiles = (
-    useAppDbLiveQuery(
-      () => appDb.files.where("databaseId").equals(currentDbId).toArray(),
-      [currentDbId],
-    ) ?? []
+    useAppDbLiveQuery(() => getDatabaseFiles(currentDbId), [currentDbId]) ?? []
   ).toSorted((a, b) => a.name.localeCompare(b.name));
 
   const filteredFiles = fileFilterPredicate

@@ -10,7 +10,7 @@ export interface QueryResult {
 
 type ContextId = string;
 type EditorValue = string;
-interface QueryStore {
+export interface QueryStore {
   queryEditors: Record<ContextId, EditorValue>;
   queryEditorsSaved: Record<ContextId, boolean>;
   queryEditorsShouldSave: Record<ContextId, boolean>;

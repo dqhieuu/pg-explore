@@ -84,10 +84,14 @@ export const useWorkflowMonitor = () => {
         await runWorkflowStepsBeforeFile(fileId);
       },
 
-      notifyRunArbitraryQuery: async (fileId: string) => {
+      notifyRunArbitraryQuery: async (fileId?: string) => {
         const file = appDb.files.get(fileId);
-        if (file == null) {
-          throw new Error(`File ${fileId} not found`);
+
+        // No file is provided, we apply the whole workflow
+        if (file == null || fileId == null) {
+          if (pgDb == null || currentDbId == null) return;
+          await applyWorkflow(pgDb, currentDbId);
+          return;
         }
 
         await runWorkflowStepsBeforeFile(fileId);

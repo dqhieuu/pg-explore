@@ -1,4 +1,6 @@
+import { deleteDatabase } from "@/lib/dexie/dexie-utils.ts";
 import { Modify } from "@/lib/ts-utils";
+import { compareVersions } from "@/lib/utils.ts";
 import Dexie, { Table } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 
@@ -122,5 +124,26 @@ appDb.version(4).upgrade((tx) => {
       if (db.workflowState != null && db.workflowState.stepResults == null) {
         db.workflowState.stepResults = [];
       }
+    });
+});
+
+// Upgrade Postgres 16.4 to 17.4
+appDb.version(5).upgrade((tx) => {
+  return tx
+    .table("databases")
+    .toCollection()
+    .modify((db) => {
+      if (compareVersions(db.version, "17.4") >= 0) return;
+
+      db.version = "17.4";
+      // Postgres breaks compatibility between major versions, so we just
+      // casually delete all databases whose versions are < 17.4 for an easy upgrade path. ඞ
+      // Actual reason: To migrate the pglite database from 16.4 to 17.4,
+      // both npm packages v16.4 and v17.4 must be kept to make pg_dump usable.
+      // (see https://web.archive.org/web/20250528185537/https://pglite.dev/docs/upgrade)
+      // This makes our bundle size unreasonably larger (15MBx2).
+      // Since we're in the early stages of development, we can afford to delete all incompatible databases
+      // and start fresh so that we don't have to keep both versions of the package.
+      deleteDatabase(db.id);
     });
 });

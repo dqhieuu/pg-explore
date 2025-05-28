@@ -1,5 +1,9 @@
+import { QueryResult, QueryStore } from "@/hooks/stores/use-query-store.ts";
 import { appDb } from "@/lib/dexie/app-db.ts";
+import { evaluateSql } from "@/lib/pglite/pg-utils.ts";
+import { PGliteInterface } from "@electric-sql/pglite";
 import { DockviewApi } from "dockview";
+import { toast } from "sonner";
 
 import { guid } from "./utils";
 
@@ -125,4 +129,105 @@ export function openAiChat(dockviewApi: DockviewApi) {
             direction: "below",
           },
   });
+}
+
+export function createQueryResultTabsIfNeeded({
+  dockviewApi,
+  numOfTabs,
+  contextId,
+  referencePanel,
+  tabName,
+}: {
+  dockviewApi: DockviewApi;
+  numOfTabs: number;
+  contextId: string;
+  referencePanel?: string;
+  tabName?: string;
+  tabNameIncludesIndex?: boolean;
+}) {
+  if (dockviewApi == null) return;
+
+  let resultGroup = dockviewApi.getGroup("result-group");
+
+  if (resultGroup == null) {
+    resultGroup = dockviewApi.addGroup({
+      id: "result-group",
+      referencePanel: referencePanel,
+      direction: window.screen.width >= 1000 ? "right" : "below",
+    });
+  }
+
+  for (let i = 0; i < numOfTabs; i++) {
+    const resultPanelId = `${contextId}_${i}`;
+
+    if (!dockviewApi.getPanel(resultPanelId)) {
+      dockviewApi.addPanel({
+        id: resultPanelId,
+        title: `Result #${i + 1}: ${tabName ?? "Untitled"}`,
+        component: "queryResult",
+        params: {
+          contextId,
+          lotNumber: i,
+        },
+        position: {
+          referenceGroup: resultGroup,
+        },
+      });
+    }
+  }
+}
+
+export async function executeQueryAndShowResults({
+  db,
+  setQueryResult,
+  dockviewApi,
+  query,
+  contextId,
+  referencePanel,
+  tabName,
+}: {
+  db: PGliteInterface;
+  setQueryResult: QueryStore["setQueryResult"];
+  query: string;
+  contextId: string;
+  dockviewApi?: DockviewApi | null;
+  referencePanel?: string;
+  tabName?: string;
+}) {
+  const createResultTabs = (numOfResults: number) => {
+    if (dockviewApi == null) return;
+    createQueryResultTabsIfNeeded({
+      dockviewApi: dockviewApi,
+      numOfTabs: numOfResults,
+      contextId: contextId,
+      referencePanel: referencePanel,
+      tabName: tabName,
+    });
+  };
+
+  evaluateSql(db, query)
+    .then((res) => {
+      const results = (res as unknown as QueryResult[])
+        .slice(1) // Skip the first result, which is the `rollback;` hack
+        .filter((result: QueryResult) => {
+          // Filter out empty results
+          return result?.fields?.length > 0;
+        });
+
+      if (results.length === 0) {
+        toast("Executed successfully!", {
+          description: "No result returned.",
+          duration: 1000,
+        });
+        return;
+      }
+
+      setQueryResult(contextId, results);
+      createResultTabs(results.length);
+    })
+    .catch((err) => {
+      const results = [err.message];
+      setQueryResult(contextId, results);
+      createResultTabs(results.length);
+    });
 }

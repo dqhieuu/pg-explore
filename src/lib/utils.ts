@@ -31,6 +31,25 @@ export function nextIncrementedFilename(prefix: string, existing: string[]) {
   return `${prefix} ${zeroPaddedNumber}`;
 }
 
+/**
+ * Compare two version strings in the format "a.b.c" where each part is a number.
+ * @param a Example: "1.2"
+ * @param b Example: "1.3.3"
+ */
+export function compareVersions(a: string, b: string) {
+  const aParts = a.split(".").map(Number);
+  const bParts = b.split(".").map(Number);
+
+  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+    const aPart = aParts[i] ?? 0;
+    const bPart = bParts[i] ?? 0;
+
+    if (aPart < bPart) return -1;
+    if (aPart > bPart) return 1;
+  }
+  return 0;
+}
+
 export async function resetApplication() {
   const databases = await window.indexedDB.databases();
   for (const db of databases) {

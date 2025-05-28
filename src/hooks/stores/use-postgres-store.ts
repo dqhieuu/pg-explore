@@ -1,11 +1,11 @@
 import { appDb } from "@/lib/dexie/app-db";
+import { deleteDatabase } from "@/lib/dexie/dexie-utils.ts";
 import {
   extensionNamesToExtensions,
   querySchemaForCodeMirror,
 } from "@/lib/pglite/pg-utils";
 import { PGlite } from "@electric-sql/pglite";
 import { PGliteWithLive, live } from "@electric-sql/pglite/live";
-import Dexie from "dexie";
 import { create } from "zustand";
 
 interface PostgresStore {
@@ -75,9 +75,9 @@ export const usePostgresStore = create<PostgresStore>((set, get) => ({
     set({ enabledExtensionsChanged: changed }),
 }));
 
-export const deleteDatabase = async (id: string) => {
-  await appDb.workflows.where("databaseId").equals(id).delete();
-  await appDb.files.where("databaseId").equals(id).delete();
-  await appDb.databases.delete(id);
-  return Dexie.delete(`/pglite/pg_${id}`);
+export const deleteDatabaseAndDependencies = async (dbId: string) => {
+  await appDb.workflows.where("databaseId").equals(dbId).delete();
+  await appDb.files.where("databaseId").equals(dbId).delete();
+  await appDb.databases.delete(dbId);
+  return deleteDatabase(dbId);
 };

@@ -255,13 +255,13 @@ async function evaluateSqlQueryStep(
 ): Promise<EvaluationResult> {
   const { fileId } = step;
   if (fileId == null) {
-    return { result: "noop", error: "There was nothing to execute" };
+    return { result: "noop", error: "Nothing to execute" };
   }
 
   const file = await appDb.files.get(fileId);
 
   if (file == null || isEmptyOrSpaces(file.content)) {
-    return { result: "noop", error: "There was nothing to execute" };
+    return { result: "noop", error: "Nothing to execute" };
   }
 
   const sql = file.content!;
@@ -282,20 +282,19 @@ async function evaluateDbmlStep(
   step: DbmlStep,
 ): Promise<EvaluationResult> {
   const { fileId } = step;
-  if (fileId == null)
-    return { result: "noop", error: "There was nothing to execute" };
+  if (fileId == null) return { result: "noop", error: "Nothing to execute" };
 
   const file = await appDb.files.get(fileId);
 
   if (file == null || isEmptyOrSpaces(file.content))
-    return { result: "noop", error: "There was nothing to execute" };
+    return { result: "noop", error: "Nothing to execute" };
 
   const dbmlContent = file.content!;
   const transformResult = transformDbmlToSql(dbmlContent);
   if (!transformResult.success) {
     return {
       result: "noop",
-      error: `Failed to convert DBML to SQL`,
+      error: `Failed to convert DBML to SQL. Open file to see error details`,
     };
   }
 

@@ -1,3 +1,5 @@
+import Dexie from "dexie";
+
 import { MEM_DB_PREFIX, guid, nextIncrementedFilename } from "../utils";
 import { FileEntry, appDb } from "./app-db";
 
@@ -53,3 +55,14 @@ export const getWorkflow = (dbId: string, type: "schema" | "data") =>
     .equals(dbId)
     .and((wf) => wf.type === type)
     .first();
+
+export const getDatabaseFiles = (dbId: string) =>
+  appDb.files.where("databaseId").equals(dbId).toArray();
+
+/**
+ * Deletes the internal database files stored in IndexedDB.
+ * @param dbId
+ */
+export const deleteDatabase = (dbId: string) => {
+  return Dexie.delete(`/pglite/pg_${dbId}`);
+};

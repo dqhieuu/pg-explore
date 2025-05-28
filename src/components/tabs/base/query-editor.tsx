@@ -1,12 +1,10 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
-import { QueryResult, useQueryStore } from "@/hooks/stores/use-query-store.ts";
+import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
-import {
-  evaluateSql,
-  querySchemaForCodeMirror,
-} from "@/lib/pglite/pg-utils.ts";
+import { executeQueryAndShowResults } from "@/lib/dockview.ts";
+import { querySchemaForCodeMirror } from "@/lib/pglite/pg-utils.ts";
 import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
 import { TransformValueResult } from "@/lib/types.ts";
 import { devModeEnabled } from "@/lib/utils.ts";
@@ -20,10 +18,6 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { useDebounce } from "react-use";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
-
-const filterNonSelectResult = (result: QueryResult) => {
-  return result?.fields?.length > 0;
-};
 
 export interface QueryEditorProps {
   contextId: string;
@@ -156,39 +150,6 @@ export function QueryEditor({
     });
   }, [shouldSave, fileId, queryEditorValue]);
 
-  function createQueryResultTabsIfNeeded(result: object[]) {
-    if (dockviewApi == null) return;
-
-    let resultGroup = dockviewApi.getGroup("result-group");
-
-    if (resultGroup == null) {
-      resultGroup = dockviewApi.addGroup({
-        id: "result-group",
-        referencePanel: fileId,
-        direction: window.screen.width >= 1000 ? "right" : "below",
-      });
-    }
-
-    for (let i = 0; i < result.length; i++) {
-      const resultPanelId = `${contextId}_${i}`;
-
-      if (!dockviewApi.getPanel(resultPanelId)) {
-        dockviewApi.addPanel({
-          id: resultPanelId,
-          title: `Result: [${i + 1}] ${associatedFile?.name ?? "Untitled"}`,
-          component: "queryResult",
-          params: {
-            contextId,
-            lotNumber: i,
-          },
-          position: {
-            referenceGroup: resultGroup,
-          },
-        });
-      }
-    }
-  }
-
   async function executeQuery() {
     const sqlToQuery = isHighlightingSelection
       ? queryEditorValue.slice(...selectionRange)
@@ -196,28 +157,15 @@ export function QueryEditor({
 
     await notifyRunArbitraryQuery(fileId);
 
-    evaluateSql(db, sqlToQuery)
-      .then((res) => {
-        const result = (res as unknown as QueryResult[])
-          .slice(1)
-          .filter(filterNonSelectResult);
-
-        if (result.length === 0) {
-          toast("Executed successfully!", {
-            description: "No result returned.",
-            duration: 1000,
-          });
-          return;
-        }
-
-        setQueryResult(contextId, result);
-        createQueryResultTabsIfNeeded(result);
-      })
-      .catch((err) => {
-        const result = [err.message];
-        setQueryResult(contextId, result);
-        createQueryResultTabsIfNeeded(result);
-      });
+    await executeQueryAndShowResults({
+      db,
+      setQueryResult,
+      query: sqlToQuery,
+      contextId,
+      dockviewApi,
+      referencePanel: fileId,
+      tabName: associatedFile?.name,
+    });
 
     querySchemaForCodeMirror(db).then(setSchema);
   }
