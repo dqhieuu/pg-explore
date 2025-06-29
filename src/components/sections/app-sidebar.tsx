@@ -18,6 +18,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
@@ -47,6 +52,8 @@ import {
   Database,
   DatabaseIcon,
   EllipsisIcon,
+  FileIcon,
+  FileSpreadsheet,
   FolderPen,
   HelpCircle,
   MoreHorizontal,
@@ -62,6 +69,7 @@ import {
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useLongPress } from "use-long-press";
 import { z } from "zod";
 
 import { Button } from "../ui/button";
@@ -161,31 +169,38 @@ function RenameFileDialogContent({
   );
 }
 
-interface TypeToStyle {
-  name: string;
-  style: string;
-}
-
-const typeToStyleMappings: Record<string, TypeToStyle> = {
-  sql: {
-    name: "SQL",
-    style: "bg-blue-900 text-white",
-  },
-  dbml: {
-    name: "DBML",
-    style: "bg-yellow-800 text-white",
-  },
-};
-
 function FileTextIcon({ type }: { type: string }) {
-  const displayName = typeToStyleMappings[type]?.name ?? type.toUpperCase();
-  const style = typeToStyleMappings[type]?.style;
+  if (type === "table") {
+    return (
+      <div className="ml-1">
+        <FileSpreadsheet strokeWidth={1.5} className="size-5!" />
+      </div>
+    );
+  }
 
-  return (
-    <div className={cn("rounded-md px-2 py-1 text-xs", style)}>
-      {displayName}
-    </div>
-  );
+  if (type === "sql" || type === "dbml") {
+    const specificStyle = {
+      sql: "-left-0.5",
+      dbml: "-left-2",
+    };
+
+    return (
+      <div className="relative ml-1">
+        <div className="bg-sidebar absolute bottom-0.75 h-2.25 w-2" />
+        <div
+          className={cn(
+            "absolute bottom-0.5 -left-0.5 text-[0.5rem] font-medium",
+            specificStyle[type],
+          )}
+        >
+          {type.toUpperCase()}
+        </div>
+        <FileIcon strokeWidth={1.5} className="size-5!" />
+      </div>
+    );
+  }
+
+  return <div className={cn("rounded-md px-2 py-1 text-xs")}>{type}</div>;
 }
 
 function FileCollapsibleSection({
@@ -202,6 +217,16 @@ function FileCollapsibleSection({
   fileFilterPredicate?: (file: FileEntry) => boolean;
 }) {
   const hiddenIfEmptyValue = hiddenIfEmpty ?? false;
+
+  const onLongPress_ToggleRenameFile = useLongPress<Element, string>(
+    (_, { context: fileId }) => {
+      if (fileId == null) return;
+      setDialogFileId(fileId);
+    },
+    {
+      threshold: 300, // 300ms for long press
+    },
+  );
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const isMobile = useIsMobile();
@@ -249,51 +274,62 @@ function FileCollapsibleSection({
             <SidebarGroupContent>
               <SidebarMenu>
                 {filteredFiles.map((file) => (
-                  <SidebarMenuItem
-                    className="group/file flex items-center"
-                    key={file.id}
-                  >
-                    <SidebarMenuButton
-                      className="h-auto"
-                      onClick={() => {
-                        if (dockviewApi == null) return;
-                        openFileEditor(dockviewApi, file.id);
-                      }}
+                  <Tooltip delayDuration={500}>
+                    <TooltipContent side="right">
+                      Long-press to rename file
+                    </TooltipContent>
+
+                    <SidebarMenuItem
+                      className="group/file flex items-center"
+                      key={file.id}
                     >
-                      {itemIcon ?? <FileTextIcon type={file.type} />}
-                      {file.name}
-                    </SidebarMenuButton>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction className="top-auto! p-4 hover:bg-gray-100">
-                          <MoreHorizontal
-                            className={
-                              isMobile ? "" : "hidden group-hover/file:block"
-                            }
-                          />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-[10rem]"
-                        side="right"
-                        align="start"
-                      >
-                        <DialogTrigger
-                          asChild
-                          onClick={() => setDialogFileId(file.id)}
+                      <TooltipTrigger asChild>
+                        <SidebarMenuButton
+                          className="h-auto"
+                          onClick={() => {
+                            if (dockviewApi == null) return;
+                            openFileEditor(dockviewApi, file.id);
+                          }}
+                          {...onLongPress_ToggleRenameFile(file.id)}
                         >
-                          <DropdownMenuItem>
-                            <FolderPen />
-                            Rename file
+                          {itemIcon ?? <FileTextIcon type={file.type} />}
+                          {file.name}
+                        </SidebarMenuButton>
+                      </TooltipTrigger>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction className="top-auto! p-4 hover:bg-gray-100">
+                            <MoreHorizontal
+                              className={
+                                isMobile ? "" : "hidden group-hover/file:block"
+                              }
+                            />
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-[10rem]"
+                          side="right"
+                          align="start"
+                        >
+                          <DialogTrigger
+                            asChild
+                            onClick={() => setDialogFileId(file.id)}
+                          >
+                            <DropdownMenuItem>
+                              <FolderPen />
+                              Rename file
+                            </DropdownMenuItem>
+                          </DialogTrigger>
+                          <DropdownMenuItem onClick={() => deleteFile(file.id)}>
+                            <Trash className="text-destructive" />
+                            <span className="text-destructive">
+                              Delete file
+                            </span>
                           </DropdownMenuItem>
-                        </DialogTrigger>
-                        <DropdownMenuItem onClick={() => deleteFile(file.id)}>
-                          <Trash className="text-destructive" />
-                          <span className="text-destructive">Delete file</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  </Tooltip>
                 ))}
               </SidebarMenu>
               {newButtonAction && (

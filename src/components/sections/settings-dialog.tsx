@@ -157,7 +157,7 @@ const GeneralSettings = () => {
             <SelectValue placeholder="Theme" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="auto">System default</SelectItem>
+            <SelectItem value="auto">System theme</SelectItem>
             <SelectItem value="light">Light</SelectItem>
             <SelectItem value="dark">Dark</SelectItem>
           </SelectContent>

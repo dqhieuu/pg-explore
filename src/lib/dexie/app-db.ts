@@ -32,7 +32,7 @@ export interface WorkflowState {
 export interface FileEntry {
   id: string;
   databaseId: string;
-  type: "sql" | "dbml";
+  type: "sql" | "dbml" | "table";
   name: string;
   content?: string;
   blob?: Blob;
@@ -68,7 +68,17 @@ export type DbmlStep = Modify<
   }
 >;
 
-export type WorkflowStep = SqlQueryStep | DbmlStep;
+export type DataTableStep = Modify<
+  CommonWorkflowStep,
+  {
+    type: "table";
+    options: {
+      tableName: string;
+    };
+  }
+>;
+
+export type WorkflowStep = SqlQueryStep | DbmlStep | DataTableStep;
 
 interface AppSession {
   id: string;

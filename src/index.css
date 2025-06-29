@@ -1,5 +1,8 @@
 @import "tailwindcss";
 @import "dockview/dist/styles/dockview.css";
+@import "handsontable/styles/handsontable.min.css";
+@import "handsontable/styles/ht-theme-main.min.css";
+
 
 @plugin "tailwindcss-animate";
 

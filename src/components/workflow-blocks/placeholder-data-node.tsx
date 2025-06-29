@@ -37,13 +37,15 @@ export const PlaceholderDataNode = ({
 
   const addWorkflowStep = async (
     insertBefore: number,
-    stepType: "sql-query",
+    stepType: "sql-query" | "table",
   ) => {
     if (dataWorkflow == null) return;
 
     let newStep: WorkflowStep;
     if (stepType === "sql-query") {
       newStep = { type: "sql-query", options: {} };
+    } else if (stepType === "table") {
+      newStep = { type: "table", options: { tableName: "" } };
     } else {
       throw new Error("Invalid step type");
     }
@@ -74,7 +76,9 @@ export const PlaceholderDataNode = ({
           <ScrollText />
           From SQL
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem
+          onClick={() => addWorkflowStep(insertBefore, "table")}
+        >
           <TableIcon />
           From tabular data (JSON, CSV,...)
         </DropdownMenuItem>

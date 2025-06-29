@@ -1,4 +1,5 @@
 import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { registerAllModules } from "handsontable/registry";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -11,6 +12,8 @@ if (import.meta.env.DEV) {
   //   trackAllPureComponents: true,
   // });
 }
+
+registerAllModules();
 
 // Create a new router instance
 const router = createRouter({ routeTree });

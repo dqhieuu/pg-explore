@@ -54,7 +54,9 @@ export function createWorkflowPanel(
 const fileTypeToComponent = {
   sql: "sqlQueryEditor",
   dbml: "dbmlEditor",
+  table: "dataTableEditor",
 };
+
 export async function openFileEditor(dockviewApi: DockviewApi, fileId: string) {
   if (dockviewApi == null) return;
 
@@ -67,7 +69,7 @@ export async function openFileEditor(dockviewApi: DockviewApi, fileId: string) {
   const componentToAdd = fileTypeToComponent[file.type];
   if (componentToAdd == null) {
     console.error(
-      `There isn't a suitable component for this file type ${file.type}`,
+      `There isn't a suitable component for this file type '${file.type}'`,
     );
     return;
   }

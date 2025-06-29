@@ -2,6 +2,10 @@ import { AppSidebar } from "@/components/sections/app-sidebar";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { ExtensionListDialogContent } from "@/components/sections/extension-list-dialog-content.tsx";
 import { AiChat } from "@/components/tabs/ai-chat.tsx";
+import {
+  DataTableEditor,
+  DataTableEditorProps,
+} from "@/components/tabs/data-table-editor.tsx";
 import { DbmlEditor } from "@/components/tabs/dbml-editor.tsx";
 import {
   SqlQueryEditor,
@@ -258,6 +262,14 @@ function MainApp() {
                       props: IDockviewPanelProps<QueryEditorProps>,
                     ) => (
                       <DbmlEditor
+                        contextId={props.params.contextId}
+                        fileId={props.params.fileId}
+                      />
+                    ),
+                    dataTableEditor: (
+                      props: IDockviewPanelProps<DataTableEditorProps>,
+                    ) => (
+                      <DataTableEditor
                         contextId={props.params.contextId}
                         fileId={props.params.fileId}
                       />

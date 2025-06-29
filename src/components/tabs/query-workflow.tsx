@@ -1,3 +1,4 @@
+import { DataTableNode } from "@/components/workflow-blocks/data-table-node.tsx";
 import { DbmlNode } from "@/components/workflow-blocks/dbml-node.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store";
@@ -97,6 +98,7 @@ const nodeTypes: NodeTypes = {
   placeholderData: PlaceholderDataNode,
   sqlScript: SqlScriptNode,
   dbml: DbmlNode,
+  table: DataTableNode,
   labeledGroup: LabeledGroupNode,
 };
 
@@ -281,6 +283,16 @@ export function QueryWorkflow() {
                 ...workflowInfo,
               },
             });
+          } else if (dataSteps[i].type === "table") {
+            draft.push({
+              id: `data-step-${i}`,
+              type: "table",
+              position: { x: 0, y: 0 },
+              data: {
+                section: "data",
+                ...workflowInfo,
+              },
+            });
           } else {
             continue;
           }
@@ -379,7 +391,7 @@ export function QueryWorkflow() {
         type: "labeledGroup",
         position: { x: bbox.x - 20, y: bbox.y - 40 },
         data: {
-          label: "Create tables",
+          label: "Define tables",
           backgroundClassName: "bg-blue-100/50",
         },
         width: groupWidth,
@@ -410,7 +422,7 @@ export function QueryWorkflow() {
         type: "labeledGroup",
         position: { x: bbox.x - 20, y: bbox.y - 40 },
         data: {
-          label: "Populate data",
+          label: "Add data",
           backgroundClassName: "bg-green-100/50",
         },
         width: groupWidth,
