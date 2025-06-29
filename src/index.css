@@ -35,6 +35,11 @@ html {
   z-index: 10;
 }
 
+/* Fix handsontables z-index too high */
+.ht_clone_inline_start, .ht_clone_top, .ht_clone_top_inline_start_corner {
+  z-index: 30;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
