@@ -274,15 +274,11 @@ function FileCollapsibleSection({
             <SidebarGroupContent>
               <SidebarMenu>
                 {filteredFiles.map((file) => (
-                  <Tooltip delayDuration={500}>
+                  <Tooltip delayDuration={500} key={file.id}>
                     <TooltipContent side="right">
                       Long-press to rename file
                     </TooltipContent>
-
-                    <SidebarMenuItem
-                      className="group/file flex items-center"
-                      key={file.id}
-                    >
+                    <SidebarMenuItem className="group/file flex items-center">
                       <TooltipTrigger asChild>
                         <SidebarMenuButton
                           className="h-auto"

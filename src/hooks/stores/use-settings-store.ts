@@ -17,6 +17,9 @@ interface SettingsStore {
   customAIEndpointModel: string;
   setCustomAIEndpointModel: (model: string) => void;
 
+  setDataTableAutoSave: (isAutoSaved: boolean) => void;
+  dataTableAutoSave: boolean;
+
   debugMode: boolean;
   setDebugMode: (show: boolean) => void;
 }
@@ -40,6 +43,10 @@ export const useSettingsStore = create<SettingsStore>()(
       customAIEndpointModel: "",
       setCustomAIEndpointModel: (model) =>
         set({ customAIEndpointModel: model }),
+
+      dataTableAutoSave: false,
+      setDataTableAutoSave: (isAutoSaved) =>
+        set({ dataTableAutoSave: isAutoSaved }),
 
       debugMode: false,
       setDebugMode: (show) => set({ debugMode: show }),

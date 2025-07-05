@@ -24,10 +24,11 @@ export interface QueryStore {
     isSaved?: boolean,
   ) => void;
 
+  setQueryEditorSaved: (contextId: string, isSaved: boolean) => void;
   setQueryEditorShouldSave: (contextId: string, shouldSave: boolean) => void;
 
   // Unlike other stores, saving query editors value to the database is resource intensive.
-  // Therefore, we signal saving asynchrnously instead of syncing browser state with the database.
+  // Therefore, we signal saving asynchronously instead of syncing browser state with the database.
   signalSaveQueryEditors: (contextIds?: string[]) => void;
 }
 
@@ -50,6 +51,13 @@ export const useQueryStore = create<QueryStore>()(
       set(
         produce<QueryStore>((state) => {
           state.queryEditors[contextId] = value;
+          state.queryEditorsSaved[contextId] = isSaved;
+        }),
+      ),
+
+    setQueryEditorSaved: (contextId, isSaved) =>
+      set(
+        produce((state) => {
           state.queryEditorsSaved[contextId] = isSaved;
         }),
       ),

@@ -7,15 +7,13 @@
 
 ![Demo screenshot](./public/demo1.png)
 
-"Most database clients are so unintuitive, except those integrated in Jetbrains' apps, which I already use daily." But even with the most advanced clients, they still can't help my unreasonably specific use cases. 
+Just built a toolbox to ease my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. To give you an idea of what you can do with it:
 
-Then I found [PGlite](https://github.com/electric-sql/pglite), which is a lightweight Postgres server that runs in a browser. "Why don't I create my own Postgres toolbox runnable anywhere for my gridsmaxxing at work?", I wondered. And so I created this project—purely to support my arbitrary data analysis cases. If your needs align with mine, this project could help:
+- I have some CSV and JSON files. I want to Ctrl+V them into Postgres and ask the o mighty LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data—for security reason) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
-- I have CSV, JSON data of unknown structure that people sent to me. I want to dump all of them into Postgres and use some LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data, unless I specify that) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
+- I want to interact with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, and store my reusable queries somewhere. Moreover, I have multiple types of data sources and being able to combine them to perform joins and aggregations sounds like a good idea.
 
-- I want to interact with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, then ask AI to create more tables and store my reusable queries in the browser. Moreover, I have multiple types of data sources and being able to combine them would be great.
-
-- (TODO) I want to add "Codepen/JSFiddle snippets but for SQL queries" in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, CTE/subquery vs lateral join performance of multiple cardinalities)
+- (TODO) I want to add "Codepen/JSFiddle snippets but for SQL queries" in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, materialized CTE/subquery vs. lateral join performance of different cardinalities)
 
 ---
 
@@ -27,7 +25,7 @@ You can keep me motivated just by using this site or starring this repo. Motivat
 
 ## Development
 
-(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure later in the app settings (per browser config).
+(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure it later in the app settings (per browser config).
 ```
 VITE_AI_API_KEY=<YOUR_API_KEY>
 VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
@@ -88,7 +86,7 @@ Suggest any ideas, report bugs - it helps!
 - [x] DBML schema (tab #5)
   - [x] Parse + autocompletion (with Lezer grammar)
   - [x] Lint
-- [ ] Table data editor (tab #6) (with AG grid (it's so good for Excel-like capability) / open-source alt in the future?)
+- [ ] Table data editor (tab #6) (with Handsontable (it's so good for Excel-like capability) / open-source alt in the future?)
   - [ ] Import CSV
   - [ ] Import JSON
   - [ ] Data type config

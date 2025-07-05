@@ -35,7 +35,7 @@ export interface QueryEditorContext {
 }
 
 interface GeneratedViewConfig {
-  transformFunc: (content: string) => TransformValueResult;
+  transformFunc: (content?: string) => TransformValueResult;
   extensions?: ((ctx: QueryEditorContext) => Extension)[];
 }
 
@@ -54,9 +54,8 @@ export function QueryEditor({
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const setQueryResult = useQueryStore((state) => state.setQueryResult);
 
-  const queryEditorValue = useQueryStore(
-    (state) => state.queryEditors[contextId],
-  );
+  const queryEditorValue =
+    useQueryStore((state) => state.queryEditors[contextId]) ?? "";
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
   );
@@ -187,7 +186,7 @@ export function QueryEditor({
 
   return (
     <div className="@container flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b p-1">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b p-1">
         <Save
           className={
             (isSaved ? "text-green-700" : "text-red-800") +

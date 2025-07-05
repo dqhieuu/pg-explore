@@ -175,6 +175,7 @@ export function QueryWorkflow() {
         type: "databaseSource",
         position: { x: 0, y: 0 },
         data: {},
+        deletable: false,
       },
     ];
 
@@ -187,6 +188,7 @@ export function QueryWorkflow() {
           type: "placeholderSchema",
           position: { x: 0, y: 0 },
           data: { compact: false, insertBefore: 0, section: "schema" },
+          deletable: false,
         } satisfies PlaceholderSchemaNode);
       });
     } else {
@@ -196,6 +198,7 @@ export function QueryWorkflow() {
           type: "placeholderSchema",
           position: { x: 0, y: 0 },
           data: { compact: true, insertBefore: 0, section: "schema" },
+          deletable: false,
         } satisfies PlaceholderSchemaNode);
 
         for (let i = 0; i < schemaSteps.length; i++) {
@@ -213,6 +216,7 @@ export function QueryWorkflow() {
                 section: "schema",
                 ...workflowInfo,
               },
+              deletable: false,
             });
           } else if (schemaSteps[i].type === "dbml") {
             draft.push({
@@ -223,6 +227,7 @@ export function QueryWorkflow() {
                 section: "schema",
                 ...workflowInfo,
               },
+              deletable: false,
             });
           } else {
             continue;
@@ -233,6 +238,7 @@ export function QueryWorkflow() {
             type: "placeholderSchema",
             position: { x: 0, y: 0 },
             data: { compact: true, insertBefore: i + 1, section: "schema" },
+            deletable: false,
           } satisfies PlaceholderSchemaNode);
         }
       });
@@ -244,6 +250,7 @@ export function QueryWorkflow() {
         type: "tablesCreated",
         position: { x: 0, y: 0 },
         data: {},
+        deletable: false,
       });
     });
 
@@ -256,6 +263,7 @@ export function QueryWorkflow() {
           type: "placeholderData",
           position: { x: 0, y: 0 },
           data: { compact: false, insertBefore: 0, section: "data" },
+          deletable: false,
         } satisfies PlaceholderDataNode);
       });
     } else {
@@ -265,12 +273,14 @@ export function QueryWorkflow() {
           type: "placeholderData",
           position: { x: 0, y: 0 },
           data: { compact: true, insertBefore: 0, section: "data" },
+          deletable: false,
         } satisfies PlaceholderDataNode);
 
         for (let i = 0; i < dataSteps.length; i++) {
           const workflowInfo = {
             workflowIndex: i,
             workflowType: "data",
+            deletable: false,
           };
 
           if (dataSteps[i].type === "sql-query") {
@@ -282,6 +292,7 @@ export function QueryWorkflow() {
                 section: "data",
                 ...workflowInfo,
               },
+              deletable: false,
             });
           } else if (dataSteps[i].type === "table") {
             draft.push({
@@ -292,6 +303,7 @@ export function QueryWorkflow() {
                 section: "data",
                 ...workflowInfo,
               },
+              deletable: false,
             });
           } else {
             continue;
@@ -302,6 +314,7 @@ export function QueryWorkflow() {
             type: "placeholderData",
             position: { x: 0, y: 0 },
             data: { compact: true, insertBefore: i + 1, section: "data" },
+            deletable: false,
           } satisfies PlaceholderDataNode);
         }
       });
@@ -313,6 +326,7 @@ export function QueryWorkflow() {
         type: "end",
         position: { x: 0, y: 0 },
         data: {},
+        deletable: false,
       });
     });
 
@@ -338,6 +352,7 @@ export function QueryWorkflow() {
           source: source.id,
           target: target.id,
           animated: true,
+          deletable: false,
         });
       }
 
@@ -396,6 +411,7 @@ export function QueryWorkflow() {
         },
         width: groupWidth,
         height: bbox.height + 60,
+        deletable: false,
       };
 
       draft.unshift(groupSchema);
@@ -427,6 +443,7 @@ export function QueryWorkflow() {
         },
         width: groupWidth,
         height: bbox.height + 60,
+        deletable: false,
       };
 
       draft.unshift(groupData);
