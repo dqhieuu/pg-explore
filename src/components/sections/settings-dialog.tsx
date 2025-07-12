@@ -59,7 +59,7 @@ const InputSetting = ({
   onValueChange: (value: string) => void;
 }) => {
   return (
-    <div className="flex flex-col gap-1">
+    <label className="flex flex-col items-start gap-0">
       <div className="font-medium">{label}</div>
       <Input
         type="text"
@@ -69,7 +69,7 @@ const InputSetting = ({
           onValueChange(e.target.value)
         }
       />
-    </div>
+    </label>
   );
 };
 
@@ -207,7 +207,7 @@ const AISettings = () => {
       />
       <div
         className={cn(
-          "flex flex-col gap-2 rounded-lg border p-2 shadow-lg",
+          "flex flex-col gap-2 rounded-lg border p-2 shadow-md",
           useCustomAIEndpoint ? "flex" : "hidden",
         )}
       >

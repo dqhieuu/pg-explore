@@ -21,13 +21,14 @@ export function isEmptyOrSpaces(str?: string | null) {
 }
 
 export function nextIncrementedFilename(prefix: string, existing: string[]) {
-  return nextIncrementedNames(prefix + " ", existing, 1)[0];
+  return nextIncrementedNames(prefix + " ", existing, 1, true)[0];
 }
 
 export function nextIncrementedNames(
   prefix: string,
   existing: string[],
   count = 1,
+  zeroPadded = false,
 ) {
   const existingNumbers = existing
     .filter((filename) => filename.match(new RegExp(`^${prefix}\\d+$`)))
@@ -35,7 +36,7 @@ export function nextIncrementedNames(
 
   const nextNumber = Math.max(...existingNumbers, 0) + 1;
   return Array.from({ length: count }, (_, i) => {
-    return `${prefix}${nextNumber + i}`;
+    return `${prefix}${(nextNumber + i).toString().padStart(zeroPadded ? 2 : 0, "0")}`;
   });
 }
 

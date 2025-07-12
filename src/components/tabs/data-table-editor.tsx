@@ -1,3 +1,4 @@
+import { Sortable } from "@/components/headless/sortable.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Label } from "@/components/ui/label.tsx";
@@ -17,19 +18,275 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
-import { nextIncrementedNames } from "@/lib/utils.ts";
+import { cn, nextIncrementedNames } from "@/lib/utils.ts";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove } from "@dnd-kit/sortable";
 import { HotTable, HotTableRef } from "@handsontable/react-wrapper";
 import { MenuItemConfig } from "handsontable/plugins/contextMenu";
 import { produce } from "immer";
-import { ChevronDown, GripHorizontal, SaveIcon, Undo2 } from "lucide-react";
+import {
+  ChevronDown,
+  Columns3,
+  GripHorizontal,
+  Rows3,
+  SaveIcon,
+  TrashIcon,
+  Undo2,
+} from "lucide-react";
 import Papa from "papaparse";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 export interface DataTableEditorProps {
   contextId: string;
   fileId: string;
 }
+
+function ColumnsActionsPopoverContent({
+  headers,
+  tableData,
+  contextId,
+}: {
+  contextId: string;
+  headers?: string[];
+  tableData: Record<string, string>[];
+}) {
+  const setQueryEditorValue = useQueryStore(
+    (state) => state.setQueryEditorValue,
+  );
+
+  const [focusedColumnIndex, setFocusedColumnIndex] = useState<number | null>(
+    null,
+  );
+
+  const [draggingColumn, setDraggingColumn] = useState<string | null>(null);
+  const [numEntriesToAdd, setNumEntriesToAdd] = useState(1);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setDraggingColumn(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over?.id == null || headers == null) return;
+
+    const oldIndex = headers.indexOf(active.id as string);
+    const newIndex = headers.indexOf(over.id as string);
+    const reorderedHeaders = arrayMove(headers, oldIndex, newIndex);
+
+    const updatedCsv = Papa.unparse(tableData, {
+      header: true,
+      columns: reorderedHeaders,
+    });
+
+    setQueryEditorValue(contextId, updatedCsv, true);
+    setFocusedColumnIndex(newIndex);
+
+    setDraggingColumn(null);
+  };
+
+  const addRows = (count: number) => {
+    if (headers == null || headers.length === 0) {
+      console.warn("No headers found, cannot add rows.");
+      return;
+    }
+
+    const updatedTable = produce(tableData, (draft) => {
+      for (let i = 0; i < count; i++) {
+        draft.push({});
+      }
+    });
+
+    const updatedCsv = Papa.unparse(updatedTable, {
+      header: true,
+      columns: headers,
+    });
+
+    setQueryEditorValue(contextId, updatedCsv, true);
+  };
+
+  const addColumns = (count: number) => {
+    const oldHeaders = headers ?? [];
+    const newHeaders = [
+      ...oldHeaders,
+      ...nextIncrementedNames("column_", oldHeaders, count),
+    ];
+
+    const newData = produce(tableData, (draft) => {
+      if (draft.length === 0) {
+        draft.push({});
+        for (const header of newHeaders) {
+          draft[0][header] = "";
+        }
+        return;
+      }
+    });
+
+    const updatedCsv = Papa.unparse(newData, {
+      header: true,
+      columns: newHeaders,
+    });
+
+    setQueryEditorValue(contextId, updatedCsv, true);
+  };
+
+  return (
+    <PopoverContent className="@container flex w-[min(42rem,100vw)] flex-col gap-2 sm:flex-row">
+      <div className="flex flex-1 flex-col gap-2">
+        <div className="flex justify-between">
+          <div className="text-sm font-semibold">Columns</div>
+          {headers != null && headers.length > 0 && (
+            <div className="flex gap-2 text-sm">
+              <div className="flex gap-1">
+                <strong className="font-medium">{tableData.length}</strong>
+                <Rows3 strokeWidth={1.5} />
+              </div>
+              <div className="flex gap-1">
+                <strong className="font-medium">{headers.length}</strong>
+                <Columns3 strokeWidth={1.5} />
+              </div>
+            </div>
+          )}
+        </div>
+        {headers == null || headers.length === 0 ? (
+          <div className="text-muted-foreground text-sm">No columns found</div>
+        ) : (
+          <div className="flex max-h-[12rem] flex-col overflow-y-auto">
+            <DndContext
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              sensors={sensors}
+            >
+              <SortableContext items={headers}>
+                {headers.map((header, index) => (
+                  <div
+                    className="mr-2 flex shrink-0 items-center gap-2"
+                    key={header}
+                  >
+                    <Sortable
+                      id={header}
+                      className={cn(
+                        "flex-1",
+                        draggingColumn === header ? "invisible" : "",
+                      )}
+                      onClick={() => setFocusedColumnIndex(index)}
+                    >
+                      <Column
+                        key={header}
+                        focused={index === focusedColumnIndex}
+                      >
+                        {header}
+                      </Column>
+                    </Sortable>
+                    <Button
+                      variant="ghost"
+                      className="hover:text-destructive h-8 w-8 duration-0"
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
+                ))}
+              </SortableContext>
+              {createPortal(
+                <DragOverlay>
+                  {draggingColumn ? <Column>{draggingColumn}</Column> : null}
+                </DragOverlay>,
+                document.body,
+              )}
+            </DndContext>
+          </div>
+        )}
+        <div className="mt-2 flex items-center gap-2">
+          Add{" "}
+          <Input
+            type="number"
+            min={1}
+            className="w-[6rem]"
+            value={numEntriesToAdd}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10);
+              if (isNaN(value) || value < 1) {
+                setNumEntriesToAdd(1);
+              } else {
+                setNumEntriesToAdd(value);
+              }
+            }}
+          />
+          {headers != null && headers.length > 0 && (
+            <Button onClick={() => addRows(numEntriesToAdd)}>
+              {numEntriesToAdd != 1 ? "Rows" : "Row"}
+            </Button>
+          )}
+          <Button onClick={() => addColumns(numEntriesToAdd)}>
+            {numEntriesToAdd != 1 ? "Columns" : "Column"}
+          </Button>
+        </div>
+      </div>
+      <div
+        className={cn(
+          "flex flex-1 border p-2",
+          focusedColumnIndex == null &&
+            "items-center justify-center bg-gray-100",
+        )}
+      >
+        {focusedColumnIndex != null ? (
+          <div className="flex w-full flex-col items-start gap-1">
+            <label className="w-full">
+              <div className="mb-0.5 text-sm font-medium">Column name</div>
+              <Input />
+            </label>
+            <label className="w-full">
+              <div className="mb-0.5 text-sm font-medium">Data type</div>
+              <Input />
+            </label>
+            <div className="mt-3 flex gap-1">
+              <Button>Save</Button>
+              <Button>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          "Select a column to edit its properties"
+        )}
+      </div>
+    </PopoverContent>
+  );
+}
+
+export function Column({
+  children,
+  focused,
+}: {
+  children: ReactNode;
+  focused?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 cursor-grab items-center gap-1 truncate rounded-md p-1 hover:bg-gray-100",
+        focused && "bg-primary/10",
+      )}
+    >
+      <GripHorizontal width={18} className="shrink-0" />
+      {children}
+    </div>
+  );
+}
+
 export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   // region Hooks
   const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
@@ -63,13 +320,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     header: true,
   });
   const headers = parsedCsv.meta.fields;
-  const data = parsedCsv.data as Record<string, string>[];
-
-  const [columnMetadata, setColumnMetadata] = useState<
-    Record<string, string>[]
-  >([]);
-
-  const [numEntriesToAdd, setNumEntriesToAdd] = useState(1);
+  const tableData = parsedCsv.data as Record<string, string>[];
 
   const saveEditorValue = async (value: string) => {
     await appDb.files.update(fileId, {
@@ -87,54 +338,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     setIsSaved(contextId, true);
   };
 
-  const addRows = (count: number) => {
-    if (headers == null || headers.length === 0) {
-      console.warn("No headers found, cannot add rows.");
-      return;
-    }
-
-    const updatedTable = produce(
-      parsedCsv.data as Record<string, string>[],
-      (draft) => {
-        for (let i = 0; i < count; i++) {
-          draft.push({});
-        }
-      },
-    );
-
-    const updatedCsv = Papa.unparse(updatedTable, {
-      header: true,
-      columns: headers,
-    });
-
-    setQueryEditorValue(contextId, updatedCsv, true);
-  };
-  const addColumns = (count: number) => {
-    const oldHeaders = headers ?? [];
-    const newHeaders = [
-      ...oldHeaders,
-      ...nextIncrementedNames("column_", oldHeaders, count),
-    ];
-
-    const newData = produce(data, (draft) => {
-      if (draft.length === 0) {
-        draft.push({});
-        for (const header of newHeaders) {
-          draft[0][header] = "";
-        }
-        return;
-      }
-    });
-
-    const updatedCsv = Papa.unparse(newData, {
-      header: true,
-      columns: newHeaders,
-    });
-
-    setQueryEditorValue(contextId, updatedCsv, true);
-  };
-
-  const addNamedColumn = (name: string, index: number) => {
+  const addNamedColumn = (name: string, position: number) => {
     if (headers == null || headers.length === 0) {
       console.warn("No headers found, cannot add named column.");
       return;
@@ -146,10 +350,10 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     }
 
     const updatedHeaders = produce(headers, (draft) => {
-      draft.splice(index, 0, name);
+      draft.splice(position, 0, name);
     });
 
-    const updatedData = produce(data, (draft) => {
+    const updatedData = produce(tableData, (draft) => {
       for (const row of draft) {
         row[name] = ""; // Initialize new column with empty string
       }
@@ -187,10 +391,10 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       return "Insert column left";
     },
     callback: (_, selection) => {
-      const column = selection[0].start.col;
+      const position = selection[0].start.col;
       const newName = prompt("Enter new column name:");
       if (newName != null && newName.trim() !== "") {
-        addNamedColumn(newName, column);
+        addNamedColumn(newName, position);
       }
     },
   };
@@ -200,17 +404,17 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       return "Insert column right";
     },
     callback: (_, selection) => {
-      const column = selection[0].end.col + 1;
+      const position = selection[0].end.col + 1;
       const newName = prompt("Enter new column name:");
       if (newName != null && newName.trim() !== "") {
-        addNamedColumn(newName, column);
+        addNamedColumn(newName, position);
       }
     },
   };
 
   const removeColumns: MenuItemConfig = {
     name() {
-      return "Remove column(s)";
+      return "Remove columns";
     },
     disabled() {
       const rangeSelected = this.getSelectedLast();
@@ -238,7 +442,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
         draft.splice(columnStart, columnEnd - columnStart + 1);
       });
 
-      const updatedData = produce(data, (draft) => {
+      const updatedData = produce(tableData, (draft) => {
         for (const row of draft) {
           for (let i = columnStart; i <= columnEnd; i++) {
             const headerToRemove = headers![i];
@@ -295,59 +499,11 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
               <ChevronDown />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="@container flex w-[min(45rem,100vw)] flex-col sm:flex-row">
-            <div className="flex flex-1 flex-col gap-2">
-              <div className="text-sm font-semibold">Columns</div>
-              {headers == null || headers.length === 0 ? (
-                <div className="text-muted-foreground text-sm">
-                  No columns found
-                </div>
-              ) : (
-                <div className="flex max-h-[8rem] flex-col overflow-y-auto">
-                  {headers.map((header, index) => (
-                    <div
-                      key={index}
-                      className="flex w-full shrink-0 items-center gap-1"
-                    >
-                      <GripHorizontal />
-                      <span className="flex-1 rounded-md p-1 hover:bg-gray-100">
-                        {header}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                Add{" "}
-                <Input
-                  type="number"
-                  min={1}
-                  className="w-[6rem]"
-                  value={numEntriesToAdd}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    if (isNaN(value) || value < 1) {
-                      setNumEntriesToAdd(1);
-                    } else {
-                      setNumEntriesToAdd(value);
-                    }
-                  }}
-                />
-                {headers != null && headers.length > 0 && (
-                  <Button onClick={() => addRows(numEntriesToAdd)}>
-                    {numEntriesToAdd != 1 ? "Rows" : "Row"}
-                  </Button>
-                )}
-                <Button onClick={() => addColumns(numEntriesToAdd)}>
-                  {numEntriesToAdd != 1 ? "Columns" : "Column"}
-                </Button>
-              </div>
-              <div className="text-sm">Table has {data.length} rows.</div>
-            </div>
-            <div className="flex flex-1 items-center justify-center">
-              <div className="m-2">Select a column to edit its properties</div>
-            </div>
-          </PopoverContent>
+          <ColumnsActionsPopoverContent
+            contextId={contextId}
+            headers={headers}
+            tableData={tableData}
+          />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
         <Button className="h-7">Import data</Button>
@@ -413,11 +569,14 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
           ) : (
             <HotTable
               ref={dataTableRef}
-              height="100%"
-              style={{ maxHeight: "100%" }}
-              data={data}
+              className="w-full"
+              height={"100%"}
+              data={tableData}
               rowHeaders={true}
               colHeaders={headers}
+              // Column name should be deserialized as a string, without any
+              // auto conversion (e.g. "2" means a column named "2")
+              columns={(column) => ({ data: headers[column] })}
               contextMenu={{
                 items: {
                   col_left: insertColumnLeft,
