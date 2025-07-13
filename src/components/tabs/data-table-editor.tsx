@@ -55,18 +55,29 @@ function ColumnsActionsPopoverContent({
   headers,
   tableData,
   contextId,
+  renameColumn,
 }: {
   contextId: string;
   headers?: string[];
   tableData: Record<string, string>[];
+  renameColumn?: (columnIndex: number, newName?: string) => void;
 }) {
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
   );
 
-  const [focusedColumnIndex, setFocusedColumnIndex] = useState<number | null>(
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(
     null,
   );
+
+  const [selectedColumnName, setSelectedColumnName] = useState<string>("");
+  const [selectedColumnDataType, setSelectedColumnDataType] =
+    useState<string>("");
+
+  const isSelectedColumnMetadataChanged =
+    headers != null &&
+    selectedColumnIndex != null &&
+    headers[selectedColumnIndex] !== selectedColumnName;
 
   const [draggingColumn, setDraggingColumn] = useState<string | null>(null);
   const [numEntriesToAdd, setNumEntriesToAdd] = useState(1);
@@ -95,7 +106,8 @@ function ColumnsActionsPopoverContent({
     });
 
     setQueryEditorValue(contextId, updatedCsv, true);
-    setFocusedColumnIndex(newIndex);
+    setSelectedColumnIndex(newIndex);
+    setSelectedColumnName(reorderedHeaders[newIndex]);
 
     setDraggingColumn(null);
   };
@@ -147,7 +159,7 @@ function ColumnsActionsPopoverContent({
 
   return (
     <PopoverContent className="@container flex w-[min(42rem,100vw)] flex-col gap-2 sm:flex-row">
-      <div className="flex flex-1 flex-col gap-2">
+      <div className="flex flex-3 flex-col gap-2">
         <div className="flex justify-between">
           <div className="text-sm font-semibold">Columns</div>
           {headers != null && headers.length > 0 && (
@@ -184,11 +196,14 @@ function ColumnsActionsPopoverContent({
                         "flex-1",
                         draggingColumn === header ? "invisible" : "",
                       )}
-                      onClick={() => setFocusedColumnIndex(index)}
+                      onClick={() => {
+                        setSelectedColumnIndex(index);
+                        setSelectedColumnName(header);
+                      }}
                     >
                       <Column
                         key={header}
-                        focused={index === focusedColumnIndex}
+                        focused={index === selectedColumnIndex}
                       >
                         {header}
                       </Column>
@@ -239,24 +254,44 @@ function ColumnsActionsPopoverContent({
       </div>
       <div
         className={cn(
-          "flex flex-1 border p-2",
-          focusedColumnIndex == null &&
+          "flex flex-2 border p-2",
+          selectedColumnIndex == null &&
             "items-center justify-center bg-gray-100",
         )}
       >
-        {focusedColumnIndex != null ? (
+        {selectedColumnIndex != null &&
+        headers != null &&
+        selectedColumnIndex < headers.length ? (
           <div className="flex w-full flex-col items-start gap-1">
             <label className="w-full">
               <div className="mb-0.5 text-sm font-medium">Column name</div>
-              <Input />
+              <Input
+                value={selectedColumnName}
+                onChange={(e) => setSelectedColumnName(e.target.value)}
+              />
             </label>
             <label className="w-full">
               <div className="mb-0.5 text-sm font-medium">Data type</div>
-              <Input />
+              <Input placeholder="<auto>" />
             </label>
             <div className="mt-3 flex gap-1">
-              <Button>Save</Button>
-              <Button variant="secondary">Cancel</Button>
+              <Button
+                disabled={!isSelectedColumnMetadataChanged}
+                onClick={() => {
+                  renameColumn?.(selectedColumnIndex, selectedColumnName);
+                }}
+              >
+                Save
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={!isSelectedColumnMetadataChanged}
+                onClick={() => {
+                  setSelectedColumnName(headers[selectedColumnIndex]);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         ) : (
@@ -282,7 +317,10 @@ export function Column({
       )}
     >
       <GripHorizontal width={18} className="shrink-0" />
-      {children}
+      <div className="shrink-1 self-baseline truncate">{children}</div>
+      <div className="text-muted-foreground max-w-[8rem] shrink-0 self-baseline truncate text-sm italic">
+        data_type
+      </div>
     </div>
   );
 }
@@ -461,6 +499,28 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   };
   // endregion
 
+  const renameColumn = (columnIndex: number, newName?: string | null) => {
+    if (headers == null || newName == null || newName.trim() === "") return;
+
+    const oldName = headers[columnIndex];
+    if (newName === oldName) return;
+
+    if (headers.includes(newName)) {
+      toast.error("Name already exists!");
+      return;
+    }
+
+    const hotInstance = dataTableRef.current?.hotInstance;
+    if (hotInstance == null) return;
+
+    hotInstance.updateSettings({
+      colHeaders: produce(hotInstance.getColHeader() as string[], (draft) => {
+        draft[columnIndex] = newName;
+      }),
+    });
+    saveCurrentTable();
+  };
+
   // Component first mount, set the query editor value
   useEffect(() => {
     if (associatedFile == null) {
@@ -503,6 +563,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
             contextId={contextId}
             headers={headers}
             tableData={tableData}
+            renameColumn={renameColumn}
           />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
@@ -595,32 +656,13 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
                       return "Rename column";
                     },
                     callback: (_, selection) => {
-                      const column = selection[0].start.col;
-                      const oldName = headers[column];
+                      const idx = selection[0].start.col;
                       const newName = prompt(
                         "Enter new column name:",
-                        headers[column],
+                        headers[idx],
                       );
-                      if (newName != null && newName.trim() !== "") {
-                        if (newName === oldName) return;
-                        if (headers.includes(newName)) {
-                          toast.error("Name already exists!");
-                          return;
-                        }
 
-                        const hotInstance = dataTableRef.current?.hotInstance;
-                        if (hotInstance == null) return;
-
-                        hotInstance.updateSettings({
-                          colHeaders: produce(
-                            hotInstance.getColHeader() as string[],
-                            (draft) => {
-                              draft[column] = newName;
-                            },
-                          ),
-                        });
-                        saveCurrentTable();
-                      }
+                      renameColumn(idx, newName);
                     },
                   },
                   insertColumnLeft,

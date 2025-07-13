@@ -7,9 +7,9 @@
 
 ![Demo screenshot](./public/demo1.png)
 
-Just built a local-first toolbox to ease my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. To give you an idea of what you can do with it:
+Just built a local-first toolbox for my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. Some of my use cases to give you an idea of what you can do with it:
 
-- I have some CSV and JSON files. I want to Ctrl+V them into Postgres and ask the o mighty LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data—for security reason) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
+- I have some CSV and JSON files. I want to Ctrl+V them into Postgres and ask the o mighty LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data—for security reasons) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
 - I want to interact with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, and store my reusable queries somewhere. Moreover, I have multiple types of data sources and being able to combine them to perform joins and aggregations sounds like a good idea.
 
