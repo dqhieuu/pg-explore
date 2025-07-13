@@ -192,7 +192,7 @@ const DatabaseList = ({
           </em>
         </div>
       </div>
-      <div className="j flex gap-1">
+      <div className="flex gap-1">
         <Tooltip>
           <TooltipContent>Rename database</TooltipContent>
           <TooltipTrigger asChild>

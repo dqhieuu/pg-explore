@@ -152,11 +152,11 @@ function ColumnsActionsPopoverContent({
           <div className="text-sm font-semibold">Columns</div>
           {headers != null && headers.length > 0 && (
             <div className="flex gap-2 text-sm">
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <strong className="font-medium">{tableData.length}</strong>
                 <Rows3 strokeWidth={1.5} />
               </div>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <strong className="font-medium">{headers.length}</strong>
                 <Columns3 strokeWidth={1.5} />
               </div>
@@ -256,7 +256,7 @@ function ColumnsActionsPopoverContent({
             </label>
             <div className="mt-3 flex gap-1">
               <Button>Save</Button>
-              <Button>Cancel</Button>
+              <Button variant="secondary">Cancel</Button>
             </div>
           </div>
         ) : (

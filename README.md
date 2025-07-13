@@ -7,7 +7,7 @@
 
 ![Demo screenshot](./public/demo1.png)
 
-Just built a toolbox to ease my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. To give you an idea of what you can do with it:
+Just built a local-first toolbox to ease my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. To give you an idea of what you can do with it:
 
 - I have some CSV and JSON files. I want to Ctrl+V them into Postgres and ask the o mighty LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data—for security reason) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
 
@@ -25,7 +25,7 @@ You can keep me motivated just by using this site or starring this repo. Motivat
 
 ## Development
 
-(Optional) You can set up the env for default AI integration (OpenAI compatible API). Or just configure it later in the app settings (per browser config).
+(Optional) You can set up the env for the default AI integration (OpenAI compatible API). Or just configure it later in the app settings (per browser config).
 ```
 VITE_AI_API_KEY=<YOUR_API_KEY>
 VITE_AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
