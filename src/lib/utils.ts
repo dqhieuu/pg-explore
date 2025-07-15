@@ -125,6 +125,19 @@ export function guessPostgresDataTypeBasedOnValueList(
   }
   if (hasUuid && !hasNonUuid) return "uuid";
 
+  let hasJson = false;
+  let hasNonJson = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^[{[].*[}\]]$/i.test(value)) {
+      hasJson = true;
+    } else {
+      hasNonJson = true;
+      break;
+    }
+  }
+  if (hasJson && !hasNonJson) return "jsonb";
+
   let hasInt = false;
   let hasNonInt = false;
   for (const value of values) {
