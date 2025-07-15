@@ -75,6 +75,86 @@ export async function resetApplication() {
   window.location.href = "/";
 }
 
+export function guessPostgresDataTypeBasedOnValueList(
+  values: (string | null | undefined)[],
+  useHighPrecision = true,
+) {
+  let hasDate = false;
+  let hasNonDate = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (
+      /^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/.test(value) &&
+      new Date(value).toString() !== "Invalid Date"
+    ) {
+      hasDate = true;
+    } else {
+      hasNonDate = true;
+      break;
+    }
+  }
+  if (hasDate && !hasNonDate) return "timestamptz";
+
+  let hasBool = false;
+  let hasNonBool = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^(?:true|false|t|f|yes|no|y|n|1|0|on|off)$/i.test(value)) {
+      hasBool = true;
+    } else {
+      hasNonBool = true;
+      break;
+    }
+  }
+  if (hasBool && !hasNonBool) return "boolean";
+
+  let hasUuid = false;
+  let hasNonUuid = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+    ) {
+      hasUuid = true;
+    } else {
+      hasNonUuid = true;
+      break;
+    }
+  }
+  if (hasUuid && !hasNonUuid) return "uuid";
+
+  let hasInt = false;
+  let hasNonInt = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^-?\d+$/.test(value)) {
+      hasInt = true;
+    } else {
+      hasNonInt = true;
+      break;
+    }
+  }
+  if (hasInt && !hasNonInt) return useHighPrecision ? "bigint" : "integer";
+
+  let hasFloat = false;
+  let hasNonFloat = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^[+-]?(\d+([.]\d*)?(e[+-]?\d+)?|[.]\d+(e[+-]?\d+)?)$/i.test(value)) {
+      hasFloat = true;
+    } else {
+      hasNonFloat = true;
+      break;
+    }
+  }
+  if (hasFloat && !hasNonFloat)
+    return useHighPrecision ? "double precision" : "real";
+
+  return "text";
+}
+
 export const devModeEnabled = () => useSettingsStore.getState().debugMode;
 
 export const sessionId = guid();

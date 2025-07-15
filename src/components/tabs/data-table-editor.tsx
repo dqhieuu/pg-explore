@@ -18,7 +18,11 @@ import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
-import { cn, nextIncrementedNames } from "@/lib/utils.ts";
+import {
+  cn,
+  guessPostgresDataTypeBasedOnValueList,
+  nextIncrementedNames,
+} from "@/lib/utils.ts";
 import {
   DndContext,
   DragEndEvent,
@@ -57,12 +61,14 @@ function ColumnsActionsPopoverContent({
   contextId,
   renameColumn,
   removeColumns,
+  suggestedDataTypeByHeader,
 }: {
   contextId: string;
   headers?: string[];
   tableData: Record<string, string>[];
   renameColumn?: (columnIndex: number, newName?: string) => void;
   removeColumns?: (columnIndexFrom: number, columnIndexTo?: number) => void;
+  suggestedDataTypeByHeader?: Record<string, string>;
 }) {
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
@@ -209,6 +215,7 @@ function ColumnsActionsPopoverContent({
                       <Column
                         key={header}
                         focused={index === selectedColumnIndex}
+                        dataType={suggestedDataTypeByHeader?.[header]}
                       >
                         {header}
                       </Column>
@@ -228,7 +235,13 @@ function ColumnsActionsPopoverContent({
               </SortableContext>
               {createPortal(
                 <DragOverlay>
-                  {draggingColumn ? <Column>{draggingColumn}</Column> : null}
+                  {draggingColumn ? (
+                    <Column
+                      dataType={suggestedDataTypeByHeader?.[draggingColumn]}
+                    >
+                      {draggingColumn}
+                    </Column>
+                  ) : null}
                 </DragOverlay>,
                 document.body,
               )}
@@ -313,9 +326,11 @@ function ColumnsActionsPopoverContent({
 
 export function Column({
   children,
+  dataType,
   focused,
 }: {
   children: ReactNode;
+  dataType?: string;
   focused?: boolean;
 }) {
   return (
@@ -328,7 +343,7 @@ export function Column({
       <GripHorizontal width={18} className="shrink-0" />
       <div className="shrink-1 self-baseline truncate">{children}</div>
       <div className="text-muted-foreground max-w-[8rem] shrink-0 self-baseline truncate text-sm italic">
-        data_type
+        {dataType}
       </div>
     </div>
   );
@@ -368,6 +383,19 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   });
   const headers = parsedCsv.meta.fields;
   const tableData = parsedCsv.data as Record<string, string>[];
+
+  const suggestedDataTypeByHeader =
+    headers != null
+      ? headers.reduce(
+          (acc, header) => {
+            acc[header] = guessPostgresDataTypeBasedOnValueList(
+              tableData.map((row) => row[header]),
+            );
+            return acc;
+          },
+          {} as Record<string, string>,
+        )
+      : {};
 
   const saveEditorValue = async (value: string) => {
     await appDb.files.update(fileId, {
@@ -584,6 +612,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
             tableData={tableData}
             renameColumn={renameColumn}
             removeColumns={removeColumns}
+            suggestedDataTypeByHeader={suggestedDataTypeByHeader}
           />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
