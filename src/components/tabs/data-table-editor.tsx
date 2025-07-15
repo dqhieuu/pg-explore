@@ -56,11 +56,13 @@ function ColumnsActionsPopoverContent({
   tableData,
   contextId,
   renameColumn,
+  removeColumns,
 }: {
   contextId: string;
   headers?: string[];
   tableData: Record<string, string>[];
   renameColumn?: (columnIndex: number, newName?: string) => void;
+  removeColumns?: (columnIndexFrom: number, columnIndexTo?: number) => void;
 }) {
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
@@ -105,7 +107,7 @@ function ColumnsActionsPopoverContent({
       columns: reorderedHeaders,
     });
 
-    setQueryEditorValue(contextId, updatedCsv, true);
+    setQueryEditorValue(contextId, updatedCsv);
     setSelectedColumnIndex(newIndex);
     setSelectedColumnName(reorderedHeaders[newIndex]);
 
@@ -121,6 +123,10 @@ function ColumnsActionsPopoverContent({
     const updatedTable = produce(tableData, (draft) => {
       for (let i = 0; i < count; i++) {
         draft.push({});
+        if (draft.length > 1) continue;
+        for (const header of headers) {
+          draft[0][header] = "";
+        }
       }
     });
 
@@ -129,7 +135,7 @@ function ColumnsActionsPopoverContent({
       columns: headers,
     });
 
-    setQueryEditorValue(contextId, updatedCsv, true);
+    setQueryEditorValue(contextId, updatedCsv);
   };
 
   const addColumns = (count: number) => {
@@ -140,12 +146,11 @@ function ColumnsActionsPopoverContent({
     ];
 
     const newData = produce(tableData, (draft) => {
-      if (draft.length === 0) {
-        draft.push({});
-        for (const header of newHeaders) {
-          draft[0][header] = "";
-        }
-        return;
+      if (draft.length > 0) return;
+
+      draft.push({});
+      for (const header of newHeaders) {
+        draft[0][header] = "";
       }
     });
 
@@ -154,7 +159,7 @@ function ColumnsActionsPopoverContent({
       columns: newHeaders,
     });
 
-    setQueryEditorValue(contextId, updatedCsv, true);
+    setQueryEditorValue(contextId, updatedCsv);
   };
 
   return (
@@ -211,6 +216,10 @@ function ColumnsActionsPopoverContent({
                     <Button
                       variant="ghost"
                       className="hover:text-destructive h-8 w-8 duration-0"
+                      onClick={() => {
+                        removeColumns?.(index);
+                        setSelectedColumnIndex(null);
+                      }}
                     >
                       <TrashIcon />
                     </Button>
@@ -295,7 +304,7 @@ function ColumnsActionsPopoverContent({
             </div>
           </div>
         ) : (
-          "Select a column to edit its properties"
+          "Select a column"
         )}
       </div>
     </PopoverContent>
@@ -402,10 +411,10 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       columns: updatedHeaders,
     });
 
-    setQueryEditorValue(contextId, updatedCsv, true);
+    setQueryEditorValue(contextId, updatedCsv);
   };
 
-  const saveCurrentTable = () => {
+  const syncCurrentTableStateToDatabase = () => {
     if (dataTableRef.current?.hotInstance == null) return;
     const exportPlugin =
       dataTableRef.current.hotInstance.getPlugin("exportFile");
@@ -419,12 +428,12 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     if (isAutoSaveEnabled) {
       saveEditorValue(exportedData);
     } else {
-      setQueryEditorValue(contextId, exportedData, false);
+      setQueryEditorValue(contextId, exportedData);
     }
   };
 
   // region Handlers
-  const insertColumnLeft: MenuItemConfig = {
+  const insertColumnLeftMenuItem: MenuItemConfig = {
     name() {
       return "Insert column left";
     },
@@ -437,7 +446,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     },
   };
 
-  const insertColumnRight: MenuItemConfig = {
+  const insertColumnRightMenuItem: MenuItemConfig = {
     name() {
       return "Insert column right";
     },
@@ -450,7 +459,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     },
   };
 
-  const removeColumns: MenuItemConfig = {
+  const removeColumnsMenuItem: MenuItemConfig = {
     name() {
       return "Remove columns";
     },
@@ -458,46 +467,56 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       const rangeSelected = this.getSelectedLast();
       const headers = this.getColHeader();
 
-      if (
+      return (
         headers == null ||
         headers.length === 0 ||
         rangeSelected == null ||
         rangeSelected.length === 0
-      )
-        return true;
-
-      return (
-        Math.abs(rangeSelected[1] - rangeSelected[3]) + 1 >= headers.length // [1] is start col, [3] is end col
       );
     },
     callback: (_, selection) => {
       if (headers == null) return;
 
-      const columnStart = selection[0].start.col;
-      const columnEnd = selection[0].end.col;
-
-      const updatedHeaders = produce(headers, (draft) => {
-        draft.splice(columnStart, columnEnd - columnStart + 1);
-      });
-
-      const updatedData = produce(tableData, (draft) => {
-        for (const row of draft) {
-          for (let i = columnStart; i <= columnEnd; i++) {
-            const headerToRemove = headers![i];
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete row[headerToRemove];
-          }
-        }
-      });
-
-      const updatedCsv = Papa.unparse(updatedData, {
-        header: true,
-        columns: updatedHeaders,
-      });
-      setQueryEditorValue(contextId, updatedCsv, true);
+      removeColumns(selection[0].start.col, selection[0].end.col);
     },
   };
   // endregion
+
+  const removeColumns = (columnIndexFrom: number, columnIndexTo?: number) => {
+    if (headers == null || headers.length === 0) return;
+
+    if (columnIndexTo == null) {
+      columnIndexTo = columnIndexFrom;
+    }
+
+    const updatedHeaders = produce(headers, (draft) => {
+      draft.splice(
+        columnIndexFrom,
+        columnIndexTo == null ? 1 : columnIndexTo - columnIndexFrom + 1,
+      );
+    });
+
+    if (updatedHeaders.length === 0) {
+      setQueryEditorValue(contextId, "");
+      return;
+    }
+
+    const updatedData = produce(tableData, (draft) => {
+      for (const row of draft) {
+        for (let i = columnIndexFrom; i <= columnIndexTo; i++) {
+          const headerToRemove = headers![i];
+          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+          delete row[headerToRemove];
+        }
+      }
+    });
+
+    const updatedCsv = Papa.unparse(updatedData, {
+      header: true,
+      columns: updatedHeaders,
+    });
+    setQueryEditorValue(contextId, updatedCsv);
+  };
 
   const renameColumn = (columnIndex: number, newName?: string | null) => {
     if (headers == null || newName == null || newName.trim() === "") return;
@@ -518,7 +537,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
         draft[columnIndex] = newName;
       }),
     });
-    saveCurrentTable();
+    syncCurrentTableStateToDatabase();
   };
 
   // Component first mount, set the query editor value
@@ -564,6 +583,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
             headers={headers}
             tableData={tableData}
             renameColumn={renameColumn}
+            removeColumns={removeColumns}
           />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
@@ -640,12 +660,12 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
               columns={(column) => ({ data: headers[column] })}
               contextMenu={{
                 items: {
-                  col_left: insertColumnLeft,
-                  col_right: insertColumnRight,
+                  insertColumnLeftMenuItem,
+                  insertColumnRightMenuItem,
                   row_above: "row_above",
                   row_below: "row_below",
                   sep: "---------",
-                  remove_col: removeColumns,
+                  removeColumnsMenuItem,
                   remove_row: "remove_row",
                 },
               }}
@@ -665,14 +685,14 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
                       renameColumn(idx, newName);
                     },
                   },
-                  insertColumnLeft,
-                  insertColumnRight,
-                  removeColumn: removeColumns,
+                  insertColumnLeftMenuItem,
+                  insertColumnRightMenuItem,
+                  removeColumnsMenuItem,
                 },
               }}
               afterChange={(_, source) => {
                 if (source === "loadData") return;
-                saveCurrentTable();
+                syncCurrentTableStateToDatabase();
               }}
               licenseKey="non-commercial-and-evaluation"
             />

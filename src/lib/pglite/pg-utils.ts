@@ -68,6 +68,7 @@ export function evaluateSql(pg: PGliteInterface, sqlScript: string) {
 }
 
 export async function getDatabaseSchemaDump(pg: PGliteInterface) {
+  await evaluateSql(pg, "");
   // @ts-expect-error pg should be a PGliteInterface, but it is not
   const dumpFile = await pgDump({ pg, args: ["--schema-only"] });
   await evaluateSql(pg, "SET search_path TO public;");

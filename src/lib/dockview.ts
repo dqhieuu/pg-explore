@@ -2,7 +2,7 @@ import { QueryResult, QueryStore } from "@/hooks/stores/use-query-store.ts";
 import { appDb } from "@/lib/dexie/app-db.ts";
 import { evaluateSql } from "@/lib/pglite/pg-utils.ts";
 import { PGliteInterface } from "@electric-sql/pglite";
-import { DockviewApi } from "dockview";
+import { DockviewApi, DockviewGroupPanel } from "dockview";
 import { toast } from "sonner";
 
 import { guid } from "./utils";
@@ -36,8 +36,10 @@ export function createWorkflowPanel(
       },
     });
   } else if (!skipIfSmallScreen) {
-    const editorGroup = dockviewApi.getGroup("editor-group");
-    if (editorGroup == null) {
+    const editorGroup = dockviewApi.getGroup("editor-group") as
+      | DockviewGroupPanel
+      | undefined;
+    if (editorGroup != null) {
       dockviewApi.addPanel({
         ...workflowPanel,
         position: {
@@ -74,7 +76,9 @@ export async function openFileEditor(dockviewApi: DockviewApi, fileId: string) {
     return;
   }
 
-  let editorGroup = dockviewApi.getGroup("editor-group");
+  let editorGroup = dockviewApi.getGroup("editor-group") as
+    | DockviewGroupPanel
+    | undefined;
 
   if (editorGroup == null) {
     editorGroup = dockviewApi.addGroup({
@@ -115,7 +119,9 @@ export function openAiChat(dockviewApi: DockviewApi) {
     return;
   }
 
-  const editorGroup = dockviewApi.getGroup("editor-group");
+  const editorGroup = dockviewApi.getGroup("editor-group") as
+    | DockviewGroupPanel
+    | undefined;
 
   dockviewApi.addPanel({
     id: "ai-chat",
@@ -149,7 +155,9 @@ export function createQueryResultTabsIfNeeded({
 }) {
   if (dockviewApi == null) return;
 
-  let resultGroup = dockviewApi.getGroup("result-group");
+  let resultGroup = dockviewApi.getGroup("result-group") as
+    | DockviewGroupPanel
+    | undefined;
 
   if (resultGroup == null) {
     resultGroup = dockviewApi.addGroup({
