@@ -29,13 +29,40 @@ export interface WorkflowState {
   stepResults: StepExecutionResult[];
 }
 
-export interface FileEntry {
+export type FileEntry = TableFileEntry | SqlFileEntry | DbmlFileEntry;
+
+export type TableFileEntry = Modify<
+  BaseFileEntry,
+  {
+    type: "table";
+    metadata?: {
+      columnToDataType?: Record<string, string>;
+    };
+  }
+>;
+
+export type SqlFileEntry = Modify<
+  BaseFileEntry,
+  {
+    type: "sql";
+  }
+>;
+
+export type DbmlFileEntry = Modify<
+  BaseFileEntry,
+  {
+    type: "dbml";
+  }
+>;
+
+interface BaseFileEntry {
   id: string;
   databaseId: string;
-  type: "sql" | "dbml" | "table";
+  type: string;
   name: string;
   content?: string;
   blob?: Blob;
+  metadata?: Record<string, unknown>;
 }
 
 export interface WorkflowSection {
@@ -46,14 +73,14 @@ export interface WorkflowSection {
   workflowSteps: WorkflowStep[];
 }
 
-interface CommonWorkflowStep {
+interface BaseWorkflowStep {
   type: string;
   fileId?: string;
   options: Record<string, unknown>;
 }
 
 export type SqlQueryStep = Modify<
-  CommonWorkflowStep,
+  BaseWorkflowStep,
   {
     type: "sql-query";
     options: Record<string, never>;
@@ -61,7 +88,7 @@ export type SqlQueryStep = Modify<
 >;
 
 export type DbmlStep = Modify<
-  CommonWorkflowStep,
+  BaseWorkflowStep,
   {
     type: "dbml";
     options: Record<string, never>;
@@ -69,7 +96,7 @@ export type DbmlStep = Modify<
 >;
 
 export type DataTableStep = Modify<
-  CommonWorkflowStep,
+  BaseWorkflowStep,
   {
     type: "table";
     options: {

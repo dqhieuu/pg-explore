@@ -17,10 +17,16 @@ import {
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
-import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
+import {
+  TableFileEntry,
+  appDb,
+  useAppDbLiveQuery,
+} from "@/lib/dexie/app-db.ts";
 import {
   cn,
   guessPostgresDataTypeBasedOnValueList,
+  guid,
+  isEmptyOrSpaces,
   nextIncrementedNames,
 } from "@/lib/utils.ts";
 import {
@@ -61,18 +67,37 @@ function ColumnsActionsPopoverContent({
   contextId,
   renameColumn,
   removeColumns,
-  suggestedDataTypeByHeader,
+  columnToDataType,
+  setColumnToDataType,
 }: {
   contextId: string;
   headers?: string[];
   tableData: Record<string, string>[];
-  renameColumn?: (columnIndex: number, newName?: string) => void;
+  renameColumn?: (columnIndex: number, newName?: string) => boolean;
   removeColumns?: (columnIndexFrom: number, columnIndexTo?: number) => void;
-  suggestedDataTypeByHeader?: Record<string, string>;
+  columnToDataType?: Record<string, string>;
+  setColumnToDataType?: (columnToDataType: Record<string, string>) => void;
 }) {
   const setQueryEditorValue = useQueryStore(
     (state) => state.setQueryEditorValue,
   );
+
+  const setIsSaved = useQueryStore((state) => state.setQueryEditorSaved);
+
+  const dataTypeByHeader =
+    headers != null
+      ? headers.reduce(
+          (acc, header) => {
+            acc[header] = isEmptyOrSpaces(columnToDataType?.[header])
+              ? guessPostgresDataTypeBasedOnValueList(
+                  tableData.map((row) => row[header]),
+                )
+              : columnToDataType![header].trim();
+            return acc;
+          },
+          {} as Record<string, string>,
+        )
+      : {};
 
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(
     null,
@@ -83,9 +108,11 @@ function ColumnsActionsPopoverContent({
     useState<string>("");
 
   const isSelectedColumnMetadataChanged =
-    headers != null &&
     selectedColumnIndex != null &&
-    headers[selectedColumnIndex] !== selectedColumnName;
+    headers != null &&
+    (headers[selectedColumnIndex] !== selectedColumnName ||
+      (columnToDataType?.[headers[selectedColumnIndex]] ?? "").trim() !==
+        selectedColumnDataType);
 
   const [draggingColumn, setDraggingColumn] = useState<string | null>(null);
   const [numEntriesToAdd, setNumEntriesToAdd] = useState(1);
@@ -116,6 +143,9 @@ function ColumnsActionsPopoverContent({
     setQueryEditorValue(contextId, updatedCsv);
     setSelectedColumnIndex(newIndex);
     setSelectedColumnName(reorderedHeaders[newIndex]);
+    setSelectedColumnDataType(
+      columnToDataType?.[reorderedHeaders[newIndex]] ?? "",
+    );
 
     setDraggingColumn(null);
   };
@@ -210,12 +240,15 @@ function ColumnsActionsPopoverContent({
                       onClick={() => {
                         setSelectedColumnIndex(index);
                         setSelectedColumnName(header);
+                        setSelectedColumnDataType(
+                          columnToDataType?.[header] ?? "",
+                        );
                       }}
                     >
                       <Column
                         key={header}
                         focused={index === selectedColumnIndex}
-                        dataType={suggestedDataTypeByHeader?.[header]}
+                        dataType={dataTypeByHeader?.[header]}
                       >
                         {header}
                       </Column>
@@ -236,9 +269,7 @@ function ColumnsActionsPopoverContent({
               {createPortal(
                 <DragOverlay>
                   {draggingColumn ? (
-                    <Column
-                      dataType={suggestedDataTypeByHeader?.[draggingColumn]}
-                    >
+                    <Column dataType={dataTypeByHeader?.[draggingColumn]}>
                       {draggingColumn}
                     </Column>
                   ) : null}
@@ -294,13 +325,35 @@ function ColumnsActionsPopoverContent({
             </label>
             <label className="w-full">
               <div className="mb-0.5 text-sm font-medium">Data type</div>
-              <Input placeholder="<auto>" />
+              <Input
+                placeholder="<auto>"
+                value={selectedColumnDataType}
+                onChange={(e) => setSelectedColumnDataType(e.target.value)}
+              />
             </label>
             <div className="mt-3 flex gap-1">
               <Button
                 disabled={!isSelectedColumnMetadataChanged}
                 onClick={() => {
-                  renameColumn?.(selectedColumnIndex, selectedColumnName);
+                  if (!renameColumn?.(selectedColumnIndex, selectedColumnName))
+                    return;
+                  if (
+                    columnToDataType != null &&
+                    setColumnToDataType != null &&
+                    selectedColumnIndex != null
+                  ) {
+                    const updatedColumnToDataType = produce(
+                      columnToDataType,
+                      (draft) => {
+                        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                        delete draft[headers[selectedColumnIndex]];
+                        draft[selectedColumnName] =
+                          selectedColumnDataType.trim();
+                      },
+                    );
+                    setColumnToDataType(updatedColumnToDataType);
+                  }
+                  setIsSaved(contextId, false);
                 }}
               >
                 Save
@@ -310,6 +363,9 @@ function ColumnsActionsPopoverContent({
                 disabled={!isSelectedColumnMetadataChanged}
                 onClick={() => {
                   setSelectedColumnName(headers[selectedColumnIndex]);
+                  setSelectedColumnDataType(
+                    columnToDataType?.[headers[selectedColumnIndex]] ?? "",
+                  );
                 }}
               >
                 Cancel
@@ -351,7 +407,9 @@ export function Column({
 
 export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   // region Hooks
-  const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId));
+  const associatedFile = useAppDbLiveQuery(() => appDb.files.get(fileId)) as
+    | TableFileEntry
+    | undefined;
   const prevAssociatedFile = useRef(associatedFile);
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
@@ -384,32 +442,30 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   const headers = parsedCsv.meta.fields;
   const tableData = parsedCsv.data as Record<string, string>[];
 
-  const suggestedDataTypeByHeader =
-    headers != null
-      ? headers.reduce(
-          (acc, header) => {
-            acc[header] = guessPostgresDataTypeBasedOnValueList(
-              tableData.map((row) => row[header]),
-            );
-            return acc;
-          },
-          {} as Record<string, string>,
-        )
-      : {};
+  const [columnToDataType, setColumnToDataType] = useState<
+    Record<string, string>
+  >({});
+
+  const [popupRefreshKey, setPopupRefreshKey] = useState(guid());
+
+  const isFirstLoad = useRef(true);
 
   const saveEditorValue = async (value: string) => {
     await appDb.files.update(fileId, {
       content: value,
+      metadata: {
+        columnToDataType,
+      },
     });
 
     setIsSaved(contextId, true);
   };
 
   const rollbackEditorValue = async () => {
-    const file = await appDb.files.get(fileId);
-    if (file == null) return;
+    if (associatedFile == null) return;
 
-    setQueryEditorValue(contextId, file.content ?? "", true);
+    setQueryEditorValue(contextId, associatedFile.content ?? "", true);
+    setColumnToDataType(associatedFile.metadata?.columnToDataType ?? {});
     setIsSaved(contextId, true);
   };
 
@@ -547,18 +603,19 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   };
 
   const renameColumn = (columnIndex: number, newName?: string | null) => {
-    if (headers == null || newName == null || newName.trim() === "") return;
+    if (headers == null || newName == null || newName.trim() === "")
+      return false;
 
     const oldName = headers[columnIndex];
-    if (newName === oldName) return;
+    if (newName === oldName) return true;
 
     if (headers.includes(newName)) {
       toast.error("Name already exists!");
-      return;
+      return false;
     }
 
     const hotInstance = dataTableRef.current?.hotInstance;
-    if (hotInstance == null) return;
+    if (hotInstance == null) return false;
 
     hotInstance.updateSettings({
       colHeaders: produce(hotInstance.getColHeader() as string[], (draft) => {
@@ -566,6 +623,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       }),
     });
     syncCurrentTableStateToDatabase();
+    return true;
   };
 
   // Component first mount, set the query editor value
@@ -579,10 +637,21 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
       return;
     }
 
+    if (associatedFile.metadata == null) {
+      appDb.files.update(fileId, {
+        metadata: {},
+      });
+    } else if (isFirstLoad.current) {
+      setColumnToDataType(associatedFile.metadata.columnToDataType ?? {});
+    }
+
     prevAssociatedFile.current = associatedFile;
 
     setQueryEditorValue(contextId, associatedFile.content ?? "", true);
     setIsSaved(contextId, true);
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+    }
   }, [
     contextId,
     fileId,
@@ -595,7 +664,11 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b p-1">
-        <Popover>
+        <Popover
+          onOpenChange={(open) => {
+            if (!open) setPopupRefreshKey(guid());
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               className="data-table-editor-columns-actions h-7"
@@ -612,7 +685,9 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
             tableData={tableData}
             renameColumn={renameColumn}
             removeColumns={removeColumns}
-            suggestedDataTypeByHeader={suggestedDataTypeByHeader}
+            columnToDataType={columnToDataType}
+            setColumnToDataType={setColumnToDataType}
+            key={popupRefreshKey}
           />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
@@ -684,8 +759,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
               data={tableData}
               rowHeaders={true}
               colHeaders={headers}
-              // Column name should be deserialized as a string, without any
-              // auto conversion (e.g. "2" means a column named "2")
+              // Needed to make the column name "1", "2" not auto converted to column index
               columns={(column) => ({ data: headers[column] })}
               contextMenu={{
                 items: {

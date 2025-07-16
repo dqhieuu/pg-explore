@@ -1,8 +1,9 @@
+import { Button } from "@/components/ui/button.tsx";
 import { Checkbox } from "@/components/ui/checkbox.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { NodeProps } from "@xyflow/react";
 import { Node } from "@xyflow/react";
-import { TableIcon } from "lucide-react";
+import { EyeIcon, TableIcon } from "lucide-react";
 
 import { BaseWorkflowNode } from "./base/base-workflow-node.tsx";
 
@@ -41,10 +42,15 @@ export const DataTableNode = ({
           placeholder="SQL table name..."
         />
       </label>
-      <label className="flex gap-1 text-xs">
-        <Checkbox />
-        <span>Include CREATE TABLE</span>
-      </label>
+      <div className="flex justify-between">
+        <label className="nopan flex items-center gap-1 text-xs">
+          <Checkbox />
+          <span className="text-[0.7rem]">Include CREATE TABLE</span>
+        </label>
+        <Button variant="ghost" className="h-6 w-4 cursor-pointer">
+          <EyeIcon strokeWidth={1.5} />
+        </Button>
+      </div>
     </BaseWorkflowNode>
   );
 };

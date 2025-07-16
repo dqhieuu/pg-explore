@@ -44,7 +44,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setCustomAIEndpointModel: (model) =>
         set({ customAIEndpointModel: model }),
 
-      dataTableAutoSave: false,
+      dataTableAutoSave: true,
       setDataTableAutoSave: (isAutoSaved) =>
         set({ dataTableAutoSave: isAutoSaved }),
 
