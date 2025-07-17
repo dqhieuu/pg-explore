@@ -592,6 +592,14 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
 
     if (updatedHeaders.length === 0) {
       setQueryEditorValue(contextId, "");
+      // We must save manually as the syncCurrentTableStateToDatabase() is not called
+      // because we do not render the table.
+      if (isAutoSaveEnabled) {
+        appDb.files.update(fileId, {
+          content: "",
+          metadata: {},
+        });
+      }
       return;
     }
 
