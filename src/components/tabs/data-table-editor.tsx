@@ -65,12 +65,14 @@ function ColumnsActionsPopoverContent({
   headers,
   tableData,
   contextId,
+  fileId,
   renameColumn,
   removeColumns,
   columnToDataType,
   setColumnToDataType,
 }: {
   contextId: string;
+  fileId: string;
   headers?: string[];
   tableData: Record<string, string>[];
   renameColumn?: (columnIndex: number, newName?: string) => boolean;
@@ -83,6 +85,10 @@ function ColumnsActionsPopoverContent({
   );
 
   const setIsSaved = useQueryStore((state) => state.setQueryEditorSaved);
+
+  const isAutoSaveEnabled = useSettingsStore(
+    (state) => state.dataTableAutoSave,
+  );
 
   const dataTypeByHeader =
     headers != null
@@ -351,6 +357,14 @@ function ColumnsActionsPopoverContent({
                           selectedColumnDataType.trim();
                       },
                     );
+
+                    if (isAutoSaveEnabled) {
+                      appDb.files.update(fileId, {
+                        metadata: {
+                          columnToDataType: updatedColumnToDataType,
+                        },
+                      });
+                    }
                     setColumnToDataType(updatedColumnToDataType);
                   }
                   setIsSaved(contextId, false);
@@ -545,25 +559,21 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
 
   const removeColumnsMenuItem: MenuItemConfig = {
     name() {
-      return "Remove columns";
-    },
-    disabled() {
       const rangeSelected = this.getSelectedLast();
-      const headers = this.getColHeader();
+      const selectedMultipleColumns =
+        rangeSelected != null &&
+        Math.abs(rangeSelected[1] - rangeSelected[3]) > 0;
 
-      return (
-        headers == null ||
-        headers.length === 0 ||
-        rangeSelected == null ||
-        rangeSelected.length === 0
-      );
+      return `Remove column${selectedMultipleColumns ? "s" : ""}`;
     },
+
     callback: (_, selection) => {
       if (headers == null) return;
 
       removeColumns(selection[0].start.col, selection[0].end.col);
     },
   };
+
   // endregion
 
   const removeColumns = (columnIndexFrom: number, columnIndexTo?: number) => {
@@ -649,6 +659,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
 
     setQueryEditorValue(contextId, associatedFile.content ?? "", true);
     setIsSaved(contextId, true);
+
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
     }
@@ -681,6 +692,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
           </PopoverTrigger>
           <ColumnsActionsPopoverContent
             contextId={contextId}
+            fileId={fileId}
             headers={headers}
             tableData={tableData}
             renameColumn={renameColumn}
@@ -797,6 +809,10 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
                 if (source === "loadData") return;
                 syncCurrentTableStateToDatabase();
               }}
+              afterRemoveRow={() => syncCurrentTableStateToDatabase()}
+              afterRemoveCol={() => syncCurrentTableStateToDatabase()}
+              afterCreateRow={() => syncCurrentTableStateToDatabase()}
+              afterCreateCol={() => syncCurrentTableStateToDatabase()}
               licenseKey="non-commercial-and-evaluation"
             />
           )}
