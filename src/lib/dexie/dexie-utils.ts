@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 
-import { MEM_DB_PREFIX, guid, nextIncrementedFilename } from "../utils";
+import { MEM_DB_PREFIX, guid, nextIncrementedFileName } from "../utils";
 import { FileEntry, appDb } from "./app-db";
 
 interface PrefixOption {
@@ -32,7 +32,7 @@ export function createNewFile(
     filename = options.filename;
   } else if ("prefix" in options) {
     const existingFileNames = options.existingFileNames ?? [];
-    filename = nextIncrementedFilename(options.prefix, existingFileNames);
+    filename = nextIncrementedFileName(options.prefix, existingFileNames);
   }
 
   filename ??= "Untitled file";

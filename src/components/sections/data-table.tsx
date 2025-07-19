@@ -136,7 +136,7 @@ function TableBodyRow<DataType>({
         switch (typeof cellValue) {
           case "object":
             if (cellValue == null) {
-              cellDisplayedValue = <em>{"<null>"}</em>;
+              cellDisplayedValue = <em>null</em>;
               break;
             }
             if (cellValue instanceof Date) {

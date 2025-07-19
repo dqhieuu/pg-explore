@@ -1,11 +1,6 @@
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
-import {
-  FileEntry,
-  WorkflowStep,
-  appDb,
-  useAppDbLiveQuery,
-} from "@/lib/dexie/app-db.ts";
+import { FileEntry, appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
 import {
   createNewFile,
   getDatabaseFiles,
@@ -49,6 +44,7 @@ export type BaseWorkflowNodeData = {
   headerBackgroundClass?: string;
   useDefaultFileSelector?: boolean;
   fileFilterPredicate?: (file: FileEntry) => boolean;
+  allowSelectFileFromMachine?: boolean;
 };
 
 export type BaseWorkflowNode = Node<BaseWorkflowNodeData, "workflow">;
@@ -67,11 +63,13 @@ export const BaseWorkflowNode = ({
     fileFilterPredicate,
     newFilePrefix,
     newFileType,
+    allowSelectFileFromMachine,
   } = data;
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
 
   const useDefaultFileSelectorValue = useDefaultFileSelector ?? true;
+  const allowSelectFileFromMachineValue = allowSelectFileFromMachine ?? true;
 
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
 
@@ -143,17 +141,12 @@ export const BaseWorkflowNode = ({
     fileId: string | null,
   ) {
     const workflow = await getWorkflow(currentDbId, workflowType);
-
     if (workflow == null) return;
+    workflow.workflowSteps[workflowIndex].fileId =
+      fileId == null ? undefined : fileId;
 
     appDb.workflows.update(workflow.id, {
-      workflowSteps: workflow.workflowSteps.map((step, index) => {
-        if (index !== workflowIndex) return step;
-        return {
-          ...step,
-          fileId: fileId == null ? undefined : fileId,
-        } satisfies WorkflowStep;
-      }),
+      workflowSteps: workflow.workflowSteps,
     });
 
     await notifyUpdateWorkflow();
@@ -265,27 +258,34 @@ export const BaseWorkflowNode = ({
                           <div>No files found.</div>
                         )}
                       </div>
-
-                      <Button>
-                        <label htmlFor="file-upload">
-                          Select from your machine
-                        </label>
-                      </Button>
-                      <input
-                        type="file"
-                        id="file-upload"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file == null) return;
-                          const fileId = await createNewFile(currentDbId, {
-                            type: newFileType,
-                            filename: file.name,
-                            content: await file.text(),
-                          });
-                          setWorkflowFile(workflowType, workflowIndex, fileId);
-                        }}
-                      />
+                      {allowSelectFileFromMachineValue && (
+                        <>
+                          <Button>
+                            <label htmlFor="file-upload">
+                              Select from your machine
+                            </label>
+                          </Button>
+                          <input
+                            type="file"
+                            id="file-upload"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file == null) return;
+                              const fileId = await createNewFile(currentDbId, {
+                                type: newFileType,
+                                filename: file.name,
+                                content: await file.text(),
+                              });
+                              setWorkflowFile(
+                                workflowType,
+                                workflowIndex,
+                                fileId,
+                              );
+                            }}
+                          />
+                        </>
+                      )}
                     </div>
                   </DialogContent>
                 </Dialog>

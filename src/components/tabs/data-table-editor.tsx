@@ -22,13 +22,9 @@ import {
   appDb,
   useAppDbLiveQuery,
 } from "@/lib/dexie/app-db.ts";
-import {
-  cn,
-  guessPostgresDataTypeBasedOnValueList,
-  guid,
-  isEmptyOrSpaces,
-  nextIncrementedNames,
-} from "@/lib/utils.ts";
+import { getColumnToDataTypeMap } from "@/lib/pglite/pg-utils.ts";
+import { useWorkflowMonitor } from "@/lib/pglite/use-workflow-monitor.ts";
+import { cn, guid, nextIncrementedNames } from "@/lib/utils.ts";
 import {
   DndContext,
   DragEndEvent,
@@ -90,19 +86,11 @@ function ColumnsActionsPopoverContent({
     (state) => state.dataTableAutoSave,
   );
 
+  const { notifyUpdateWorkflow } = useWorkflowMonitor();
+
   const dataTypeByHeader =
     headers != null
-      ? headers.reduce(
-          (acc, header) => {
-            acc[header] = isEmptyOrSpaces(columnToDataType?.[header])
-              ? guessPostgresDataTypeBasedOnValueList(
-                  tableData.map((row) => row[header]),
-                )
-              : columnToDataType![header].trim();
-            return acc;
-          },
-          {} as Record<string, string>,
-        )
+      ? getColumnToDataTypeMap(headers, tableData, columnToDataType)
       : {};
 
   const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(
@@ -366,6 +354,7 @@ function ColumnsActionsPopoverContent({
                       });
                     }
                     setColumnToDataType(updatedColumnToDataType);
+                    notifyUpdateWorkflow();
                   }
                   setIsSaved(contextId, false);
                 }}
@@ -445,6 +434,8 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   const setIsAutoSaveEnabled = useSettingsStore(
     (state) => state.setDataTableAutoSave,
   );
+
+  const { notifyUpdateWorkflow } = useWorkflowMonitor();
   // endregion
 
   const dataTableRef = useRef<HotTableRef>(null);
@@ -512,7 +503,7 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     setQueryEditorValue(contextId, updatedCsv);
   };
 
-  const syncCurrentTableStateToDatabase = () => {
+  const syncCurrentTableStateToDatabase = async () => {
     if (dataTableRef.current?.hotInstance == null) return;
     const exportPlugin =
       dataTableRef.current.hotInstance.getPlugin("exportFile");
@@ -524,7 +515,8 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
     if (exportedData === queryEditorValue) return;
 
     if (isAutoSaveEnabled) {
-      saveEditorValue(exportedData);
+      await saveEditorValue(exportedData);
+      await notifyUpdateWorkflow();
     } else {
       setQueryEditorValue(contextId, exportedData);
     }

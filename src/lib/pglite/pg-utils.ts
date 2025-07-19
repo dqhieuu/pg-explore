@@ -1,4 +1,5 @@
-import { Extension, PGliteInterface } from "@electric-sql/pglite";
+import { debugLog, isEmptyOrSpaces, nextIncrementedName } from "@/lib/utils.ts";
+import { Extension, PGliteInterface, QueryOptions } from "@electric-sql/pglite";
 import { pgDump } from "@electric-sql/pglite-tools/pg_dump";
 import { amcheck } from "@electric-sql/pglite/contrib/amcheck";
 import { auto_explain } from "@electric-sql/pglite/contrib/auto_explain";
@@ -21,6 +22,7 @@ import { tsm_system_rows } from "@electric-sql/pglite/contrib/tsm_system_rows";
 import { tsm_system_time } from "@electric-sql/pglite/contrib/tsm_system_time";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
 import { vector } from "@electric-sql/pglite/vector";
+import Papa from "papaparse";
 
 export async function querySchemaForCodeMirror(
   pg: PGliteInterface,
@@ -32,7 +34,7 @@ export async function querySchemaForCodeMirror(
   }>(`
       SELECT 
         table_schema AS schema,
-        table_name AS table,
+        table_name AS "table",
         array_agg(column_name) AS columns
       FROM 
         information_schema.columns
@@ -63,15 +65,117 @@ export function wipeDatabase(pg: PGliteInterface) {
   );
 }
 
-export function evaluateSql(pg: PGliteInterface, sqlScript: string) {
-  return pg.exec("rollback;" + sqlScript);
+export function evaluateSql(
+  pg: PGliteInterface,
+  sqlScript: string,
+  fileContent: string | File | Blob | null = null,
+) {
+  const queryOptions = {} as QueryOptions;
+  if (fileContent != null) {
+    if (typeof fileContent === "string") {
+      queryOptions.blob = new File([fileContent], "any_file_name");
+    } else {
+      queryOptions.blob = fileContent;
+    }
+  }
+
+  return pg.exec("rollback;" + sqlScript, queryOptions);
+}
+
+/**
+ * Import a table from a CSV file.
+ * @param pg
+ * @param includeCreateTable
+ * @param tableName
+ * @param csv Must be a valid CSV file, containing a header row.
+ * @param specifiedColumnTypes
+ */
+export async function importTableFromCsv(
+  pg: PGliteInterface,
+  csv: string | File,
+  includeCreateTable = false,
+  tableName?: string,
+  specifiedColumnTypes?: Record<string, string>,
+) {
+  if (!includeCreateTable && isEmptyOrSpaces(tableName)) {
+    throw new Error(
+      "Table name is required if 'Include CREATE TABLE' is unchecked",
+    );
+  }
+
+  if (isEmptyOrSpaces(tableName)) {
+    const allCurrentTableNames = await getAllTableNames(pg);
+    tableName = nextIncrementedName("datatable_", allCurrentTableNames);
+  }
+
+  const fileContent = typeof csv === "string" ? csv : await csv.text();
+  const parsedCsv = Papa.parse(fileContent, { header: true });
+  const columns = parsedCsv.meta.fields;
+  if (columns == undefined || columns.length === 0) {
+    throw new Error("CSV file must contain a header row");
+  }
+
+  const tableColumnsSql =
+    columns && columns.length > 0
+      ? "(" +
+        columns
+          .map((columnName) => `"${escapeSqlIdentifier(columnName)}"`)
+          .join(", ") +
+        ")"
+      : "";
+
+  if (includeCreateTable) {
+    const columnsToDataType = getColumnToDataTypeMap(
+      columns,
+      parsedCsv.data as Record<string, string>[],
+      specifiedColumnTypes,
+    );
+    const createTableSql = getCreateTableSql(tableName!, columnsToDataType);
+    debugLog({ createTableSql });
+    await evaluateSql(pg, createTableSql);
+  }
+
+  return evaluateSql(
+    pg,
+    `copy "${escapeSqlIdentifier(tableName!)}" ${tableColumnsSql} from '/dev/blob' with (format csv, header);`,
+    csv,
+  );
+}
+
+export async function getAllTableNames(pg: PGliteInterface) {
+  const ret = await pg.query<{ table_name: string }>(
+    `select table_name from information_schema.tables where table_schema = 'public'`,
+  );
+  return ret.rows.map((row) => row.table_name);
+}
+
+export function getCreateTableSql(
+  tableName: string,
+  columnToDataType: Record<string, string>,
+) {
+  const sqlColumns = Object.entries(columnToDataType)
+    .map(
+      ([columnName, dataType]) =>
+        `  "${escapeSqlIdentifier(columnName)}" ${dataType}`,
+    )
+    .join(",\n");
+  return (
+    `CREATE TABLE "${escapeSqlIdentifier(tableName)}" (` +
+    "\n" +
+    sqlColumns +
+    "\n);"
+  );
+}
+
+function escapeSqlIdentifier(identifier: string) {
+  return identifier.replace(/"/g, '""');
 }
 
 export async function getDatabaseSchemaDump(pg: PGliteInterface) {
   await evaluateSql(pg, "");
   // @ts-expect-error pg should be a PGliteInterface, but it is not
   const dumpFile = await pgDump({ pg, args: ["--schema-only"] });
-  await evaluateSql(pg, "SET search_path TO public;");
+  await evaluateSql(pg, "set search_path to public;");
   return dumpFile.text();
 }
 
@@ -243,4 +347,114 @@ export function extensionNamesToExtensions(extensionNames: string[]) {
     },
     {} as Record<string, Extension>,
   );
+}
+
+export const getColumnToDataTypeMap = (
+  columns: string[],
+  tableData: Record<string, string>[],
+  specifiedColumnTypes: Record<string, string> = {},
+) =>
+  columns.reduce(
+    (acc, column) => {
+      acc[column] = isEmptyOrSpaces(specifiedColumnTypes?.[column])
+        ? guessPostgresDataTypeBasedOnValueList(
+            tableData.map((row) => row[column]),
+          )
+        : specifiedColumnTypes![column].trim();
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
+
+export function guessPostgresDataTypeBasedOnValueList(
+  values: (string | null | undefined)[],
+  useHighPrecision = true,
+) {
+  let hasDate = false;
+  let hasNonDate = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (
+      /^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/.test(value) &&
+      new Date(value).toString() !== "Invalid Date"
+    ) {
+      hasDate = true;
+    } else {
+      hasNonDate = true;
+      break;
+    }
+  }
+  if (hasDate && !hasNonDate) return "timestamptz";
+
+  let hasBool = false;
+  let hasNonBool = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^(?:true|false|t|f|yes|no|y|n|1|0|on|off)$/i.test(value)) {
+      hasBool = true;
+    } else {
+      hasNonBool = true;
+      break;
+    }
+  }
+  if (hasBool && !hasNonBool) return "boolean";
+
+  let hasUuid = false;
+  let hasNonUuid = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+    ) {
+      hasUuid = true;
+    } else {
+      hasNonUuid = true;
+      break;
+    }
+  }
+  if (hasUuid && !hasNonUuid) return "uuid";
+
+  let hasJson = false;
+  let hasNonJson = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^[{[].*[}\]]$/i.test(value)) {
+      hasJson = true;
+    } else {
+      hasNonJson = true;
+      break;
+    }
+  }
+  if (hasJson && !hasNonJson) return "jsonb";
+
+  let hasInt = false;
+  let hasNonInt = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^-?\d+$/.test(value)) {
+      hasInt = true;
+    } else {
+      hasNonInt = true;
+      break;
+    }
+  }
+  if (hasInt && !hasNonInt) return useHighPrecision ? "bigint" : "integer";
+
+  let hasFloat = false;
+  let hasNonFloat = false;
+  for (const value of values) {
+    if (value == null || value === "") continue;
+    if (/^[+-]?(\d+([.]\d*)?(e[+-]?\d+)?|[.]\d+(e[+-]?\d+)?)$/i.test(value)) {
+      hasFloat = true;
+    } else {
+      hasNonFloat = true;
+      break;
+    }
+  }
+  if (hasFloat && !hasNonFloat)
+    return useHighPrecision ? "double precision" : "real";
+
+  return "text";
 }

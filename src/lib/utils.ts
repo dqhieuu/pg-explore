@@ -20,8 +20,16 @@ export function isEmptyOrSpaces(str?: string | null) {
   return str == null || str.match(/^\s*$/) !== null;
 }
 
-export function nextIncrementedFilename(prefix: string, existing: string[]) {
+export function nextIncrementedFileName(prefix: string, existing: string[]) {
   return nextIncrementedNames(prefix + " ", existing, 1, true)[0];
+}
+
+export function nextIncrementedName(
+  prefix: string,
+  existing: string[],
+  zeroPadded = false,
+) {
+  return nextIncrementedNames(prefix, existing, 1, zeroPadded)[0];
 }
 
 export function nextIncrementedNames(
@@ -75,100 +83,12 @@ export async function resetApplication() {
   window.location.href = "/";
 }
 
-export function guessPostgresDataTypeBasedOnValueList(
-  values: (string | null | undefined)[],
-  useHighPrecision = true,
-) {
-  let hasDate = false;
-  let hasNonDate = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (
-      /^\d{1,4}[-/]\d{1,2}[-/]\d{1,4}/.test(value) &&
-      new Date(value).toString() !== "Invalid Date"
-    ) {
-      hasDate = true;
-    } else {
-      hasNonDate = true;
-      break;
-    }
-  }
-  if (hasDate && !hasNonDate) return "timestamptz";
-
-  let hasBool = false;
-  let hasNonBool = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (/^(?:true|false|t|f|yes|no|y|n|1|0|on|off)$/i.test(value)) {
-      hasBool = true;
-    } else {
-      hasNonBool = true;
-      break;
-    }
-  }
-  if (hasBool && !hasNonBool) return "boolean";
-
-  let hasUuid = false;
-  let hasNonUuid = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        value,
-      )
-    ) {
-      hasUuid = true;
-    } else {
-      hasNonUuid = true;
-      break;
-    }
-  }
-  if (hasUuid && !hasNonUuid) return "uuid";
-
-  let hasJson = false;
-  let hasNonJson = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (/^[{[].*[}\]]$/i.test(value)) {
-      hasJson = true;
-    } else {
-      hasNonJson = true;
-      break;
-    }
-  }
-  if (hasJson && !hasNonJson) return "jsonb";
-
-  let hasInt = false;
-  let hasNonInt = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (/^-?\d+$/.test(value)) {
-      hasInt = true;
-    } else {
-      hasNonInt = true;
-      break;
-    }
-  }
-  if (hasInt && !hasNonInt) return useHighPrecision ? "bigint" : "integer";
-
-  let hasFloat = false;
-  let hasNonFloat = false;
-  for (const value of values) {
-    if (value == null || value === "") continue;
-    if (/^[+-]?(\d+([.]\d*)?(e[+-]?\d+)?|[.]\d+(e[+-]?\d+)?)$/i.test(value)) {
-      hasFloat = true;
-    } else {
-      hasNonFloat = true;
-      break;
-    }
-  }
-  if (hasFloat && !hasNonFloat)
-    return useHighPrecision ? "double precision" : "real";
-
-  return "text";
-}
-
 export const devModeEnabled = () => useSettingsStore.getState().debugMode;
+export const debugLog = (...args: unknown[]) => {
+  if (devModeEnabled()) {
+    console.debug(...args);
+  }
+};
 
 export const sessionId = guid();
 export const MEM_DB_PREFIX = "mem_";

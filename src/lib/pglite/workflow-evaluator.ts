@@ -1,15 +1,21 @@
 import { transformDbmlToSql } from "@/lib/dbml.ts";
 import {
+  DataTableStep,
   DbmlStep,
   SqlQueryStep,
   StepExecutionResult,
+  TableFileEntry,
   WorkflowState,
   WorkflowStep,
   appDb,
 } from "@/lib/dexie/app-db.ts";
 import { getWorkflow } from "@/lib/dexie/dexie-utils.ts";
-import { evaluateSql, wipeDatabase } from "@/lib/pglite/pg-utils.ts";
-import { devModeEnabled, isEmptyOrSpaces } from "@/lib/utils.ts";
+import {
+  evaluateSql,
+  importTableFromCsv,
+  wipeDatabase,
+} from "@/lib/pglite/pg-utils.ts";
+import { debugLog, isEmptyOrSpaces } from "@/lib/utils.ts";
 import { PGliteInterface } from "@electric-sql/pglite";
 
 interface EvaluationResult {
@@ -56,20 +62,16 @@ export async function applyWorkflow(
         until.workflowType === "data" &&
         until.stepsToApply >= workflowState.stepsDone)
     ) {
-      if (devModeEnabled()) {
-        console.debug(
-          `Database in error state + requesting steps beyond error => do nothing`,
-        );
-      }
+      debugLog(
+        `Database in error state + requesting steps beyond error => do nothing`,
+      );
 
       return;
     }
 
-    if (devModeEnabled()) {
-      console.debug(
-        `Database in error state + requesting steps before error => resetting workflow state`,
-      );
-    }
+    debugLog(
+      `Database in error state + requesting steps before error => resetting workflow state`,
+    );
 
     await wipeDatabase(db);
 
@@ -91,9 +93,7 @@ export async function applyWorkflow(
         workflowState.currentProgress === "data") ||
         until.stepsToApply < workflowState.stepsDone))
   ) {
-    if (devModeEnabled()) {
-      console.debug(`Dirty database, wiping and resetting workflow state`);
-    }
+    debugLog(`Dirty database, wiping and resetting workflow state`);
 
     await wipeDatabase(db);
 
@@ -148,11 +148,9 @@ export async function applyWorkflow(
       break;
     }
 
-    if (devModeEnabled()) {
-      console.debug(
-        `Applying workflow step ${currentStepIdx + 1} (${currentStepType})`,
-      );
-    }
+    debugLog(
+      `Applying workflow step ${currentStepIdx + 1} (${currentStepType})`,
+    );
 
     const stepResult = await evaluateWorkflowStep(db, currentStep);
 
@@ -169,11 +167,9 @@ export async function applyWorkflow(
         return;
       }
 
-      if (devModeEnabled()) {
-        console.debug(
-          `Error applying workflow step: ${stepResult.error}. Replaying to a non-error state`,
-        );
-      }
+      debugLog(
+        `Error applying workflow step: ${stepResult.error}. Replaying to a non-error state`,
+      );
 
       if (
         workflowState.currentProgress !== "schema" &&
@@ -241,6 +237,8 @@ async function evaluateWorkflowStep(
       return evaluateSqlQueryStep(db, step);
     case "dbml":
       return evaluateDbmlStep(db, step);
+    case "table":
+      return evaluateDataTableStep(db, step);
     default:
       return {
         result: "error",
@@ -302,6 +300,35 @@ async function evaluateDbmlStep(
 
   try {
     await evaluateSql(db, sql);
+    return { result: "success" };
+  } catch (e) {
+    return {
+      result: "error",
+      error: (e as Error).message,
+    };
+  }
+}
+
+async function evaluateDataTableStep(
+  db: PGliteInterface,
+  step: DataTableStep,
+): Promise<EvaluationResult> {
+  const { fileId } = step;
+  if (fileId == null) return { result: "noop", error: "Nothing to execute" };
+  const file = (await appDb.files.get(fileId)) as TableFileEntry | undefined;
+  if (file == null || isEmptyOrSpaces(file.content))
+    return { result: "noop", error: "Nothing to execute" };
+
+  const dataTableContent = file.content!;
+
+  try {
+    await importTableFromCsv(
+      db,
+      dataTableContent,
+      step.options.includeCreateTable,
+      step.options.tableName,
+      file.metadata?.columnToDataType,
+    );
     return { result: "success" };
   } catch (e) {
     return {

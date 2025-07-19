@@ -77,10 +77,6 @@ export const useWorkflowMonitor = () => {
           throw new Error(`File ${fileId} not found`);
         }
 
-        if (file.type !== "sql") {
-          return;
-        }
-
         await runWorkflowStepsBeforeFile(fileId);
       },
 

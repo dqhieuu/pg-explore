@@ -62,7 +62,7 @@ interface BaseFileEntry {
   name: string;
   content?: string;
   blob?: Blob;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, never>;
 }
 
 export interface WorkflowSection {
@@ -100,7 +100,8 @@ export type DataTableStep = Modify<
   {
     type: "table";
     options: {
-      tableName: string;
+      tableName?: string;
+      includeCreateTable?: boolean;
     };
   }
 >;
