@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import ReactJsonView from "@microlink/react-json-view";
 import {
   ColumnDef,
   HeaderGroup,
@@ -22,7 +23,7 @@ import {
   Virtualizer,
   useVirtualizer,
 } from "@tanstack/react-virtual";
-import { useMemo, useRef } from "react";
+import { ReactNode, useMemo, useRef } from "react";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -32,7 +33,12 @@ interface DataTableProps<TData, TValue> {
 }
 
 let gCanvasContext: CanvasRenderingContext2D | null = null;
-const measureOneLineCellWidth = (content: string) => {
+const measureOneLineCellWidth = (content: string | object) => {
+  if (typeof content === "object") {
+    if (content == null) return 50;
+    return 300;
+  }
+
   if (!gCanvasContext) {
     gCanvasContext = document.createElement("canvas").getContext("2d");
     if (!gCanvasContext) return 0;
@@ -125,6 +131,42 @@ function TableBodyRow<DataType>({
       ) : null}
       {virtualColumns.map((vc) => {
         const cell = visibleCells[vc.index];
+        const cellValue = cell.getValue();
+        let cellDisplayedValue: string | ReactNode = "";
+        switch (typeof cellValue) {
+          case "object":
+            if (cellValue == null) {
+              cellDisplayedValue = <em>{"<null>"}</em>;
+              break;
+            }
+            if (cellValue instanceof Date) {
+              cellDisplayedValue = cellValue.toLocaleString();
+              break;
+            }
+            cellDisplayedValue = (
+              <ReactJsonView
+                src={cellValue}
+                indentWidth={2}
+                displayDataTypes={false}
+                style={{ width: "100%" }}
+              />
+            );
+            break;
+          case "boolean":
+            cellDisplayedValue = <em>{cellValue ? "true" : "false"}</em>;
+            break;
+          case "number":
+          case "string":
+            cellDisplayedValue = cellValue.toString();
+            break;
+          default:
+            console.warn(
+              `The type ${typeof cellValue} is not supported yet`,
+              cellValue,
+            );
+            break;
+        }
+
         return (
           <TableCell
             key={cell.id}
@@ -133,7 +175,7 @@ function TableBodyRow<DataType>({
               width: cell.column.getSize(),
             }}
           >
-            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            {cellDisplayedValue}
           </TableCell>
         );
       })}
