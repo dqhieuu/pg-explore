@@ -45,7 +45,10 @@ export const PlaceholderDataNode = ({
     if (stepType === "sql-query") {
       newStep = { type: "sql-query", options: {} };
     } else if (stepType === "table") {
-      newStep = { type: "table", options: { tableName: "" } };
+      newStep = {
+        type: "table",
+        options: { tableName: "", includeCreateTable: true },
+      };
     } else {
       throw new Error("Invalid step type");
     }

@@ -487,14 +487,34 @@ function jsonParseAsStringDictList(text: string) {
     // If the parsed result is not an array, wrap it in an array.
     result = [parsed] as Record<string, JsonValueType>[];
   } else {
+    for (const item of parsed) {
+      if (typeof item !== "object") {
+        throw new Error("JSON array contains non-object values.");
+      }
+    }
+
     result = parsed as Record<string, JsonValueType>[];
+  }
+  for (const item of result) {
+    if (Object.hasOwn(item, "")) {
+      item["[EMPTY]"] = item[""];
+      delete item[""];
+    }
   }
 
   // For each dict in the array, convert each key to string.
   return result.map((dict) => {
     return Object.fromEntries(
       Object.entries(dict).map(([key, value]) => {
-        return [key.toString(), (value ?? "null").toString()];
+        let resultValue;
+        if (value == null) {
+          resultValue = "null";
+        } else if (typeof value === "object") {
+          resultValue = JSON.stringify(value);
+        } else {
+          resultValue = value.toString();
+        }
+        return [key, resultValue];
       }),
     );
   });
@@ -514,6 +534,9 @@ function csvParseAsStringDictList(
       .map((e) => `${e.row != null ? `Row ${e.row + 1}:` : ""} ${e.message}`)
       .join("--");
     throw new Error(errorMsg);
+  }
+  if (parsed.meta.fields != null && parsed.meta.fields.includes("")) {
+    throw new Error("Empty column names are not allowed.");
   }
   return parsed.data as Record<string, string>[];
 }

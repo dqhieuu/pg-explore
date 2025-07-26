@@ -110,6 +110,9 @@ export const AiChat = () => {
       *****************
       ${dbSchema}
       *****************
+      There are rules for writing SQL queries:
+      - Always quote identifiers (table and column names)
+      
       The prompt is as follows:
       `,
       messages: updatedChatMessages,
