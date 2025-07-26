@@ -125,7 +125,7 @@ function HomePage() {
           <div className="flex flex-col gap-2">
             <div className="font-medium">Create a new database</div>
             <div className="flex flex-wrap gap-2">
-              <div
+              <button
                 className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none"
                 onClick={() => navigate({ to: `/database/memory` })}
               >
@@ -137,10 +137,10 @@ function HomePage() {
                     All data is lost when the browser tab is closed.
                   </div>
                 </div>
-              </div>
+              </button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <div className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none">
+                  <button className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none">
                     <div className="font-semibold">Persistent database</div>
                     <Database size={48} strokeWidth={1} className="my-2" />
                     <div className="text-muted-foreground text-center text-sm text-balance">
@@ -149,7 +149,7 @@ function HomePage() {
                         Data is persisted across browser sessions.
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </DialogTrigger>
                 <CreatePersistentDatabaseDialogContent />
               </Dialog>
@@ -159,7 +159,7 @@ function HomePage() {
           <div className="hidden border-r border-gray-200 md:block"></div>
           {/* divider */}
           <div className="flex w-full min-w-0 flex-col gap-2 md:w-auto">
-            <div className="font-medium">Open an existing database</div>
+            <div className="ml-1 font-medium">Open an existing database</div>
             {databases?.length === 0 ? (
               <div className="text-muted-foreground">No databases found.</div>
             ) : (

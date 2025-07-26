@@ -1,3 +1,4 @@
+import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store";
 import { appDb } from "@/lib/dexie/app-db";
 import { MEM_DB_PREFIX, sessionId } from "@/lib/utils";
@@ -56,6 +57,10 @@ export default function AppLifecycleHandler({
     (state) => state.signalSaveQueryEditors,
   );
 
+  const setDropImportFileDialogOpen = useAnimationStore(
+    (state) => state.setDropImportFileDialogOpen,
+  );
+
   useEffect(() => {
     console.log("Initializing app");
 
@@ -75,17 +80,32 @@ export default function AppLifecycleHandler({
       }
     };
 
+    const fileStartDragHandler = (event: DragEvent) => {
+      const isFileDrag = event.dataTransfer?.types.includes("Files") ?? false;
+      if (!isFileDrag) return;
+
+      setDropImportFileDialogOpen(true);
+    };
+
+    const preventDefaultFileDrop = (event: DragEvent) => {
+      event.preventDefault();
+    };
+
+    document.addEventListener("dragover", preventDefaultFileDrop);
+    document.addEventListener("dragenter", fileStartDragHandler);
     window.addEventListener("beforeunload", beforeunloadHandler);
     document.addEventListener("visibilitychange", visibilityChangeHandler);
 
     return () => {
       document.removeEventListener("beforeunload", beforeunloadHandler);
+      document.removeEventListener("dragenter", fileStartDragHandler);
+      document.removeEventListener("dragover", preventDefaultFileDrop);
       window.document.removeEventListener(
         "visibilitychange",
         visibilityChangeHandler,
       );
     };
-  }, [signalSaveQueryEditors]);
+  }, [setDropImportFileDialogOpen, signalSaveQueryEditors]);
 
   return <>{children}</>;
 }

@@ -21,6 +21,7 @@ import { tcn } from "@electric-sql/pglite/contrib/tcn";
 import { tsm_system_rows } from "@electric-sql/pglite/contrib/tsm_system_rows";
 import { tsm_system_time } from "@electric-sql/pglite/contrib/tsm_system_time";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
+// import { pg_ivm } from "@electric-sql/pglite/pg_ivm";
 import { vector } from "@electric-sql/pglite/vector";
 import Papa from "papaparse";
 
@@ -55,13 +56,12 @@ export async function querySchemaForCodeMirror(
 export function wipeDatabase(pg: PGliteInterface) {
   return evaluateSql(
     pg,
-    `DROP SCHEMA public CASCADE; 
-    CREATE SCHEMA public;
-    GRANT ALL ON SCHEMA public TO postgres;
-    GRANT ALL ON SCHEMA public TO public;
-    ALTER USER postgres SET search_path TO public;
-    SET search_path TO public;
-    `,
+    `drop schema public cascade; 
+    create schema public;
+    grant all on schema public to postgres;
+    grant all on schema public to public;
+    alter user postgres set search_path to public;
+    set search_path to public;`,
   );
 }
 
@@ -78,8 +78,10 @@ export function evaluateSql(
       queryOptions.blob = fileContent;
     }
   }
+  const executedScript = "rollback;" + sqlScript;
+  debugLog({ executedScript, queryOptions });
 
-  return pg.exec("rollback;" + sqlScript, queryOptions);
+  return pg.exec(executedScript, queryOptions);
 }
 
 /**
@@ -103,7 +105,8 @@ export async function importTableFromCsv(
     );
   }
 
-  if (isEmptyOrSpaces(tableName)) {
+  const isNameAutomaticallyGenerated = isEmptyOrSpaces(tableName);
+  if (isNameAutomaticallyGenerated) {
     const allCurrentTableNames = await getAllTableNames(pg);
     tableName = nextIncrementedName("datatable_", allCurrentTableNames);
   }
@@ -131,8 +134,9 @@ export async function importTableFromCsv(
       specifiedColumnTypes,
     );
     const createTableSql = getCreateTableSql(tableName!, columnsToDataType);
-    debugLog({ createTableSql });
-    await evaluateSql(pg, createTableSql);
+    const commentOnTable = `comment on table "${escapeSqlIdentifier(tableName!)}" is 'Imported from external data file. ${isNameAutomaticallyGenerated ? "Table name was automatically generated and prefixed with ''datatable_''." : ""}';`;
+
+    await evaluateSql(pg, createTableSql + commentOnTable);
   }
 
   return evaluateSql(
@@ -173,10 +177,15 @@ function escapeSqlIdentifier(identifier: string) {
 
 export async function getDatabaseSchemaDump(pg: PGliteInterface) {
   await evaluateSql(pg, "");
-  // @ts-expect-error pg should be a PGliteInterface, but it is not
-  const dumpFile = await pgDump({ pg, args: ["--schema-only"] });
+  const dumpFile = await pgDump({
+    // @ts-expect-error pg should be a PGliteInterface, but it is not
+    pg,
+    args: ["--schema-only", "--no-owner", "--no-privileges"],
+  });
+  const dumpText = await dumpFile.text();
   await evaluateSql(pg, "set search_path to public;");
-  return dumpFile.text();
+  debugLog({ "Database schema dump": dumpText });
+  return dumpText;
 }
 
 export const pgExtensions = [
@@ -277,6 +286,13 @@ export const pgExtensions = [
       "This module implements a data type ltree for representing labels of data stored in a hierarchical tree-like structure. Extensive facilities for searching through label trees are provided.",
     implementation: ltree,
   },
+  // {
+  //   id: "pg_ivm",
+  //   name: "pg_ivm",
+  //   description:
+  //     "The pg_ivm module provides Incremental View Maintenance (IVM) feature for PostgreSQL. Incremental View Maintenance (IVM) is a way to make materialized views up-to-date in which only incremental changes are computed and applied on views rather than recomputing the contents from scratch as REFRESH MATERIALIZED VIEW does. IVM can update materialized views more efficiently than recomputation when only small parts of the view are changed.",
+  //   implementation: pg_ivm,
+  // },
   {
     id: "pg_trgm",
     name: "pg_trgm",

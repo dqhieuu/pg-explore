@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/sections/app-sidebar";
+import { DataTableFileImportDialogContent } from "@/components/sections/data-table-file-import-dialog-content.tsx";
 import { DockviewCustomTab } from "@/components/sections/dockview-tab";
 import { ExtensionListDialogContent } from "@/components/sections/extension-list-dialog-content.tsx";
 import { AiChat } from "@/components/tabs/ai-chat.tsx";
@@ -118,7 +119,6 @@ function MainApp() {
   const extensionsDialogOpen = useAnimationStore(
     (state) => state.extensionsDialogOpen,
   );
-
   const setExtensionsDialogOpen = useAnimationStore(
     (state) => state.setExtensionsDialogOpen,
   );
@@ -128,6 +128,13 @@ function MainApp() {
   );
   const setEnabledExtensionsChanged = usePostgresStore(
     (state) => state.setEnabledExtensionsChanged,
+  );
+
+  const dropImportFileDialogOpen = useAnimationStore(
+    (state) => state.dropImportFileDialogOpen,
+  );
+  const setDropImportFileDialogOpen = useAnimationStore(
+    (state) => state.setDropImportFileDialogOpen,
   );
 
   useEffect(() => {
@@ -214,89 +221,97 @@ function MainApp() {
         <ReactFlowProvider>
           <SidebarProvider className="flex w-full">
             <Dialog
-              open={extensionsDialogOpen}
-              onOpenChange={(open) => {
-                setExtensionsDialogOpen(open);
-                if (!open && enabledExtensionsChanged) {
-                  setPgDb(internalDbId);
-                  toast("Extensions updated!", {
-                    duration: 1000,
-                  });
-                  setEnabledExtensionsChanged(false);
-                }
-              }}
+              open={dropImportFileDialogOpen}
+              onOpenChange={setDropImportFileDialogOpen}
             >
-              <AppSidebar />
-              <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
-              <main className="h-[100dvh] flex-1">
-                <DockviewReact
-                  onReady={(event) => {
-                    setDockviewApi(event.api);
-
-                    const editorGroup = event.api.addGroup({
-                      direction: "right",
-                      id: "editor-group",
+              <Dialog
+                open={extensionsDialogOpen}
+                onOpenChange={(open) => {
+                  setExtensionsDialogOpen(open);
+                  if (!open && enabledExtensionsChanged) {
+                    setPgDb(internalDbId);
+                    toast("Extensions updated!", {
+                      duration: 1000,
                     });
+                    setEnabledExtensionsChanged(false);
+                  }
+                }}
+              >
+                <AppSidebar />
+                <SidebarTrigger className="flex h-[100dvh] items-start rounded-none border-r py-2" />
+                <main className="h-[100dvh] flex-1">
+                  <DockviewReact
+                    onReady={(event) => {
+                      setDockviewApi(event.api);
 
-                    event.api.addPanel({
-                      id: "no-editors",
-                      title: "No files opened",
-                      component: "noEditors",
-                      position: {
-                        referenceGroup: editorGroup,
-                      },
-                    });
+                      const editorGroup = event.api.addGroup({
+                        direction: "right",
+                        id: "editor-group",
+                      });
 
-                    createWorkflowPanel(event.api, true);
-                  }}
-                  components={{
-                    sqlQueryEditor: (
-                      props: IDockviewPanelProps<SqlQueryEditorProps>,
-                    ) => (
-                      <SqlQueryEditor
-                        contextId={props.params.contextId}
-                        fileId={props.params.fileId}
-                      />
-                    ),
-                    dbmlEditor: (
-                      props: IDockviewPanelProps<QueryEditorProps>,
-                    ) => (
-                      <DbmlEditor
-                        contextId={props.params.contextId}
-                        fileId={props.params.fileId}
-                      />
-                    ),
-                    dataTableEditor: (
-                      props: IDockviewPanelProps<DataTableEditorProps>,
-                    ) => (
-                      <DataTableEditor
-                        contextId={props.params.contextId}
-                        fileId={props.params.fileId}
-                      />
-                    ),
-                    queryResult: (
-                      props: IDockviewPanelProps<QueryResultProps>,
-                    ) => (
-                      <div className="h-full w-full overflow-auto p-2">
-                        <QueryResult
+                      event.api.addPanel({
+                        id: "no-editors",
+                        title: "No files opened",
+                        component: "noEditors",
+                        position: {
+                          referenceGroup: editorGroup,
+                        },
+                      });
+
+                      createWorkflowPanel(event.api, true);
+                    }}
+                    components={{
+                      sqlQueryEditor: (
+                        props: IDockviewPanelProps<SqlQueryEditorProps>,
+                      ) => (
+                        <SqlQueryEditor
                           contextId={props.params.contextId}
-                          lotNumber={props.params.lotNumber}
+                          fileId={props.params.fileId}
                         />
-                      </div>
-                    ),
-                    queryWorkflow: () => <QueryWorkflow />,
-                    noEditors: () => <NoEditors />,
-                    aiChat: () => <AiChat />,
-                  }}
-                  singleTabMode="fullwidth"
-                  theme={{ ...themeReplit, gap: 0 }}
-                  defaultTabComponent={DockviewCustomTab}
-                  watermarkComponent={NoEditors}
-                />
-              </main>
+                      ),
+                      dbmlEditor: (
+                        props: IDockviewPanelProps<QueryEditorProps>,
+                      ) => (
+                        <DbmlEditor
+                          contextId={props.params.contextId}
+                          fileId={props.params.fileId}
+                        />
+                      ),
+                      dataTableEditor: (
+                        props: IDockviewPanelProps<DataTableEditorProps>,
+                      ) => (
+                        <DataTableEditor
+                          contextId={props.params.contextId}
+                          fileId={props.params.fileId}
+                        />
+                      ),
+                      queryResult: (
+                        props: IDockviewPanelProps<QueryResultProps>,
+                      ) => (
+                        <div className="h-full w-full overflow-auto p-2">
+                          <QueryResult
+                            contextId={props.params.contextId}
+                            lotNumber={props.params.lotNumber}
+                          />
+                        </div>
+                      ),
+                      queryWorkflow: () => <QueryWorkflow />,
+                      noEditors: () => <NoEditors />,
+                      aiChat: () => <AiChat />,
+                    }}
+                    singleTabMode="fullwidth"
+                    theme={{ ...themeReplit, gap: 0 }}
+                    defaultTabComponent={DockviewCustomTab}
+                    watermarkComponent={NoEditors}
+                  />
+                </main>
 
-              <DialogContent>
-                <ExtensionListDialogContent databaseId={currentDbId} />
+                <DialogContent>
+                  <ExtensionListDialogContent databaseId={currentDbId} />
+                </DialogContent>
+              </Dialog>
+              <DialogContent className="w-auto max-w-none sm:max-w-none">
+                <DataTableFileImportDialogContent />
               </DialogContent>
             </Dialog>
           </SidebarProvider>

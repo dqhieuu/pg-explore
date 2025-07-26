@@ -47,10 +47,10 @@ export const DataTableNode = ({
     getWorkflow(currentDbId, workflowType),
   );
   const isIncludeCreateTable =
-    currentWorkflow?.workflowSteps[workflowIndex].options.includeCreateTable ??
-    false;
+    currentWorkflow?.workflowSteps[workflowIndex]?.options
+      ?.includeCreateTable ?? false;
   const tableName =
-    currentWorkflow?.workflowSteps[workflowIndex].options.tableName ?? "";
+    currentWorkflow?.workflowSteps[workflowIndex]?.options?.tableName ?? "";
   const { notifyUpdateWorkflow } = useWorkflowMonitor();
 
   const [createTablePreview, setCreateTablePreview] = useState("");
@@ -157,7 +157,7 @@ export const DataTableNode = ({
             setCreateTablePreview(createTableSql);
           }}
         >
-          <PopoverContent>
+          <PopoverContent className="max-h-[70vh] w-auto max-w-[80vw] overflow-auto">
             <CodeMirror
               value={createTablePreview}
               extensions={[
@@ -165,7 +165,6 @@ export const DataTableNode = ({
                   dialect: PostgreSQLDialect,
                 }),
               ]}
-              className="h-full w-full flex-1"
               width="100%"
               height="100%"
               readOnly={true}

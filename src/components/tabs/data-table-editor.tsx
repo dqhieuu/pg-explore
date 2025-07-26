@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip.tsx";
+import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
 import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
@@ -436,6 +437,10 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   );
 
   const { notifyUpdateWorkflow } = useWorkflowMonitor();
+
+  const setDropImportFileDialogOpen = useAnimationStore(
+    (state) => state.setDropImportFileDialogOpen,
+  );
   // endregion
 
   const dataTableRef = useRef<HotTableRef>(null);
@@ -703,7 +708,12 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
           />
         </Popover>
         <Separator orientation="vertical" className="h-6!" />
-        <Button className="h-7">Import data</Button>
+        <Button
+          className="h-7"
+          onClick={() => setDropImportFileDialogOpen(true, fileId)}
+        >
+          Import data
+        </Button>
 
         <div className="ml-auto flex content-end items-center gap-1">
           {!isAutoSaveEnabled && (
@@ -760,7 +770,14 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
                   Add more columns
                 </Button>
                 or
-                <Button variant="link">Import data from file</Button>
+                <Button
+                  variant="link"
+                  onClick={() => {
+                    setDropImportFileDialogOpen(true, fileId);
+                  }}
+                >
+                  Import data from file
+                </Button>
               </div>
             </div>
           ) : (

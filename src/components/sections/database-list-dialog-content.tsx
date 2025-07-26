@@ -175,12 +175,15 @@ const DatabaseList = ({
 
   return orderedDatabases.map((db) => (
     <li key={db.id} className="flex items-center gap-2">
-      <div
+      <button
         className={cn(
-          "flex flex-1 items-center gap-2 rounded-md p-1 px-3 select-none",
+          "flex flex-1 items-center gap-2 rounded-md p-1 px-3 text-start select-none",
           db.id !== currentDbId ? "hover:bg-muted" : "",
         )}
         onClick={() => onSelectDatabase(db)}
+        {...(db.id === currentDbId && {
+          tabIndex: -1,
+        })}
       >
         <DatabaseIcon />
         <div>
@@ -191,7 +194,7 @@ const DatabaseList = ({
             Last opened {dayjs(db.lastOpened).format("YYYY-MM-DD HH:mm:ss")}
           </em>
         </div>
-      </div>
+      </button>
       <div className="flex gap-1">
         <Tooltip>
           <TooltipContent>Rename database</TooltipContent>
@@ -276,9 +279,7 @@ export const DatabaseListDialogContent = () => {
                 databases={databases}
                 currentDbId={currentDbId}
                 onSelectDatabase={(db) => {
-                  if (currentDbId !== memDbId) {
-                    navigate({ to: `/database/${db.id}` });
-                  }
+                  navigate({ to: `/database/${db.id}` });
                 }}
                 onRenameDatabase={(db) => {
                   setPopupActionState({
