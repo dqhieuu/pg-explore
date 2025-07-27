@@ -35,11 +35,7 @@ import {
   getNonMemoryDatabases,
   getWorkflow,
 } from "@/lib/dexie/dexie-utils";
-import {
-  createWorkflowPanel,
-  openAiChat,
-  openFileEditor,
-} from "@/lib/dockview";
+import { openAiChat, openFileEditor, openWorkflowEditor } from "@/lib/dockview";
 import { cn, memDbId } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "@tanstack/react-router";
@@ -265,7 +261,7 @@ function FileCollapsibleSection({
       <Collapsible defaultOpen className="group/collapsible shrink-0">
         <SidebarGroup>
           <SidebarGroupLabel asChild>
-            <CollapsibleTrigger className="mb-1 hover:bg-gray-100">
+            <CollapsibleTrigger className="hover:bg-sidebar-accent mb-1">
               {sectionName}
               <ChevronDown className="ml-auto transition-transform group-data-[state=closed]/collapsible:rotate-180" />
             </CollapsibleTrigger>
@@ -294,7 +290,7 @@ function FileCollapsibleSection({
                       </TooltipTrigger>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction className="top-auto! p-4 hover:bg-gray-100">
+                          <SidebarMenuAction className="hover:bg-sidebar-accent top-auto! p-4">
                             <MoreHorizontal
                               className={
                                 isMobile ? "" : "hidden group-hover/file:block"
@@ -510,7 +506,7 @@ export function AppSidebar() {
         <SidebarContent>
           <SidebarGroup className="flex shrink-0 gap-2">
             <Button
-              onClick={() => dockviewApi && createWorkflowPanel(dockviewApi)}
+              onClick={() => dockviewApi && openWorkflowEditor(dockviewApi)}
             >
               <Workflow />
               Set up pre-query steps
@@ -519,7 +515,7 @@ export function AppSidebar() {
               <Button
                 onClick={() => dockviewApi && openAiChat(dockviewApi)}
                 variant="secondary"
-                className="flex-1 rounded-r-none bg-gray-200"
+                className="flex-1 rounded-r-none bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 <BotMessageSquare />
                 AI chat
@@ -527,7 +523,7 @@ export function AppSidebar() {
               <Button
                 variant="secondary"
                 disabled
-                className="flex-1 rounded-l-none bg-gray-200"
+                className="flex-1 rounded-l-none bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
               >
                 <Table2 />
                 Tables

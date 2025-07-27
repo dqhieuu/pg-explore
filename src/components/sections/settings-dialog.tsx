@@ -147,7 +147,7 @@ const GeneralSettings = () => {
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <div>
-          <div className="font-medium">(TODO) Theme</div>
+          <div className="font-medium">Theme</div>
           <div className="text-foreground/50 text-sm">
             Choose between light and dark themes
           </div>

@@ -13,15 +13,23 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { Toggle } from "@/components/ui/toggle.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip.tsx";
 import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
+import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
 import {
   createNewFile,
   getDatabaseFiles,
   getWorkflow,
 } from "@/lib/dexie/dexie-utils.ts";
-import { cn, memDbId } from "@/lib/utils.ts";
+import { openWorkflowEditor } from "@/lib/dockview.ts";
+import { cn, isEmptyOrSpaces, memDbId } from "@/lib/utils.ts";
 import {
   indentMore,
   insertNewline,
@@ -33,8 +41,10 @@ import { Prec } from "@codemirror/state";
 import { EditorView, highlightWhitespace, keymap } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { produce } from "immer";
+import { JSONPath } from "jsonpath-plus";
 import {
   CircleAlert,
+  CircleQuestionMark,
   PlusIcon,
   TrashIcon,
   WrapText,
@@ -70,6 +80,7 @@ interface ImportedFile {
   name: string;
   type: FileType;
   content: string;
+  jsonPathQuery?: string;
 }
 
 interface FileImportResult {
@@ -85,7 +96,9 @@ interface FileImportError {
 }
 
 export const DataTableFileImportDialogContent = () => {
+  const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const currentDbId = usePostgresStore((state) => state.databaseId) ?? memDbId;
+  const theme = useSettingsStore((state) => state.resolvedTheme);
   const dataWorkflow = useAppDbLiveQuery(() =>
     getWorkflow(currentDbId, "data"),
   );
@@ -217,7 +230,7 @@ export const DataTableFileImportDialogContent = () => {
             data = tsvParseAsStringDictList(file.content);
             break;
           case FileType.Json:
-            data = jsonParseAsStringDictList(file.content);
+            data = jsonParseAsStringDictList(file.content, file.jsonPathQuery);
             break;
           default:
             success = false;
@@ -271,7 +284,7 @@ export const DataTableFileImportDialogContent = () => {
         content: newFileContent,
       });
 
-      appDb.workflows.update(dataWorkflow.id, {
+      await appDb.workflows.update(dataWorkflow.id, {
         workflowSteps: [
           ...dataWorkflow.workflowSteps,
           {
@@ -284,6 +297,10 @@ export const DataTableFileImportDialogContent = () => {
           },
         ],
       });
+
+      if (dockviewApi != null) {
+        openWorkflowEditor(dockviewApi);
+      }
     }
 
     setDropImportFileDialogOpen(false);
@@ -316,7 +333,7 @@ export const DataTableFileImportDialogContent = () => {
       </DialogHeader>
 
       <label
-        className="text-muted-foreground flex h-[min(15rem,calc(100vh-15rem))] w-[min(40rem,calc(100vw-5rem))] items-center justify-center rounded-2xl border-4 border-dashed text-center text-xl select-none hover:bg-gray-50"
+        className="text-muted-foreground hover:bg-muted/50 flex h-[min(15rem,calc(100vh-15rem))] w-[min(40rem,calc(100vw-5rem))] items-center justify-center rounded-2xl border-4 border-dashed text-center text-xl select-none"
         ref={dropZoneRef}
       >
         Drop your file here. Click to open file browser.
@@ -340,131 +357,164 @@ export const DataTableFileImportDialogContent = () => {
           Preview the contents of your file. You can edit the data here.
         </DialogDescription>
       </DialogHeader>
-      <div className="flex h-[min(30rem,calc(100vh-10rem))] w-[min(55rem,calc(100vw-5rem))] flex-row gap-2">
-        <div className="flex w-[12rem] flex-col gap-3">
-          <div className="mt-1 ml-2 shrink-0 font-medium">Files</div>
-          <div className="overflow-y-auto">
-            {importedFiles.map((file, index) => (
-              <div
-                className={cn(
-                  selectedFileIndex === index && "bg-gray-200",
-                  "flex w-full shrink-0 items-center justify-between gap-1 rounded-lg p-1 px-2 text-sm select-none hover:bg-gray-100",
-                )}
-                key={index}
-                onClick={() => setSelectedFileIndex(index)}
-                tabIndex={0}
-              >
-                <div>{file.name}</div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (importedFiles.length <= 1) {
-                      setImportedFiles([]);
-                      setCurrentImportStep(ImportStep.SelectFile);
-                    } else {
-                      if (index === selectedFileIndex) {
-                        setSelectedFileIndex(index - 1);
+      <div className="@container w-[min(55rem,calc(100vw-5rem))]">
+        <div className="flex h-[calc(100vh-10rem)] max-h-full flex-col gap-2 overflow-auto @xl:h-[min(30rem,calc(100vh-10rem))] @xl:flex-row">
+          <div className="flex shrink-0 flex-col gap-3 @xl:w-[12rem]">
+            <div className="mt-1 ml-2 font-medium">Files</div>
+            <div className="overflow-y-auto">
+              {importedFiles.map((file, index) => (
+                <div
+                  className={cn(
+                    selectedFileIndex === index && "bg-primary/20",
+                    "hover:bg-sidebar-accent flex w-full shrink-0 items-center justify-between gap-1 rounded-lg p-1 px-2 text-sm select-none",
+                  )}
+                  key={index}
+                  onClick={() => setSelectedFileIndex(index)}
+                  tabIndex={0}
+                >
+                  <div>{file.name}</div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (importedFiles.length <= 1) {
+                        setImportedFiles([]);
+                        setCurrentImportStep(ImportStep.SelectFile);
+                      } else {
+                        if (index === selectedFileIndex) {
+                          setSelectedFileIndex(index - 1);
+                        }
+                        setImportedFiles((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        );
                       }
-                      setImportedFiles((prev) =>
-                        prev.filter((_, i) => i !== index),
-                      );
-                    }
+                    }}
+                  >
+                    <TrashIcon className="text-muted-foreground hover:text-destructive size-6 shrink-0 p-1" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <Button
+              className="shrink-0 self-start"
+              onClick={() =>
+                document.getElementById("add-import-file")?.click()
+              }
+            >
+              <PlusIcon /> Add files
+            </Button>
+            <HiddenFileInput />
+          </div>
+          <div className="flex flex-1 shrink-0 flex-col gap-2">
+            <div className="flex shrink-0 items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div>File type</div>
+                <Select
+                  value={currentFileType}
+                  onValueChange={(value: FileType) => {
+                    setImportedFiles((prev) =>
+                      produce(prev, (draft) => {
+                        draft[selectedFileIndex].type = value;
+                      }),
+                    );
                   }}
                 >
-                  <TrashIcon className="text-muted-foreground hover:text-destructive size-6 shrink-0 p-1" />
-                </button>
+                  <SelectTrigger className="w-[12rem]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV (with header)</SelectItem>
+                    <SelectItem value="tsv">TSV (with header)</SelectItem>
+                    <SelectItem value="json">JSON</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-          </div>
-          <Button
-            className="shrink-0 self-start"
-            onClick={() => document.getElementById("add-import-file")?.click()}
-          >
-            <PlusIcon /> Add files
-          </Button>
-          <HiddenFileInput />
-        </div>
-        <div className="flex flex-1 flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div>File type</div>
-              <Select
-                value={currentFileType}
-                onValueChange={(value: FileType) => {
-                  setImportedFiles((prev) =>
-                    produce(prev, (draft) => {
-                      draft[selectedFileIndex].type = value;
-                    }),
-                  );
-                }}
+              <Toggle
+                pressed={isWrapTextEnabled}
+                onPressedChange={setIsWrapTextEnabled}
               >
-                <SelectTrigger className="w-[12rem]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="csv">CSV (with header)</SelectItem>
-                  <SelectItem value="tsv">TSV (with header)</SelectItem>
-                  <SelectItem value="json">JSON</SelectItem>
-                </SelectContent>
-              </Select>
+                <WrapText />
+              </Toggle>
             </div>
-            <Toggle
-              pressed={isWrapTextEnabled}
-              onPressedChange={setIsWrapTextEnabled}
-            >
-              <WrapText />
-            </Toggle>
-          </div>
-          <CodeMirror
-            value={currentFileContent}
-            onChange={(val) => {
-              setImportedFiles((prev) =>
-                produce(prev, (draft) => {
-                  draft[selectedFileIndex].content = val;
-                }),
-              );
-            }}
-            extensions={[editorExtensions]}
-            className="flex-1"
-            height="100%"
-            width="100%"
-          />
-          <div className="flex items-center justify-between gap-2">
-            {associatedFile == null && (
-              <>
-                <div className="shrink-0">New table name:</div>
+            <CodeMirror
+              theme={theme}
+              value={currentFileContent}
+              onChange={(val) => {
+                setImportedFiles((prev) =>
+                  produce(prev, (draft) => {
+                    draft[selectedFileIndex].content = val;
+                  }),
+                );
+              }}
+              extensions={[editorExtensions]}
+              className="max-h-[30rem] min-h-[10rem] flex-1 overflow-auto"
+              height="100%"
+              width="100%"
+            />
+            {currentFileType === FileType.Json && (
+              <div className="flex shrink-0 items-center gap-2">
+                <div className="shrink-0">JSONPath selector</div>
+                <Tooltip>
+                  <TooltipContent>Example: $.items</TooltipContent>
+                  <TooltipTrigger asChild>
+                    <a
+                      href="https://github.com/JSONPath-Plus/JSONPath?tab=readme-ov-file#syntax-through-examples"
+                      target="_blank"
+                      className="-ml-1"
+                    >
+                      <CircleQuestionMark size={14}></CircleQuestionMark>
+                    </a>
+                  </TooltipTrigger>
+                </Tooltip>
                 <Input
-                  placeholder="Auto-generated if unfilled"
-                  value={newTableName}
-                  onChange={(e) => setNewTableName(e.target.value)}
+                  placeholder="Optional. Leave empty to import all objects."
+                  value={importedFiles[selectedFileIndex].jsonPathQuery}
+                  onChange={(e) => {
+                    setImportedFiles((prev) =>
+                      produce(prev, (draft) => {
+                        draft[selectedFileIndex].jsonPathQuery = e.target.value;
+                      }),
+                    );
+                  }}
                 />
-              </>
+              </div>
             )}
-            <Button className="shrink-0" onClick={importFiles}>
-              Import
-            </Button>
-          </div>
-          {importErrors.length > 0 && (
-            <Alert variant="destructive">
-              <CircleAlert />
-              <AlertTitle>Failed to import files!</AlertTitle>
-              <Button
-                variant="ghost"
-                className="text-muted-foreground absolute top-1 right-2 size-6 hover:bg-transparent"
-                onClick={() => setImportErrors([])}
-              >
-                <XIcon />
+            <div className="flex shrink-0 items-center justify-between gap-2">
+              {associatedFile == null && (
+                <>
+                  <div className="shrink-0">New table name</div>
+                  <Input
+                    placeholder="Auto-generated if unfilled"
+                    value={newTableName}
+                    onChange={(e) => setNewTableName(e.target.value)}
+                  />
+                </>
+              )}
+              <Button className="shrink-0" onClick={importFiles}>
+                Import
               </Button>
-              <AlertDescription className="flex h-full max-h-[10rem] flex-col overflow-auto">
-                {importErrors.map((error, index) => (
-                  <div key={index} className="shrink-0">
-                    <span className="font-medium">{error.filename}</span>
-                    <span> - {error.error}</span>
-                  </div>
-                ))}
-              </AlertDescription>
-            </Alert>
-          )}
+            </div>
+            {importErrors.length > 0 && (
+              <Alert variant="destructive">
+                <CircleAlert />
+                <AlertTitle>Failed to import files!</AlertTitle>
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground absolute top-1 right-2 size-6 hover:bg-transparent"
+                  onClick={() => setImportErrors([])}
+                >
+                  <XIcon />
+                </Button>
+                <AlertDescription className="flex h-full max-h-[10rem] flex-col overflow-auto">
+                  {importErrors.map((error, index) => (
+                    <div key={index} className="shrink-0">
+                      <span className="font-medium">{error.filename}</span>
+                      <span> - {error.error}</span>
+                    </div>
+                  ))}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
         </div>
       </div>
     </>
@@ -475,26 +525,38 @@ type JsonValueType = object | number | string | boolean | null;
 /**
  * Parse a valid JSON string into a Record<string, string>[].
  * @param text
+ * @param jsonPathQuery
  */
-function jsonParseAsStringDictList(text: string) {
+function jsonParseAsStringDictList(text: string, jsonPathQuery?: string) {
   const parsed = JSON.parse(text);
-  let result;
-  if (typeof parsed !== "object") {
+  if (typeof parsed !== "object" || parsed == null) {
     throw new Error("JSON is not an object.");
   }
+  let filteredByPath = parsed as JsonValueType;
+  if (!isEmptyOrSpaces(jsonPathQuery)) {
+    filteredByPath = JSONPath<JsonValueType>({
+      path: jsonPathQuery!,
+      json: parsed,
+    });
+  }
 
-  if (!Array.isArray(parsed)) {
+  if (typeof filteredByPath !== "object" || filteredByPath == null) {
+    throw new Error("JSONPath query does not return an object.");
+  }
+
+  let result;
+  if (!Array.isArray(filteredByPath)) {
     // If the parsed result is not an array, wrap it in an array.
-    result = [parsed] as Record<string, JsonValueType>[];
+    result = [filteredByPath] as Record<string, JsonValueType>[];
   } else {
-    for (const item of parsed) {
+    for (const item of filteredByPath) {
       if (typeof item !== "object") {
         throw new Error("JSON array contains non-object values.");
       }
     }
-
-    result = parsed as Record<string, JsonValueType>[];
+    result = filteredByPath as Record<string, JsonValueType>[];
   }
+
   for (const item of result) {
     if (Object.hasOwn(item, "")) {
       item["[EMPTY]"] = item[""];

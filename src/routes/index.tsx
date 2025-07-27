@@ -90,12 +90,16 @@ function HomePage() {
   );
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100 dark:bg-neutral-900">
       <Card className="mx-2 mt-2">
         <CardHeader>
           <CardTitle>
             <div className="flex items-center gap-2">
-              <img className="w-12 shrink-0 rounded-md" src={Logo} alt="logo" />
+              <img
+                className="w-12 shrink-0 rounded-md dark:filter-[invert(1)_hue-rotate(180deg)]"
+                src={Logo}
+                alt="logo"
+              />
               <div>
                 pgExplore
                 <CardDescription className="font-normal">
@@ -167,7 +171,7 @@ function HomePage() {
                 {sortedDatabases?.map((db) => (
                   <a
                     key={db.id}
-                    className="flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1.5 select-none hover:bg-gray-100 md:w-[15rem]"
+                    className="hover:bg-sidebar-accent flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1.5 select-none md:w-[15rem]"
                     onClick={(event) => {
                       event.preventDefault();
                       navigate({ to: `/database/${db.id}` });

@@ -492,7 +492,12 @@ export function QueryWorkflow() {
         nodesConnectable={false}
         ref={ref}
       >
-        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={12}
+          size={1}
+          bgColor=""
+        />
       </ReactFlow>
     </div>
   );

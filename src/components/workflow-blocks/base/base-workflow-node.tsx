@@ -157,7 +157,7 @@ export const BaseWorkflowNode = ({
       <Handle type="target" position={Position.Top} className="z-10" />
       <BaseNode
         className={cn(
-          "w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1",
+          "w-[11rem] overflow-hidden rounded-lg bg-white px-2 py-1 dark:bg-neutral-950",
           workflowStepExecutionResult != null ? "outline-3" : "",
           workflowStepExecutionResult?.result === "success"
             ? "outline-green-600"
@@ -195,18 +195,18 @@ export const BaseWorkflowNode = ({
           <div
             className={cn(
               "absolute top-0 right-0 bottom-0 left-0 -mx-2 -mt-1 -mb-1",
-              headerBackgroundClass ?? "bg-amber-50",
+              headerBackgroundClass ?? "bg-amber-50 dark:bg-amber-950",
             )}
           />
         </div>
 
-        <div className="relative -mx-2 my-1 border-b border-gray-200" />
+        <div className="relative -mx-2 my-1 border-b border-neutral-200 dark:border-neutral-600" />
         <div className="flex flex-col gap-2 py-2">
           {useDefaultFileSelectorValue &&
             (currentFile == null ? (
               <div className="flex h-6 w-full overflow-hidden">
                 <div
-                  className="flex flex-1 gap-0.5 rounded-l bg-gray-100 px-1 hover:bg-gray-200"
+                  className="flex flex-1 gap-0.5 rounded-l bg-neutral-100 px-1 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-800"
                   onClick={async () => {
                     if (dockviewApi == null) return;
                     const fileId = await createNewFile(currentDbId, {
@@ -222,11 +222,11 @@ export const BaseWorkflowNode = ({
                   <div className="flex items-center text-xs">New</div>
                 </div>
                 {/* divider */}
-                <div className="h-full w-0.5 bg-gray-300" />
+                <div className="neutral-300 h-full w-0.5 dark:bg-neutral-600" />
                 {/* divider */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <div className="flex flex-1 gap-0.5 rounded-r bg-gray-100 px-1 hover:bg-gray-200">
+                    <div className="flex flex-1 gap-0.5 rounded-r bg-neutral-100 px-1 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-800">
                       <ExternalLink className="w-4" />
                       <div className="flex items-center text-xs">Open</div>
                     </div>
@@ -241,7 +241,7 @@ export const BaseWorkflowNode = ({
                           filteredFiles.map((file) => (
                             <div
                               key={file.id}
-                              className="mr-1 flex shrink-0 gap-1 rounded-lg p-2 select-none hover:bg-gray-100"
+                              className="hover:bg-sidebar-accent mr-1 flex shrink-0 gap-1 rounded-lg p-2 select-none"
                               onClick={() => {
                                 setWorkflowFile(
                                   workflowType,
@@ -300,7 +300,7 @@ export const BaseWorkflowNode = ({
                       openFileEditor(dockviewApi, currentFile.id);
                     }}
                   >
-                    <div className="flex flex-1 gap-0.5 rounded-l bg-gray-100 px-1 hover:bg-gray-200">
+                    <div className="dark:bg flex flex-1 gap-0.5 rounded-l bg-neutral-100 px-1 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-800">
                       <FileText className="w-4 shrink-0" />
                       <div className="flex items-center overflow-hidden text-xs whitespace-nowrap">
                         {currentFilename}
@@ -310,10 +310,10 @@ export const BaseWorkflowNode = ({
                   <TooltipContent>{currentFilename}</TooltipContent>
                 </Tooltip>
                 {/* divider */}
-                <div className="h-full w-0.5 bg-gray-300" />
+                <div className="h-full w-0.5 bg-neutral-300 dark:bg-neutral-600" />
                 {/* divider */}
                 <div
-                  className="group flex items-center rounded-r bg-gray-100 px-1 hover:bg-gray-200"
+                  className="group flex items-center rounded-r bg-neutral-100 px-1 hover:bg-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-800"
                   onClick={() =>
                     setWorkflowFile(workflowType, workflowIndex, null)
                   }

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { guid } from "./utils";
 
-export function createWorkflowPanel(
+export function openWorkflowEditor(
   dockviewApi: DockviewApi,
   skipIfSmallScreen = false,
 ) {

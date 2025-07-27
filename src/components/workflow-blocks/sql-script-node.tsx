@@ -26,7 +26,7 @@ export const SqlScriptNode = ({
         fileFilterPredicate: (file) => file.type === "sql",
         newFilePrefix: "SQL Script",
         headerText: "SQL Script",
-        headerBackgroundClass: "bg-amber-50",
+        headerBackgroundClass: "bg-amber-50 dark:bg-amber-950",
         headerIcon: <ScrollText strokeWidth={1.5} className="w-5" />,
       }}
       {...props}

@@ -27,12 +27,40 @@ html {
   .dv-groupview {
     border-radius: 0;
   }
-
+  --dv-tabs-and-actions-container-background-color: var(--background);
   padding: 0;
 }
 
 .dv-split-view-container .dv-sash-container .dv-sash {
   z-index: 10;
+}
+
+.dv-groupview.dv-active-group > .dv-tabs-and-actions-container .dv-tabs-container > .dv-tab.dv-active-tab {
+  background-color: color-mix(in srgb, var(--primary) 15%, var(--background) 90%);
+  color: var(--foreground);
+}
+
+.dockview-theme-replit .dv-groupview .dv-tabs-and-actions-container .dv-tab:hover {
+  background-color: color-mix(in srgb, var(--primary) 10%, var(--accent) 50%) !important;
+}
+
+.dv-groupview.dv-active-group > .dv-tabs-and-actions-container .dv-tabs-container > .dv-tab.dv-inactive-tab
+, .dv-groupview.dv-inactive-group > .dv-tabs-and-actions-container .dv-tabs-container > .dv-tab.dv-inactive-tab
+, .dv-groupview.dv-inactive-group > .dv-tabs-and-actions-container .dv-tabs-container > .dv-tab.dv-active-tab {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.dockview-theme-replit .dv-groupview .dv-content-container {
+  background-color: var(--background)
+}
+
+.dockview-theme-replit .dv-groupview.dv-inactive-group {
+  border:1px solid var(--border);
+}
+
+.dockview-theme-replit .dv-groupview.dv-active-group {
+  border:1px solid color-mix(in srgb, var(--primary) 45%, var(--background) 90%);
 }
 
 /* Fix handsontables z-index too high */
@@ -47,11 +75,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   --background: hsl(0 0% 100%);
   --foreground: hsl(0 0% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 3.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 3.9%);
-  --primary: hsl(0 0% 9%);
+  --primary: hsl(210, 42%, 45%);
   --primary-foreground: hsl(0 0% 98%);
   --secondary: hsl(0 0% 96.1%);
   --secondary-foreground: hsl(0 0% 9%);
@@ -78,16 +102,16 @@ html {
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
 }
 
 .dark {
   --background: hsl(0 0% 3.9%);
   --foreground: hsl(0 0% 98%);
-  --card: hsl(0 0% 3.9%);
-  --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(0 0% 3.9%);
-  --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
+  --primary: hsl(197, 44%, 84%);
   --primary-foreground: hsl(0 0% 9%);
   --secondary: hsl(0 0% 14.9%);
   --secondary-foreground: hsl(0 0% 98%);
@@ -113,6 +137,10 @@ html {
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
   --sidebar-border: hsl(240 3.7% 15.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --card: hsl(0 0% 3.9%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 3.9%);
+  --popover-foreground: hsl(0 0% 98%);
 }
 
 @theme inline {

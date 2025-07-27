@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs.tsx";
 import { useDockviewStore } from "@/hooks/stores/use-dockview-store.ts";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
 import { useQueryStore } from "@/hooks/stores/use-query-store.ts";
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db.ts";
 import { executeQueryAndShowResults } from "@/lib/dockview.ts";
 import { querySchemaForCodeMirror } from "@/lib/pglite/pg-utils.ts";
@@ -80,6 +81,8 @@ export function QueryEditor({
   const isHighlightingSelection = selectionRange[0] < selectionRange[1];
 
   const { notifyModifyEditor, notifyRunArbitraryQuery } = useWorkflowMonitor();
+
+  const theme = useSettingsStore((state) => state.resolvedTheme);
 
   const [, cancelDebouncedSave] = useDebounce(
     () => {
@@ -174,6 +177,7 @@ export function QueryEditor({
     generatedViewConfig != null ? (
       <CodeMirror
         value={generatedEditorValue ?? "-- Value currently unavailable."}
+        theme={theme}
         extensions={[...generatedViewExtensions.map((e) => e(ctx))]}
         className="h-full w-full flex-1"
         width="100%"
@@ -215,6 +219,7 @@ export function QueryEditor({
           <CodeMirror
             ref={editor}
             value={queryEditorValue}
+            theme={theme}
             className="h-full w-full flex-1 border-b-2 @2xl:border-r-2 @2xl:border-b-0"
             width="100%"
             height="100%"

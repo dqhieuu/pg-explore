@@ -10,6 +10,7 @@ const setHtmlTheme = (theme: "dark" | "light") => {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useSettingsStore((state) => state.theme);
+  const setResolvedTheme = useSettingsStore((state) => state.setResolvedTheme);
 
   useEffect(() => {
     if (theme === "auto") {
@@ -18,11 +19,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       );
 
       const updateThemeBasedOnSystem = (event: MediaQueryListEvent) => {
-        setHtmlTheme(event.matches ? "dark" : "light");
+        const resolvedTheme = event.matches ? "dark" : "light";
+        setHtmlTheme(resolvedTheme);
+        setResolvedTheme(resolvedTheme);
       };
       colorSchemeQuery.addEventListener("change", updateThemeBasedOnSystem);
 
-      setHtmlTheme(colorSchemeQuery.matches ? "dark" : "light");
+      const resolvedTheme = colorSchemeQuery.matches ? "dark" : "light";
+      setHtmlTheme(resolvedTheme);
+      setResolvedTheme(resolvedTheme);
 
       return () => {
         colorSchemeQuery.removeEventListener(
@@ -33,7 +38,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
 
     setHtmlTheme(theme);
-  }, [theme]);
+    setResolvedTheme(theme);
+  }, [setResolvedTheme, theme]);
 
   return <>{children}</>;
 }

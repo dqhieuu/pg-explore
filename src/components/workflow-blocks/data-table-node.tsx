@@ -7,6 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover.tsx";
 import { usePostgresStore } from "@/hooks/stores/use-postgres-store.ts";
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import {
   TableFileEntry,
   appDb,
@@ -46,6 +47,8 @@ export const DataTableNode = ({
   const currentWorkflow = useAppDbLiveQuery(() =>
     getWorkflow(currentDbId, workflowType),
   );
+  const theme = useSettingsStore((state) => state.resolvedTheme);
+
   const isIncludeCreateTable =
     currentWorkflow?.workflowSteps[workflowIndex]?.options
       ?.includeCreateTable ?? false;
@@ -64,7 +67,7 @@ export const DataTableNode = ({
         fileFilterPredicate: (file) => file.type === "table",
         newFilePrefix: "Data Table",
         headerText: "Data Table",
-        headerBackgroundClass: "bg-blue-100",
+        headerBackgroundClass: "bg-blue-100 dark:bg-blue-950",
         useDefaultFileSelector: true,
         headerIcon: <TableIcon strokeWidth={1.5} className="w-5" />,
         allowSelectFileFromMachine: false,
@@ -72,7 +75,7 @@ export const DataTableNode = ({
       {...props}
     >
       <label className="-mt-1 flex cursor-pointer flex-col items-start">
-        <div className="text-[0.7rem] text-gray-600">
+        <div className="text-muted-foreground text-[0.7rem]">
           Table name{" "}
           {!isIncludeCreateTable && <span className="text-destructive">*</span>}
         </div>
@@ -160,6 +163,7 @@ export const DataTableNode = ({
           <PopoverContent className="max-h-[70vh] w-auto max-w-[80vw] overflow-auto">
             <CodeMirror
               value={createTablePreview}
+              theme={theme}
               extensions={[
                 sql({
                   dialect: PostgreSQLDialect,

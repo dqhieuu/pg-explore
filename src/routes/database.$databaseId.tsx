@@ -22,7 +22,7 @@ import {
   getDatabaseFiles,
   getWorkflow,
 } from "@/lib/dexie/dexie-utils";
-import { createWorkflowPanel, openFileEditor } from "@/lib/dockview";
+import { openFileEditor, openWorkflowEditor } from "@/lib/dockview";
 import { WorkflowMonitorProvider } from "@/lib/pglite/workflow-monitor.tsx";
 import { guid, memDbId } from "@/lib/utils";
 import { PGliteProvider } from "@electric-sql/pglite-react";
@@ -258,7 +258,7 @@ function MainApp() {
                         },
                       });
 
-                      createWorkflowPanel(event.api, true);
+                      openWorkflowEditor(event.api, true);
                     }}
                     components={{
                       sqlQueryEditor: (

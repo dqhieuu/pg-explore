@@ -4,6 +4,12 @@ import { persist } from "zustand/middleware";
 interface SettingsStore {
   theme: "auto" | "dark" | "light";
   setTheme: (theme: "auto" | "dark" | "light") => void;
+  /**
+   * The actual theme used by the app. It resolves "auto" to the user's
+   * system preference.
+   */
+  resolvedTheme: "dark" | "light";
+  setResolvedTheme: (theme: "dark" | "light") => void;
 
   editorShowAccurateSQLError: boolean;
   setEditorShowAccurateSQLError: (show: boolean) => void;
@@ -29,6 +35,8 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       theme: "light",
       setTheme: (theme) => set({ theme }),
+      resolvedTheme: "light",
+      setResolvedTheme: (theme) => set({ resolvedTheme: theme }),
 
       editorShowAccurateSQLError: false,
       setEditorShowAccurateSQLError: (show) =>

@@ -60,6 +60,9 @@ export default function AppLifecycleHandler({
   const setDropImportFileDialogOpen = useAnimationStore(
     (state) => state.setDropImportFileDialogOpen,
   );
+  const dropImportFileDialogOpen = useAnimationStore(
+    (state) => state.dropImportFileDialogOpen,
+  );
 
   useEffect(() => {
     console.log("Initializing app");
@@ -81,6 +84,7 @@ export default function AppLifecycleHandler({
     };
 
     const fileStartDragHandler = (event: DragEvent) => {
+      if (dropImportFileDialogOpen) return;
       const isFileDrag = event.dataTransfer?.types.includes("Files") ?? false;
       if (!isFileDrag) return;
 
@@ -105,7 +109,11 @@ export default function AppLifecycleHandler({
         visibilityChangeHandler,
       );
     };
-  }, [setDropImportFileDialogOpen, signalSaveQueryEditors]);
+  }, [
+    dropImportFileDialogOpen,
+    setDropImportFileDialogOpen,
+    signalSaveQueryEditors,
+  ]);
 
   return <>{children}</>;
 }

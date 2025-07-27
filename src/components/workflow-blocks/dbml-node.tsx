@@ -23,7 +23,7 @@ export const DbmlNode = ({ data, ...props }: NodeProps<DbmlNodeType>) => {
         fileFilterPredicate: (file) => file.type === "dbml",
         newFilePrefix: "DBML Schema",
         headerText: "DBML File",
-        headerBackgroundClass: "bg-purple-100",
+        headerBackgroundClass: "bg-purple-100 dark:bg-purple-950",
         headerIcon: <ScrollText strokeWidth={1.5} className="w-5" />,
       }}
       {...props}

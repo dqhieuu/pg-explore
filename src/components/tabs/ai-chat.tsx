@@ -192,9 +192,9 @@ export const AiChat = () => {
         }
       </div>
       <div className="relative flex-1">
-        <div className="flex h-full flex-col items-start gap-1 overflow-auto px-2 pt-2 pb-[4rem]">
+        <div className="flex h-full flex-col items-start gap-1 overflow-auto px-2 pt-2 pb-[4rem] dark:bg-neutral-950">
           {chatMessages.length === 0 ? (
-            <div className="text-primary/50">
+            <div className="text-muted-foreground">
               <div>Try asking me a question about your database schema.</div>
               <div>For example: "What are the tables in my database?"</div>
               <div>Or "How can I get the top 10 users by activity?"</div>
@@ -206,8 +206,8 @@ export const AiChat = () => {
                 className={cn(
                   "flex max-w-full shrink-0 flex-col gap-1 overflow-auto rounded-2xl border px-3 py-2",
                   role === "user"
-                    ? "bg-background self-end rounded-br-sm"
-                    : "bg-foreground text-background self-start rounded-bl-sm",
+                    ? "bg-muted self-end rounded-br-sm"
+                    : "bg-foreground dark:bg-muted-foreground text-background self-start rounded-bl-sm",
                 )}
               >
                 <Markdown

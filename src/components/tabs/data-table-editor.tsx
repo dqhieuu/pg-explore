@@ -303,8 +303,7 @@ function ColumnsActionsPopoverContent({
       <div
         className={cn(
           "flex flex-2 border p-2",
-          selectedColumnIndex == null &&
-            "items-center justify-center bg-gray-100",
+          selectedColumnIndex == null && "bg-muted items-center justify-center",
         )}
       >
         {selectedColumnIndex != null &&
@@ -396,8 +395,8 @@ export function Column({
   return (
     <div
       className={cn(
-        "flex shrink-0 cursor-grab items-center gap-1 truncate rounded-md p-1 hover:bg-gray-100",
-        focused && "bg-primary/10",
+        "hover:bg-sidebar-accent flex shrink-0 cursor-grab items-center gap-1 truncate rounded-md p-1",
+        focused && "bg-primary/20",
       )}
     >
       <GripHorizontal width={18} className="shrink-0" />
@@ -441,6 +440,8 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
   const setDropImportFileDialogOpen = useAnimationStore(
     (state) => state.setDropImportFileDialogOpen,
   );
+
+  const theme = useSettingsStore((state) => state.theme);
   // endregion
 
   const dataTableRef = useRef<HotTableRef>(null);
@@ -788,6 +789,14 @@ export function DataTableEditor({ contextId, fileId }: DataTableEditorProps) {
               data={tableData}
               rowHeaders={true}
               colHeaders={headers}
+              themeName={
+                "ht-theme-main" +
+                (theme === "dark"
+                  ? "-dark"
+                  : theme === "light"
+                    ? ""
+                    : "dark-auto")
+              }
               // Needed to make the column name "1", "2" not auto converted to column index
               columns={(column) => ({ data: headers[column] })}
               contextMenu={{
