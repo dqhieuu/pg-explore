@@ -6,6 +6,16 @@ const setHtmlTheme = (theme: "dark" | "light") => {
 
   root.classList.remove("light", "dark");
   root.classList.add(theme);
+
+  const themeMetaElem = window.document.querySelector(
+    'meta[name="theme-color"]',
+  );
+  if (themeMetaElem) {
+    themeMetaElem.setAttribute(
+      "content",
+      theme === "dark" ? "#111827" : "#fff",
+    );
+  }
 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

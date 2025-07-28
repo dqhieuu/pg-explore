@@ -143,6 +143,12 @@ html {
   --popover-foreground: hsl(0 0% 98%);
 }
 
+.dark {
+  --ht-background-color: var(--background);
+  --ht-menu-border-color: var(--border);
+  --ht-menu-item-hover-color: var(--sidebar-accent);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
