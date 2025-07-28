@@ -153,7 +153,7 @@ const GeneralSettings = () => {
           </div>
         </div>
         <Select value={theme} onValueChange={setTheme}>
-          <SelectTrigger className="w-[10rem]">
+          <SelectTrigger className="w-[9rem] shrink-0">
             <SelectValue placeholder="Theme" />
           </SelectTrigger>
           <SelectContent>

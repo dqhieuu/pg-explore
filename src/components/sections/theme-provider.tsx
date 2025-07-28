@@ -11,10 +11,7 @@ const setHtmlTheme = (theme: "dark" | "light") => {
     'meta[name="theme-color"]',
   );
   if (themeMetaElem) {
-    themeMetaElem.setAttribute(
-      "content",
-      theme === "dark" ? "#111827" : "#fff",
-    );
+    themeMetaElem.setAttribute("content", theme === "dark" ? "#000" : "#fff");
   }
 };
 

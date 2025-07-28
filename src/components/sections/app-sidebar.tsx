@@ -420,7 +420,7 @@ export function AppSidebar() {
                 <div className="relative flex">
                   <img
                     alt="App logo"
-                    className="w-8 rounded-md opacity-85"
+                    className="w-8 rounded-md opacity-85 dark:filter-[invert(1)_hue-rotate(180deg)]"
                     src={Logo}
                   />
                   <DropdownMenuLabel>{APP_NAME}</DropdownMenuLabel>
