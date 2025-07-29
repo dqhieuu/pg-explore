@@ -137,7 +137,7 @@ function RenameFileDialogContent({
   }, [fileId, form]);
 
   return (
-    <DialogContent>
+    <DialogContent aria-describedby={undefined}>
       <DialogHeader>
         <DialogTitle>Rename file</DialogTitle>
       </DialogHeader>
@@ -313,8 +313,8 @@ function FileCollapsibleSection({
                             </DropdownMenuItem>
                           </DialogTrigger>
                           <DropdownMenuItem onClick={() => deleteFile(file.id)}>
-                            <Trash className="text-destructive" />
-                            <span className="text-destructive">
+                            <Trash className="text-destructive dark:text-red-600" />
+                            <span className="text-destructive dark:text-red-600">
                               Delete file
                             </span>
                           </DropdownMenuItem>
@@ -342,7 +342,6 @@ function FileCollapsibleSection({
         onClose={() => {
           setDialogFileId(null);
         }}
-        key={dialogFileId}
       />
     </Dialog>
   );

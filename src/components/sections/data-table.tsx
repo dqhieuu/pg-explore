@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSettingsStore } from "@/hooks/stores/use-settings-store.ts";
 import ReactJsonView from "@microlink/react-json-view";
 import {
   ColumnDef,
@@ -67,7 +68,7 @@ function TableHeadRow<DataType>({
 
   return (
     <TableRow
-      className="flex w-full min-w-auto bg-gray-100"
+      className="bg-muted flex w-full min-w-auto"
       data-index={headerGroup.id}
       ref={rowVirtualizer.measureElement}
     >
@@ -115,6 +116,8 @@ function TableBodyRow<DataType>({
   const visibleCells = row.getVisibleCells();
   const virtualColumns = columnVirtualizer.getVirtualItems();
 
+  const theme = useSettingsStore((state) => state.resolvedTheme);
+
   return (
     <TableRow
       key={row.id}
@@ -149,6 +152,7 @@ function TableBodyRow<DataType>({
                 indentWidth={2}
                 displayDataTypes={false}
                 style={{ width: "100%" }}
+                theme={theme === "dark" ? "railscasts" : "rjv-default"}
               />
             );
             break;

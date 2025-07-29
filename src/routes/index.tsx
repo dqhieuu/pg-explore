@@ -20,7 +20,7 @@ import { useAnimationStore } from "@/hooks/stores/use-animation-store.ts";
 import { CURRENT_POSTGRES_VERSION, GITHUB_URL } from "@/lib/constants";
 import { appDb, useAppDbLiveQuery } from "@/lib/dexie/app-db";
 import { getNonMemoryDatabases } from "@/lib/dexie/dexie-utils.ts";
-import { guid } from "@/lib/utils";
+import { guid, isEmptyOrSpaces } from "@/lib/utils";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Database, MemoryStick, SettingsIcon } from "lucide-react";
 import { generateSlug } from "random-word-slugs";
@@ -36,7 +36,7 @@ function CreatePersistentDatabaseDialogContent() {
   const [newDbName, setNewDbName] = useState(generateSlug(3));
 
   async function createDatabase() {
-    if (newDbName.trim() === "") return;
+    if (isEmptyOrSpaces(newDbName)) return;
 
     const newDbId = await appDb.databases.add({
       id: guid(),
@@ -60,8 +60,15 @@ function CreatePersistentDatabaseDialogContent() {
             placeholder="Database name"
             value={newDbName}
             onChange={(e) => setNewDbName(e.target.value)}
+            data-testid="create-persistent-db-name-input"
           />
-          <Button onClick={createDatabase}>Create database</Button>
+          <Button
+            onClick={createDatabase}
+            disabled={isEmptyOrSpaces(newDbName)}
+            data-testid="create-persistent-db-submit-btn"
+          >
+            Create database
+          </Button>
         </DialogDescription>
       </DialogHeader>
     </DialogContent>
@@ -90,7 +97,7 @@ function HomePage() {
   );
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-100 dark:bg-neutral-900">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900">
       <Card className="mx-2 mt-2">
         <CardHeader>
           <CardTitle>
@@ -132,6 +139,7 @@ function HomePage() {
               <button
                 className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none"
                 onClick={() => navigate({ to: `/database/memory` })}
+                data-testid="create-memory-db-btn"
               >
                 <div className="font-semibold">In-memory database</div>
                 <MemoryStick size={48} strokeWidth={1} className="my-2" />
@@ -144,7 +152,10 @@ function HomePage() {
               </button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none">
+                  <button
+                    className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none"
+                    data-testid="create-persistent-db-btn"
+                  >
                     <div className="font-semibold">Persistent database</div>
                     <Database size={48} strokeWidth={1} className="my-2" />
                     <div className="text-muted-foreground text-center text-sm text-balance">
@@ -167,22 +178,23 @@ function HomePage() {
             {databases?.length === 0 ? (
               <div className="text-muted-foreground">No databases found.</div>
             ) : (
-              <div className="flex max-h-none flex-col gap-1 overflow-auto md:max-h-[10rem]">
+              <ul className="flex max-h-none flex-col gap-1 overflow-auto md:max-h-[10rem]">
                 {sortedDatabases?.map((db) => (
-                  <a
-                    key={db.id}
-                    className="hover:bg-sidebar-accent flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1.5 select-none md:w-[15rem]"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      navigate({ to: `/database/${db.id}` });
-                    }}
-                    href={`/database/${db.id}`}
-                  >
-                    <Database className="shrink-0" strokeWidth={1.5} />
-                    <div>{db.name}</div>
-                  </a>
+                  <li data-testclass="database-list-item" key={db.id}>
+                    <a
+                      className="hover:bg-sidebar-accent flex max-h-[3rem] shrink-0 cursor-default items-center gap-2 rounded-xl p-1.5 select-none md:w-[15rem]"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        navigate({ to: `/database/${db.id}` });
+                      }}
+                      href={`/database/${db.id}`}
+                    >
+                      <Database className="shrink-0" strokeWidth={1.5} />
+                      <div>{db.name}</div>
+                    </a>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </CardContent>

@@ -21,7 +21,7 @@ import { tcn } from "@electric-sql/pglite/contrib/tcn";
 import { tsm_system_rows } from "@electric-sql/pglite/contrib/tsm_system_rows";
 import { tsm_system_time } from "@electric-sql/pglite/contrib/tsm_system_time";
 import { uuid_ossp } from "@electric-sql/pglite/contrib/uuid_ossp";
-// import { pg_ivm } from "@electric-sql/pglite/pg_ivm";
+import { pg_ivm } from "@electric-sql/pglite/pg_ivm";
 import { vector } from "@electric-sql/pglite/vector";
 import Papa from "papaparse";
 
@@ -286,13 +286,13 @@ export const pgExtensions = [
       "This module implements a data type ltree for representing labels of data stored in a hierarchical tree-like structure. Extensive facilities for searching through label trees are provided.",
     implementation: ltree,
   },
-  // {
-  //   id: "pg_ivm",
-  //   name: "pg_ivm",
-  //   description:
-  //     "The pg_ivm module provides Incremental View Maintenance (IVM) feature for PostgreSQL. Incremental View Maintenance (IVM) is a way to make materialized views up-to-date in which only incremental changes are computed and applied on views rather than recomputing the contents from scratch as REFRESH MATERIALIZED VIEW does. IVM can update materialized views more efficiently than recomputation when only small parts of the view are changed.",
-  //   implementation: pg_ivm,
-  // },
+  {
+    id: "pg_ivm",
+    name: "pg_ivm",
+    description:
+      "The pg_ivm module provides Incremental View Maintenance (IVM) feature for PostgreSQL. Incremental View Maintenance (IVM) is a way to make materialized views up-to-date in which only incremental changes are computed and applied on views rather than recomputing the contents from scratch as REFRESH MATERIALIZED VIEW does. IVM can update materialized views more efficiently than recomputation when only small parts of the view are changed.",
+    implementation: pg_ivm,
+  },
   {
     id: "pg_trgm",
     name: "pg_trgm",

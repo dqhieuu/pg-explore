@@ -270,47 +270,54 @@ export const DatabaseListDialogContent = () => {
         ) : (
           <ul className="flex flex-col gap-2">
             <Dialog
-              open={popupActionState !== null}
+              open={popupActionState?.action === "rename"}
               onOpenChange={(open) => {
                 if (!open) setPopupActionState(null);
               }}
             >
-              <DatabaseList
-                databases={databases}
-                currentDbId={currentDbId}
-                onSelectDatabase={(db) => {
-                  navigate({ to: `/database/${db.id}` });
+              <Dialog
+                open={popupActionState?.action === "delete"}
+                onOpenChange={(open) => {
+                  if (!open) setPopupActionState(null);
                 }}
-                onRenameDatabase={(db) => {
-                  setPopupActionState({
-                    action: "rename",
-                    databaseId: db.id,
-                  });
-                }}
-                onDeleteDatabase={(db) => {
-                  setPopupActionState({
-                    action: "delete",
-                    databaseId: db.id,
-                  });
-                }}
-              />
+              >
+                <DatabaseList
+                  databases={databases}
+                  currentDbId={currentDbId}
+                  onSelectDatabase={(db) => {
+                    navigate({ to: `/database/${db.id}` });
+                  }}
+                  onRenameDatabase={(db) => {
+                    setPopupActionState({
+                      action: "rename",
+                      databaseId: db.id,
+                    });
+                  }}
+                  onDeleteDatabase={(db) => {
+                    setPopupActionState({
+                      action: "delete",
+                      databaseId: db.id,
+                    });
+                  }}
+                />
 
-              {popupActionState && (
                 <DialogContent aria-describedby={undefined}>
-                  {popupActionState.action === "rename" && (
-                    <RenameDatabaseDialogContent
-                      databaseId={popupActionState.databaseId}
-                      onClose={() => setPopupActionState(null)}
-                    />
-                  )}
-                  {popupActionState.action === "delete" && (
+                  {popupActionState && (
                     <DeleteDatabaseDialogContent
                       databaseId={popupActionState.databaseId}
                       onClose={() => setPopupActionState(null)}
                     />
                   )}
                 </DialogContent>
-              )}
+              </Dialog>
+              <DialogContent aria-describedby={undefined}>
+                {popupActionState && (
+                  <RenameDatabaseDialogContent
+                    databaseId={popupActionState.databaseId}
+                    onClose={() => setPopupActionState(null)}
+                  />
+                )}
+              </DialogContent>
             </Dialog>
           </ul>
         )}

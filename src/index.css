@@ -68,6 +68,10 @@ html {
   z-index: 30;
 }
 
+.react-json-view {
+  background-color: transparent!important;
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;

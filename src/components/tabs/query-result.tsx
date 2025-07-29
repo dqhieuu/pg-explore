@@ -66,7 +66,7 @@ export function QueryResult({ contextId, lotNumber }: QueryResultProps) {
               className="h-7 max-w-[4.5rem] border-none bg-transparent shadow-none transition-all duration-100 ease-in-out focus:max-w-[12rem] focus-visible:shadow-none focus-visible:ring-0 focus-visible:outline-none"
             />
           </label>
-          <div className="text-primary/50 shrink-0 text-sm">
+          <div className="text-primary/70 shrink-0 text-sm">
             {filter.length > 0 ? `${filteredCount} / ` : ""}
             {data.length} {data.length !== 1 ? "rows" : "row"}
           </div>
