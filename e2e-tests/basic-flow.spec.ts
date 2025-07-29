@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const BASE_URL = "http://localhost:5173";
+const BASE_URL = "http://127.0.0.1:5173";
 // const MEMORY_DB_URL = `${BASE_URL}/database/memory`;
 
 test("has a title", async ({ page }) => {

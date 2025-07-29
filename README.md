@@ -3,23 +3,35 @@
     <h1>pgExplore</h1>
 </div>
 
-<h3 align="center">Web-based PostgreSQL data explorer with AI, workflow builder, integration, ... and more are being added!</h3>
+<h3 align="center">Web-based PostgreSQL data explorer with AI, workflow builder, integration, ... and more are being added! (Under active development)</h3>
 
-![Demo screenshot](./public/demo1.png)
+![Demo screenshot](./public/demo2.png)
 
-Just built a local-first toolbox for my data analysis needs, [PGlite](https://github.com/electric-sql/pglite)-powered. AI, workflow builder, and whatever buzzwords you can think get thrown in there. It's a work in progress, but some use cases are covered already. Some of my use cases to give you an idea of what you can do with it:
+I just built a local-first toolbox for my data analysis needs, and made it runnable locally on the browser with a [PGlite](https://github.com/electric-sql/pglite) backend! Some cool features:
 
-- I have some CSV and JSON files. I want to Ctrl+V them into Postgres and ask the o mighty LLM to "give me the top 5 most active accounts per group, JSON-aggregated." It should know the schema (but not the data—for security reasons) and provide a runnable SQL query. I then run it, modify it, and ask the AI to modify it for me for more complex cases.
+- Create your Postgres database in seconds and perform your query directly in your browser (thanks to PGLite)
+- Drag and Drop your CSV, JSON files into the app and instantly have them as database tables.
+- Pasting Excel data into the app's table editor also works, too!
+- With the tables you created, chat with the AI to create a query for your needs, for example, "Get PnL of each location, grouped by month.", then execute that query with one click!
+- You can also provide your own AI by setting the custom endpoint!
+- Your SQL queries and imported table data are managed as app files, and you can create an execution workflow with those files.
+- Some DDL languages such as [DBML](https://dbml.dbdiagram.io/home) are also supported.
+- Postgres extensions are supported.
+- You can manage multiple databases at once!
 
-- I want to interact with my [DBML](https://dbml.dbdiagram.io/home) schema I wrote some time ago, and store my reusable queries somewhere. Moreover, I have multiple types of data sources and being able to combine them to perform joins and aggregations sounds like a good idea.
+This web app is still unfinished (usable but expect bugs) and under active development. In the future, I will make it able to:
+- Visualize current database tables.
+- Create embed URLs like Codepen, Codesandbox to be able to preview SQL snippets.
+- Export database dumps and files.
+- Visualize query result as charts?
 
-- (TODO) I want to add "Codepen/JSFiddle snippets but for SQL queries" in my blogs to archive some cool SQL patterns and benchmarks (select top 1 per group, materialized CTE/subquery vs. lateral join performance of different cardinalities)
+Just ask for a feature, and you will have me implement it if it's useful enough and in high demand.
 
 ---
 
 Try it out at [pg-explore.vercel.app](https://pg-explore.vercel.app). It will cache the data in your browser (PWA), and then you can use it offline the next time you visit the site. Or host it locally in the section below!
 
-You can keep me motivated just by using this site or starring this repo. Motivation powers open-source development, as always!
+You can keep me motivated just by using this site or starring this repo. Motivation powers open-source development, as always! Feature requests & bug reports are also highly appreciated! 
 
 ---
 
@@ -86,16 +98,16 @@ Suggest any ideas, report bugs - it helps!
 - [x] DBML schema (tab #5)
   - [x] Parse + autocompletion (with Lezer grammar)
   - [x] Lint
-- [ ] Table data editor (tab #6) (with Handsontable (it's so good for Excel-like capability) / open-source alt in the future?)
-  - [ ] Import CSV
-  - [ ] Import JSON
-  - [ ] Data type config
-    - [ ] Data type
-    - [ ] Unique/null/Autoincrement
-  - [ ] Auto detect column type
+- [x] Table data editor (tab #6) (with Handsontable (it's so good for Excel-like capability but not free) / open-source alt in the future?)
+  - [x] Import CSV
+  - [x] Import JSON
+  - [x] Data type config
+    - [x] Data type
+    - [x] Unique/null/Autoincrement
+  - [x] Auto detect column type
+  - [x] Dark mode
 
 ### Will do next
-- [ ] Dark mode
 - [ ] AI node in workflow builder
 - [ ] Tables & relationship visualization
   - [ ] Table
@@ -115,4 +127,4 @@ Suggest any ideas, report bugs - it helps!
 - [ ] More AI (actually, I'm not too hyped for this)
   - Copilot/Cursor-like suggestion
   - Inline suggestion
-- [ ] Proper unit tests (pardon my overconfidence in code -_-)
+- [ ] Proper unit, E2E, performance tests (pardon my overconfidence in code -_-)

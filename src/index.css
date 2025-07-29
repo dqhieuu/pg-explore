@@ -145,6 +145,7 @@ html {
   --card-foreground: hsl(0 0% 98%);
   --popover: hsl(0 0% 3.9%);
   --popover-foreground: hsl(0 0% 98%);
+  color-scheme: dark;
 }
 
 .dark {
