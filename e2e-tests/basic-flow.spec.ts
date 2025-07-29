@@ -1,17 +1,16 @@
 import { expect, test } from "@playwright/test";
 
-const BASE_URL = "http://127.0.0.1:5173";
 // const MEMORY_DB_URL = `${BASE_URL}/database/memory`;
 
 test("has a title", async ({ page }) => {
-  await page.goto(BASE_URL);
+  await page.goto("/");
   await expect(page).toHaveTitle("pgExplore");
 });
 
 test("can navigate from home page to memory database page", async ({
   page,
 }) => {
-  await page.goto(BASE_URL);
+  await page.goto("/");
   await expect(page).toHaveTitle("pgExplore");
   await page.getByTestId("create-memory-db-btn").click();
   await expect(page).toHaveURL(/\/database\/memory/);
@@ -20,7 +19,7 @@ test("can navigate from home page to memory database page", async ({
 test("can navigate from home page to persistent database page", async ({
   page,
 }) => {
-  await page.goto(BASE_URL);
+  await page.goto("/");
   await page.getByTestId("create-persistent-db-btn").click();
 
   const getDbInputNameInputBtn = () =>
@@ -41,7 +40,7 @@ test("can navigate from home page to persistent database page", async ({
   await expect(page).toHaveURL(/\/database\/(?!memory)/);
   await page.waitForTimeout(1000);
 
-  await page.goto(BASE_URL);
+  await page.goto("/");
   await page.locator("[data-testclass='database-list-item']").first().click();
   await expect(page).toHaveURL(/\/database\/(?!memory)/);
 });
