@@ -23,14 +23,14 @@ export function openWorkflowEditor(
     component: "queryWorkflow",
   };
 
-  if (window.screen.width >= 1000) {
+  if (document.documentElement.clientWidth >= 1000) {
     const workflowGroup = dockviewApi.addGroup({
       direction: "left",
       id: "workflow-group",
     });
     dockviewApi.addPanel({
       ...workflowPanel,
-      initialWidth: window.screen.width * 0.2,
+      initialWidth: document.documentElement.clientWidth * 0.2,
       position: {
         referenceGroup: workflowGroup,
       },
@@ -163,7 +163,8 @@ export function createQueryResultTabsIfNeeded({
     resultGroup = dockviewApi.addGroup({
       id: "result-group",
       referencePanel: referencePanel,
-      direction: window.screen.width >= 1000 ? "right" : "below",
+      direction:
+        document.documentElement.clientWidth >= 1000 ? "right" : "below",
     });
   }
 

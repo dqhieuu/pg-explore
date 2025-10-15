@@ -96,6 +96,8 @@ function HomePage() {
     (state) => state.setSettingsDialogOpen,
   );
 
+  const [randomDbNamePopupKey, setRandomDbNamePopupKey] = useState(guid());
+
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-neutral-100 dark:bg-neutral-900">
       <Card className="mx-2 mt-2">
@@ -150,7 +152,13 @@ function HomePage() {
                   </div>
                 </div>
               </button>
-              <Dialog>
+              <Dialog
+                onOpenChange={(open) => {
+                  if (open) return;
+                  // Delay for animation to complete
+                  setTimeout(() => setRandomDbNamePopupKey(guid()), 200);
+                }}
+              >
                 <DialogTrigger asChild>
                   <button
                     className="hover:bg-muted flex w-[13rem] flex-[1_0_auto] flex-col items-center rounded-xl border p-2 shadow transition ease-in-out select-none"
@@ -166,7 +174,9 @@ function HomePage() {
                     </div>
                   </button>
                 </DialogTrigger>
-                <CreatePersistentDatabaseDialogContent />
+                <CreatePersistentDatabaseDialogContent
+                  key={randomDbNamePopupKey}
+                />
               </Dialog>
             </div>
           </div>

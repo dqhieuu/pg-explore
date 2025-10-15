@@ -44,3 +44,19 @@ test("can navigate from home page to persistent database page", async ({
   await page.locator("[data-testclass='database-list-item']").first().click();
   await expect(page).toHaveURL(/\/database\/(?!memory)/);
 });
+
+test("random database name changes on reopen popup", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("create-persistent-db-btn").click();
+  const dbNameInput = page.getByTestId("create-persistent-db-name-input");
+  const dbName = await dbNameInput.inputValue();
+  await expect(dbName).not.toBe("");
+
+  const closeBtn = page.getByRole("button", { name: "Close" });
+  await closeBtn.click();
+  await expect(dbNameInput).not.toBeAttached();
+
+  await page.getByTestId("create-persistent-db-btn").click();
+  const newDbName = await dbNameInput.inputValue();
+  await expect(newDbName).not.toBe(dbName);
+});
