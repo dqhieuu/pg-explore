@@ -7,17 +7,16 @@
 
 ![Demo screenshot](./public/demo2.png)
 
-I just built a local-first toolbox for my data analysis needs, and made it runnable locally on the browser with a [PGlite](https://github.com/electric-sql/pglite) backend! Some cool features:
+I just created a local-first toolbox for my data analysis needs and made it runnable locally on the browser with a [PGlite](https://github.com/electric-sql/pglite) backend! Some cool features:
 
-- Create your Postgres database in seconds and perform your query directly in your browser (thanks to PGLite)
-- Drag and Drop your CSV, JSON files into the app and instantly have them as database tables.
-- Pasting Excel data into the app's table editor also works, too!
-- With the tables you created, chat with the AI to create a query for your needs, for example, "Get PnL of each location, grouped by month.", then execute that query with one click!
-- You can also provide your own AI by setting the custom endpoint!
-- Your SQL queries and imported table data are managed as app files, and you can create an execution workflow with those files.
+- Create your Postgres databases in seconds and perform your query directly in your browser (thanks to PGlite)
+- Drag and drop your CSV, JSON files into the app and instantly have them as Postgres tables.
+- Data grid editor allows you to edit your data in a table-like way.
+- With the tables you created, chat with the AI to create a query for your needs, for example, "Find the average salary per department," then execute that query with one click!
+- Provide your own AI by setting the custom endpoint.
+- Your SQL queries and imported table data are treated as app files, and you can create an execution workflow with those files.
 - Some DDL languages such as [DBML](https://dbml.dbdiagram.io/home) are also supported.
 - Postgres extensions are supported.
-- You can manage multiple databases at once!
 
 This web app is still unfinished (usable but expect bugs) and under active development. In the future, I will make it able to:
 - Visualize current database tables.
@@ -25,7 +24,7 @@ This web app is still unfinished (usable but expect bugs) and under active devel
 - Export database dumps and files.
 - Visualize query result as charts?
 
-Just ask for a feature, and you will have me implement it if it's useful enough and in high demand.
+Ask for a feature, and you will have me implement it if I find it useful.
 
 ---
 

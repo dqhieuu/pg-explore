@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-// const MEMORY_DB_URL = `${BASE_URL}/database/memory`;
-
 test("has a title", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle("pgExplore");
@@ -50,7 +48,7 @@ test("random database name changes on reopen popup", async ({ page }) => {
   await page.getByTestId("create-persistent-db-btn").click();
   const dbNameInput = page.getByTestId("create-persistent-db-name-input");
   const dbName = await dbNameInput.inputValue();
-  await expect(dbName).not.toBe("");
+  expect(dbName).not.toBe("");
 
   const closeBtn = page.getByRole("button", { name: "Close" });
   await closeBtn.click();
@@ -58,5 +56,5 @@ test("random database name changes on reopen popup", async ({ page }) => {
 
   await page.getByTestId("create-persistent-db-btn").click();
   const newDbName = await dbNameInput.inputValue();
-  await expect(newDbName).not.toBe(dbName);
+  expect(newDbName).not.toBe(dbName);
 });

@@ -2,17 +2,28 @@ import { useSettingsStore } from "@/hooks/stores/use-settings-store";
 import { ReactNode, useEffect } from "react";
 
 const setHtmlTheme = (theme: "dark" | "light") => {
-  const root = window.document.documentElement;
+  const root = document.documentElement;
 
   root.classList.remove("light", "dark");
   root.classList.add(theme);
 
-  const themeMetaElem = window.document.querySelector(
-    'meta[name="theme-color"]',
-  );
-  if (themeMetaElem) {
-    themeMetaElem.setAttribute("content", theme === "dark" ? "#000" : "#fff");
+  // Remove any existing theme-color meta tag having attribute prefers-color
+  // and add a single theme-color because Chrome doesn't update
+  // the theme color when the media query changes.
+  document
+    .querySelectorAll("meta[name=theme-color][media*='(prefers-color']")
+    .forEach((meta) => meta.remove());
+
+  let themeMetaElem = document.querySelector(`meta[name=theme-color]`);
+  if (!themeMetaElem) {
+    themeMetaElem = document.createElement("meta");
+    themeMetaElem.setAttribute("name", "theme-color");
+    document.head.appendChild(themeMetaElem);
   }
+  themeMetaElem.setAttribute(
+    "content",
+    theme === "dark" ? "#000000" : "#ffffff",
+  );
 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

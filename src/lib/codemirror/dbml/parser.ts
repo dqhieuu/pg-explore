@@ -2,6 +2,7 @@ import { Program } from "@/lib/codemirror/dbml/language/lezer-parser.terms.ts";
 import { parser } from "@/lib/codemirror/dbml/language/lezer-parser.ts";
 import { CompletionContext, completeFromList } from "@codemirror/autocomplete";
 import {
+  Language,
   LanguageSupport,
   foldInside,
   foldNodeProp,
@@ -78,7 +79,7 @@ const parserConfig: ParserConfig = {
 
 const parserDefinition = LRLanguage.define({
   parser: parser.configure(parserConfig),
-});
+}) as unknown as Language;
 
 const autocompletion = parserDefinition.data.of({
   autocomplete: (context: CompletionContext) => {

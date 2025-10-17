@@ -32,7 +32,6 @@ export default defineConfig({
         short_name: "pgExplore",
         description:
           "Run PostgreSQL locally on browser, interactive and open-source.",
-        theme_color: "#ffffff",
         icons: [
           {
             src: "pwa-192x192.png",
