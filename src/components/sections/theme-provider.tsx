@@ -7,13 +7,6 @@ const setHtmlTheme = (theme: "dark" | "light") => {
   root.classList.remove("light", "dark");
   root.classList.add(theme);
 
-  // Remove any existing theme-color meta tag having attribute prefers-color
-  // and add a single theme-color because Chrome doesn't update
-  // the theme color when the media query changes.
-  document
-    .querySelectorAll("meta[name=theme-color][media*='(prefers-color']")
-    .forEach((meta) => meta.remove());
-
   let themeMetaElem = document.querySelector(`meta[name=theme-color]`);
   if (!themeMetaElem) {
     themeMetaElem = document.createElement("meta");
