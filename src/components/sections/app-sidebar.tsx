@@ -268,7 +268,7 @@ function FileCollapsibleSection({
           </SidebarGroupLabel>
           <CollapsibleContent>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu data-testid={sectionName}>
                 {filteredFiles.map((file) => (
                   <Tooltip delayDuration={500} key={file.id}>
                     <TooltipContent side="right">

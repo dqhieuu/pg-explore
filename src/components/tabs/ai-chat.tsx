@@ -18,7 +18,7 @@ import { cn, memDbId } from "@/lib/utils";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { usePGlite } from "@electric-sql/pglite-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CoreMessage, streamText } from "ai";
+import { ModelMessage, streamText } from "ai";
 import { produce } from "immer";
 import {
   ClipboardCopyIcon,
@@ -41,7 +41,7 @@ export const AiChat = () => {
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
 
-  const [chatMessages, setChatMessages] = useState<CoreMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ModelMessage[]>([]);
 
   const { notifySendingChat, notifyRunArbitraryQuery } = useWorkflowMonitor();
   const setQueryResult = useQueryStore((state) => state.setQueryResult);

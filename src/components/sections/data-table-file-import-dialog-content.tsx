@@ -374,6 +374,7 @@ export const DataTableFileImportDialogContent = () => {
                 >
                   <div>{file.name}</div>
                   <button
+                    className="shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (importedFiles.length <= 1) {
