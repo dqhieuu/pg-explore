@@ -214,15 +214,7 @@ function FileCollapsibleSection({
 }) {
   const hiddenIfEmptyValue = hiddenIfEmpty ?? false;
 
-  const onLongPress_ToggleRenameFile = useLongPress<Element, string>(
-    (_, { context: fileId }) => {
-      if (fileId == null) return;
-      setDialogFileId(fileId);
-    },
-    {
-      threshold: 300, // 300ms for long press
-    },
-  );
+  const [dialogFileId, setDialogFileId] = useState<string | null>(null);
 
   const dockviewApi = useDockviewStore((state) => state.dockviewApi);
   const isMobile = useIsMobile();
@@ -245,7 +237,15 @@ function FileCollapsibleSection({
     appDb.files.delete(fileId);
   };
 
-  const [dialogFileId, setDialogFileId] = useState<string | null>(null);
+  const onLongPress_ToggleRenameFile = useLongPress<Element, string>(
+    (_, { context: fileId }) => {
+      if (fileId == null) return;
+      setDialogFileId(fileId);
+    },
+    {
+      threshold: 300, // 300ms for long press
+    },
+  );
 
   if (hiddenIfEmptyValue && filteredFiles.length === 0) return null;
 
